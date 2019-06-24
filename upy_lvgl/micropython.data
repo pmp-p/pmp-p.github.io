@@ -1,0 +1,926 @@
+__UPY__ = True
+# maybe related https://github.com/mavier/jsobject
+
+
+if __UPY__:
+    import embed
+    from ujson import dumps,loads
+    DBG=1
+else:
+    DBG=0
+
+
+class Proxy:
+
+    get = None
+    act = None
+    set = None
+    tmout = 300
+    cfg = {"get": {}, "set": {}, "act": {}}
+
+
+
+class JSProxy(Proxy):
+    def __init__(self):
+        self.caller_id = 0
+        self.tmout = 300
+        self.cache = {}
+        self.q_return = {}
+        self.q_reply = []
+        self.q_sync = []
+        self.q_async = []
+
+    def new_call(self):
+        self.caller_id += 1
+        return str(self.caller_id)
+
+    async def wait_answer(self,cid, fqn, solvepath):
+        #cid = str(self.caller_id)
+        if DBG:print('\tas id %s' % cid)
+        unsolved = fqn[len(solvepath)+1:]
+        tmout = self.tmout
+        if DBG and unsolved:
+            print('\twill remain', unsolved )
+        solved = None
+
+        while tmout>0:
+            if cid in self.q_return:
+                oid, solved = self.unref(cid)
+                if len(unsolved):
+                    solved = await self.get( "%s.%s" % ( oid, unsolved ) , None )
+                    unsolved = ''
+                    break
+                break
+            await aio.asleep_ms(1)
+            tmout -= 1
+        return solved, unsolved
+
+
+    def unref(self, cid):
+        oid = self.q_return.pop(cid)
+        tip="%s@%s"%( oid,cid )
+        if isinstance(oid,str) and oid.startswith('js|'):
+            if oid.find('/')>0:
+                oid,tip = oid.split('/',1)
+        if not oid in self.cache:
+           self.cache[oid] = CallPath(None,oid,tip=tip)
+        return oid, self.cache[oid]
+
+    async def get(self, cp,argv,**kw):
+        print('async_js_get',cp,argv)
+        cid = self.new_call()
+        self.q_async.append( {"id": cid, 'm':cp } )
+
+        while True:
+            if cid in self.q_return:
+                return self.q_return.pop(cid)
+            await aio.asleep_ms(1)
+
+    def set(self, cp,argv,cs=None):
+        if cs is not None:
+            if len(cs)>1:
+                raise Exception('please simplify assign via (await %s(...)).%s = %r' % (cs[0][0], name,argv))
+            value = argv
+            solvepath, argv, kw = cs.pop(0)
+            unsolved = cp[len(solvepath)+1:]
+
+            jsdata = "JSON.parse(`{}`)".format((json.dumps(argv)))
+            target = solvepath.rsplit('.',1)[0]
+            assign = 'JSON.parse(`{}`)'.format((json.dumps(value)))
+            doit = "{}.apply({},{}).{} = {}".format((solvepath), (target), (jsdata), (unsolved), (assign))
+            print("74:",doit)
+            return self.q_sync.append(doit)
+
+        if cp.count('|'):
+            cp  = cp.split('.')
+            cp[0] = 'window["{}"]'.format((cp[0]))
+            cp = '.'.join( cp )
+
+        if DBG:
+            print('82: set',cp,argv)
+        self.q_sync.append( '{} =  JSON.parse(`{}`)'.format((cp), (json.dumps(argv))) )
+
+    def act(self, cp,c_argv,c_kw,**kw):
+        cid = self.new_call()
+        self.q_async.append( {"m": cp, "a": c_argv, "k": c_kw, "id": cid} )
+        return cid
+
+
+class obj:
+
+    def __init__(self):
+        self.myattr = 666
+
+    def __delattr__(self, name):
+        print('delattr ',name)
+
+
+
+class CallPath(dict):
+
+    proxy = Proxy
+    cache = {}
+
+
+
+    def __setup__(self, host, fqn, default=None, tip='[object %s]'):
+        self.__fqn = fqn
+        self.__name = fqn.rsplit(".", 1)[-1]
+        self.__host = host
+
+
+        #empty call stack
+        self.__cs = []
+        self.__tmout = 500
+        self.__tip  = tip
+        if host:
+            self.__host._cp_setup(self.__name, default)
+        return self
+
+    if not __UPY__:
+        def __init__(self, host, fqn, default=None, tip='[object %s]'):
+            self.__setup__(host, fqn, default, tip)
+            dict.__init__(self)
+
+
+    @classmethod
+    def set_proxy(cls,proxy):
+        cls.proxy = proxy
+        proxy.cp = cls
+        cls.get = proxy.get
+        cls.set = proxy.set
+        cls.act = proxy.act
+
+    def __delattr__(self, name):
+        print('delattr ',name)
+
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        fqn = "%s.%s" % (self.__fqn, name)
+        if DBG:
+            print("72:cp-ast", fqn)
+        if __UPY__:
+            newattr = self.__class__().__setup__(self, fqn)
+        else:
+            newattr = self.__class__(self, fqn)
+        self._cp_setup(name, newattr)
+        return newattr
+
+    def __setattr__(self, name, value):
+        if name.startswith("_"):
+            self[name]=value
+            return
+
+        print('setattr',name,value)
+        fqn = "%s.%s" % (self.__fqn, name)
+        if DBG:
+            print("105:cp->pe", fqn, ":=", value, self.__cs)
+
+        if len(self.__cs):
+            self.proxy.set(fqn,value,self.__cs)
+            self.__cs.clear()
+            #can't assign path-end to a dynamic callpath
+            return
+
+#FIXME: caching type/value is flaky
+        #setattr(self.__class__, name, PathEnd(self, fqn, value))
+        self.proxy.set(fqn, value)
+
+#FIXME: caching type/value is flaky
+#    def __setitem__(self, name, v):
+#        fqn = "%s.%s" % (self.__fqn, name)
+#        setattr(self.__class__, key, PathEnd(host, fqn, default=v))
+
+    def _cp_setup(self, key, v):
+        if v is None:
+            print("86:cp-set None ????", key, v)
+            return
+
+        if not isinstance(v, self.__class__):
+            print("87:cp-set", key, v)
+            if self.__class__.set:
+                if DBG:
+                    print("93:cp-set", key, v)
+                self.proxy.set("%s.%s" % (self.__fqn, key), v)
+
+        dict.__setitem__(self, key, v)
+
+
+    async def __solver(self):
+        cs = []
+        p = self
+        while p.__host:
+            if p.__cs :
+                cs.extend(p.__cs)
+            p = p.__host
+        cs.reverse()
+
+        unsolved = self.__fqn
+        cid='?'
+        # FIXME: (maybe) for now just limit to only one level of call()
+        # horrors like "await window.document.getElementById('test').textContent.length" are long enough already.
+        if len(cs):
+            solvepath, argv, kw = cs.pop(0)
+            if DBG:print(self.__fqn,'about to solve', solvepath,argv,kw)
+            cid = self.proxy.act(solvepath, argv, kw )
+            solved, unsolved = await self.proxy.wait_answer(cid, unsolved, solvepath)
+#FIXME:         #timeout: raise ? or disconnect event ?
+#FIXME: strip solved part on fqn and continue in callstack
+            if not len(unsolved):
+                return solved
+        else:
+            if DBG:print('__solver about to solve',unsolved)
+            return await self.proxy.get( unsolved , None )
+
+        return 'future-async-unsolved[%s->%s]' % (cid,unsolved)
+
+    def __await__(self):
+        return self.__solver().__await__()
+
+    def __call__(self, *argv, **kw):
+        if DBG:
+            print("89:cp-call", self.__fqn, argv, kw)
+        #stack up the async call list
+        self.__cs.append( [self.__fqn, argv, kw ] )
+        return self
+
+
+# maybe yield from https://stackoverflow.com/questions/33409888/how-can-i-await-inside-future-like-objects-await
+#        async def __call__(self, *argv, **kw):
+#
+#            self.__class__.act(self.__fqn, argv, kw)
+#            cid  = str( self.__class__.caller_id )
+#            rv = ":async-cp-call:%s" % cid
+#            while True:
+#                if cid in self.q_return:
+#                    oid = self.q_return.pop(cid)
+#                    if oid in self.cache:
+#                        return self.cache[oid]
+#
+#                    rv = self.__class__(None,oid)
+#                    self.cache[oid]=rv
+#                    break
+#                await asleep_ms(1)
+#            return rv
+
+    def __repr__(self):
+        #if self.__fqn=='window' or self.__fqn.count('|'):
+        #print("FIXME: give tip about remote object proxy")
+        if self.__tip.count('%s'):
+            return self.__tip % self.__fqn
+        return self.__tip
+        #raise Exception("Giving cached value from previous await %s N/I" % self.__fqn)
+
+        #return ":async-pe-get:%s" % self.__fqn
+
+#CallPath.set_proxy(JSProxy())
+
+window = CallPath().__setup__(None, 'window', tip="[ object Window]")
+
+testo = obj()
+#window.document.title = 'pouet'
+
+
+
+print("assets.py")
+def new_module(module):
+    import sys
+    save = list(sys.path)
+    sys.path.clear()
+    sys.path.append('/tmp')
+    m = None
+    with open('/tmp/%s.py' % module,'w') as empty:
+        empty.write('#\n')
+
+    try:
+        m = __import__(module)
+    except Exception as e :
+        sys.print_execption(e)
+    finally:
+        import sys
+        sys.path.clear()
+        sys.path.extend(save)
+        print(sys.path, m)
+        #TODO: os.remove / unlink
+    return m
+
+def load_module(module, *argv):
+    import sys
+    m = new_module(module)
+    if m:
+        import embed
+        file = '/assets/%s.py' % module
+        mroot = module.split('.')[0]
+        m = sys.modules[mroot]
+        runf(file, module=embed.vars(m), patch='\n\n__file__=%r\n' % file )
+        globals()[mroot] = m
+        return m
+
+print(""" This can provide a workaround for :
+    https://github.com/pmp-p/micropython-ports-wasm/issues/5
+use imp.load_module(modulename) to load modules from /assets/*.py
+""")
+from . import core
+
+class Lock:
+
+    def __init__(self):
+        self.locked = False
+        self.wlist = []
+
+    def release(self):
+        assert self.locked
+        self.locked = False
+        if self.wlist:
+            #print(self.wlist)
+            coro = self.wlist.pop(0)
+            core.get_event_loop().call_soon(coro)
+
+    def acquire(self):
+        # As release() is not coro, assume we just released and going to acquire again
+        # so, yield first to let someone else to acquire it first
+        yield
+        #print("acquire:", self.locked)
+        while 1:
+            if not self.locked:
+                self.locked = True
+                return True
+            #print("putting", core.get_event_loop().cur_task, "on waiting list")
+            self.wlist.append(core.get_event_loop().cur_task)
+            yield False
+from collections.deque import deque
+from .core import sleep
+
+
+class QueueEmpty(Exception):
+    """Exception raised by get_nowait()."""
+
+
+class QueueFull(Exception):
+    """Exception raised by put_nowait()."""
+
+
+class Queue:
+    """A queue, useful for coordinating producer and consumer coroutines.
+
+    If maxsize is less than or equal to zero, the queue size is infinite. If it
+    is an integer greater than 0, then "yield from put()" will block when the
+    queue reaches maxsize, until an item is removed by get().
+
+    Unlike the standard library Queue, you can reliably know this Queue's size
+    with qsize(), since your single-threaded asyncio application won't be
+    interrupted between calling qsize() and doing an operation on the Queue.
+    """
+
+    _attempt_delay = 0.1
+
+    def __init__(self, maxsize=0):
+        self.maxsize = maxsize
+        self._queue = deque()
+
+    def _get(self):
+        return self._queue.popleft()
+
+    def get(self):
+        """Returns generator, which can be used for getting (and removing)
+        an item from a queue.
+
+        Usage::
+
+            item = yield from queue.get()
+        """
+        while not self._queue:
+            yield from sleep(self._attempt_delay)
+        return self._get()
+
+    def get_nowait(self):
+        """Remove and return an item from the queue.
+
+        Return an item if one is immediately available, else raise QueueEmpty.
+        """
+        if not self._queue:
+            raise QueueEmpty()
+        return self._get()
+
+    def _put(self, val):
+        self._queue.append(val)
+
+    def put(self, val):
+        """Returns generator which can be used for putting item in a queue.
+
+        Usage::
+
+            yield from queue.put(item)
+        """
+        while self.qsize() >= self.maxsize and self.maxsize:
+            yield from sleep(self._attempt_delay)
+        self._put(val)
+
+    def put_nowait(self, val):
+        """Put an item into the queue without blocking.
+
+        If no free slot is immediately available, raise QueueFull.
+        """
+        if self.qsize() >= self.maxsize and self.maxsize:
+            raise QueueFull()
+        self._put(val)
+
+    def qsize(self):
+        """Number of items in the queue."""
+        return len(self._queue)
+
+    def empty(self):
+        """Return True if the queue is empty, False otherwise."""
+        return not self._queue
+
+    def full(self):
+        """Return True if there are maxsize items in the queue.
+
+        Note: if the Queue was initialized with maxsize=0 (the default),
+        then full() is never True.
+        """
+        if self.maxsize <= 0:
+            return False
+        else:
+            return self.qsize() >= self.maxsize
+import usocket
+from . import core
+
+
+DEBUG = 0
+log = None
+
+
+def set_debug(val):
+    global DEBUG, log
+    DEBUG = val
+    if val:
+        import logging
+
+        log = logging.getLogger("asyncio.udp")
+
+
+def socket(af=usocket.AF_INET):
+    s = usocket.socket(af, usocket.SOCK_DGRAM)
+    s.setblocking(False)
+    return s
+
+
+def recv(s, n):
+    try:
+        yield core.IORead(s)
+        return s.recv(n)
+    except:
+        # print("recv: exc, cleaning up")
+        # print(asyncio.core._event_loop.objmap, asyncio.core._event_loop.poller)
+        # asyncio.core._event_loop.poller.dump()
+        yield core.IOReadDone(s)
+        # print(asyncio.core._event_loop.objmap)
+        # asyncio.core._event_loop.poller.dump()
+        raise
+
+
+def recvfrom(s, n):
+    try:
+        yield core.IORead(s)
+        return s.recvfrom(n)
+    except:
+        # print("recv: exc, cleaning up")
+        # print(asyncio.core._event_loop.objmap, asyncio.core._event_loop.poller)
+        # asyncio.core._event_loop.poller.dump()
+        yield core.IOReadDone(s)
+        # print(asyncio.core._event_loop.objmap)
+        # asyncio.core._event_loop.poller.dump()
+        raise
+
+
+def sendto(s, buf, addr=None):
+    while 1:
+        res = s.sendto(buf, 0, addr)
+        # print("send res:", res)
+        if res == len(buf):
+            return
+        print("asento: IOWrite")
+        yield core.IOWrite(s)
+
+
+def close(s):
+    yield core.IOReadDone(s)
+    s.close()
+# (c) 2014-2018 Paul Sokolovsky. MIT license.
+# import uerrno
+try:
+    import uselect as select
+except:
+
+    class select:
+        class fake_poll:
+
+            def register(self,*argv):
+                print("register",argv)
+
+            def unregister(self,*argv):
+                print("register",argv)
+
+            def ipoll(self,delay,v):
+                print("ipoll",default,v)
+
+        instance = fake_poll()
+        @classmethod
+        def poll(cls):
+            print("TODO: a wasm select.poll() implementation is required")
+            return cls.instance
+
+# import usocket as _socket
+# (c) 2014-2018 Paul Sokolovsky. MIT license.
+__EMSCRIPTEN__ = __import__('sys').platform in ('asm.js','wasm',)
+if __EMSCRIPTEN__ or 1:
+    print("""
+#FIXME: time with time.time_ns()
+    https://www.python.org/dev/peps/pep-0564/
+    https://vstinner.github.io/python37-pep-564-nanoseconds.html
+""")
+    import embed
+
+import utime as time
+import utimeq
+
+# import ucollections
+
+
+type_gen = type((lambda: (yield))())
+
+
+class CancelledError(Exception):
+    pass
+
+
+class TimeoutError(CancelledError):
+    pass
+
+
+class EventLoop:
+    def __init__(self, runq_len=16, waitq_len=16):
+        self.runq = []  # ucollections.deque((), runq_len, True)
+        self.waitq = utimeq.utimeq(waitq_len)
+        # Current task being run. Task is a top-level coroutine scheduled
+        # in the event loop (sub-coroutines executed transparently by
+        # yield from/await, event loop "doesn't see" them).
+        self.cur_task = None
+
+    if __EMSCRIPTEN__:
+        def time(self):
+            return int(time.time() * 1000)
+    else:
+        def time(self):
+            return time.ticks_ms()
+
+    def create_task(self, coro):
+        # CPython 3.4.2
+        self.call_later_ms(0, coro)
+        # CPython asyncio incompatibility: we don't return Task object
+
+    def call_soon(self, callback, *argv):
+        self.runq.append(callback)
+        if not isinstance(callback, type_gen):
+            self.runq.append(argv)
+
+    def call_at_(self, time, callback, argv=()):
+        self.waitq.push(time, callback, argv)
+
+    def call_later(self, delay, callback, *argv):
+        self.call_at_(time.ticks_add(self.time(), int(delay * 1000)), callback, argv)
+
+    def call_later_ms(self, delay, callback, *argv):
+        if not delay:
+            return self.call_soon(callback, *argv)
+        #self.call_at_(time.ticks_add(self.time(), int(delay)), callback, argv)
+        self.call_at_(time.ticks_add(self.time(), delay), callback, argv)
+
+    def wait(self, delay):
+        # Default wait implementation, to be overriden in subclasses
+        # with IO scheduling
+        time.sleep_ms(int(delay))
+
+    def run_once(self):
+        global cur_task
+        tnow = self.time()
+        while len(self.waitq):
+            t = self.waitq.peektime()
+            delay = time.ticks_diff(t, tnow)
+            if delay > 0:
+                break
+            self.waitq.pop(cur_task)
+            self.call_soon(cur_task[1], *cur_task[2])
+
+        # Process runq
+        while len(self.runq):
+            cb = self.runq.pop(0)
+            argv = ()
+            if not isinstance(cb, type_gen):
+                if len(self.runq):
+                    argv = self.runq.pop(0)
+                try:
+                    cb(*argv)
+                    continue
+                except TypeError:print(cb,argv)
+
+            self.cur_task = cb
+            delay = 0
+            try:
+                if argv is ():
+                    ret = next(cb)
+                else:
+                    ret = cb.send(*argv)
+                if isinstance(ret, SysCall1):
+                    argv = ret.arg
+                    if isinstance(ret, SleepMs):
+                        delay = argv
+                    elif isinstance(ret, IORead):
+                        cb.pend_throw(False)
+                        self.add_reader(argv, cb)
+                        continue
+                    elif isinstance(ret, IOWrite):
+                        cb.pend_throw(False)
+                        self.add_writer(argv, cb)
+                        continue
+                    elif isinstance(ret, IOReadDone):
+                        self.remove_reader(argv)
+                    elif isinstance(ret, IOWriteDone):
+                        self.remove_writer(argv)
+                    elif isinstance(ret, StopLoop):
+                        return argv
+                    else:
+                        assert False, "Unknown syscall yielded: %r (of type %r)" % (ret, type(ret))
+                elif isinstance(ret, type_gen):
+                    self.call_soon(ret)
+                elif isinstance(ret, int):
+                    # Delay
+                    delay = ret
+                elif isinstance(ret, float):
+                    # Delay
+                    delay = int(ret)
+                elif ret is None:
+                    # Just reschedule
+                    pass
+                elif ret is False:
+                    # Don't reschedule
+                    continue
+                else:
+                    assert False, "Unsupported coroutine yield value: %r (of type %r)" % (ret, type(ret))
+            except StopIteration as e:
+                continue
+            except CancelledError as e:
+                continue
+            # Currently all syscalls don't return anything, so we don't
+            # need to feed anything to the next invocation of coroutine.
+            # If that changes, need to pass that value below.
+            if delay:
+                self.call_later_ms(delay, cb)
+            else:
+                self.call_soon(cb)
+
+    def run_forever(self):
+        global cur_task
+        while True:
+            # Expire entries in waitq and move them to runq
+            self.run_once(cur_task)
+            # Wait until next waitq task or I/O availability
+            delay = 0
+            if not len(self.runq):
+                delay = -1
+                if self.waitq:
+                    tnow = self.time()
+                    t = self.waitq.peektime()
+                    delay = time.ticks_diff(t, tnow)
+                    if delay < 0:
+                        delay = 0
+            self.wait(delay)
+
+
+    def run_until_complete(self, coro):
+        def _run_and_stop():
+            yield from coro
+            yield StopLoop(0)
+
+        self.call_soon(_run_and_stop())
+        self.run_forever()
+
+    def stop(self):
+        self.call_soon((lambda: (yield StopLoop(0)))())
+
+    def close(self):
+        pass
+
+
+class SysCall:
+    def __init__(self, *argv):
+        self.args = argv
+
+    def handle(self):
+        raise NotImplementedError
+
+
+# Optimized syscall with 1 arg
+class SysCall1(SysCall):
+    def __init__(self, argv):
+        self.arg = argv
+
+
+class StopLoop(SysCall1):
+    pass
+
+
+class IORead(SysCall1):
+    pass
+
+
+class IOWrite(SysCall1):
+    pass
+
+
+class IOReadDone(SysCall1):
+    pass
+
+
+class IOWriteDone(SysCall1):
+    pass
+
+
+_event_loop = None
+
+def register(EventLoop):
+    global _event_loop_class
+    _event_loop_class = EventLoop
+
+register(EventLoop)
+
+def get_event_loop(runq_len=16, waitq_len=16):
+    global _event_loop
+    if _event_loop is None:
+        _event_loop = _event_loop_class(runq_len, waitq_len)
+    return _event_loop
+
+
+def sleep(secs):
+    yield int(secs * 1000)
+
+
+# Implementation of sleep_ms awaitable with zero heap memory usage
+class SleepMs(SysCall1):
+    def __init__(self):
+        self.v = None
+        self.arg = None
+
+    def __call__(self, argv):
+        self.v = argv
+        # print("__call__")
+        return self
+
+    def __iter__(self):
+        # print("__iter__")
+        return self
+
+    def __next__(self):
+        if self.v is not None:
+            # print("__next__ syscall enter")
+            self.arg = self.v
+            self.v = None
+            return self
+        # print("__next__ syscall exit")
+        _stop_iter.__traceback__ = None
+        raise _stop_iter
+
+
+_stop_iter = StopIteration()
+sleep_ms = SleepMs()
+
+
+def cancel(coro):
+    if coro.pend_throw(CancelledError()) is False:
+        _event_loop.call_soon(coro)
+
+
+class TimeoutObj:
+    def __init__(self, coro):
+        self.coro = coro
+
+
+def wait_for_ms(coro, timeout):
+    def waiter(coro, timeout_obj):
+        res = yield from coro
+        timeout_obj.coro = None
+        return res
+
+    def timeout_func(timeout_obj):
+        if timeout_obj.coro and (timeout_obj.coro.pend_throw(TimeoutError()) is False):
+            _event_loop.call_soon(timeout_obj.coro)
+
+    timeout_obj = TimeoutObj(_event_loop.cur_task)
+    _event_loop.call_later_ms(timeout, timeout_func, timeout_obj)
+    return (yield from waiter(coro, timeout_obj))
+
+
+def wait_for(coro, timeout):
+    return wait_for_ms(coro, int(timeout * 1000))
+
+
+def coroutine(f):
+    return f
+
+
+#
+# The functions below are deprecated in asyncio, and provided only
+# for compatibility with CPython asyncio
+#
+
+# def ensure_future(coro, loop=_event_loop):
+#    _event_loop.call_soon(coro)
+#    # CPython asyncio incompatibility: we don't return Task object
+#    return coro
+
+
+# CPython asyncio incompatibility: Task is a function, not a class (for efficiency)
+def Task(coro, loop=_event_loop):
+    # Same as async()
+    _event_loop.call_soon(coro)
+
+
+class PollEventLoop(EventLoop):
+    def __init__(self, runq_len=16, waitq_len=16):
+        EventLoop.__init__(self, runq_len, waitq_len)
+        self.poller = select.poll()
+        self.objmap = {}
+
+    def add_reader(self, sock, cb, *args):
+        self.poller.register(sock, select.POLLIN)
+        if args:
+            self.objmap[id(sock)] = (cb, args)
+        else:
+            self.objmap[id(sock)] = cb
+
+    def remove_reader(self, sock):
+        self.poller.unregister(sock)
+        del self.objmap[id(sock)]
+
+    def add_writer(self, sock, cb, *args):
+        self.poller.register(sock, select.POLLOUT)
+        if args:
+            self.objmap[id(sock)] = (cb, args)
+        else:
+            self.objmap[id(sock)] = cb
+
+    def remove_writer(self, sock):
+        try:
+            self.poller.unregister(sock)
+            self.objmap.pop(id(sock), None)
+        except OSError as e:
+            # StreamWriter.awrite() first tries to write to a socket,
+            # and if that succeeds, yield IOWrite may never be called
+            # for that socket, and it will never be added to poller. So,
+            # ignore such error.
+            if e.args[0] != 2:  # uerrno.ENOENT:
+                raise
+
+    def wait(self, delay):
+        # We need one-shot behavior (second arg of 1 to .poll())
+        #        res = self.poller.ipoll(delay, 1)
+        # log.debug("poll result: %s", res)
+        # Remove "if res" workaround after
+        # https://github.com/micropython/micropython/issues/2716 fixed.
+
+        for sock, ev in self.poller.ipoll(delay, 1):
+            cb = self.objmap[id(sock)]
+            if ev & (select.POLLHUP | select.POLLERR):
+                # These events are returned even if not requested, and
+                # are sticky, i.e. will be returned again and again.
+                # If the caller doesn't do proper error handling and
+                # unregister this sock, we'll busy-loop on it, so we
+                # as well can unregister it now "just in case".
+                self.remove_reader(sock)
+            if isinstance(cb, tuple):
+                cb[0](*cb[1])
+                continue
+            cb.pend_throw(None)
+            self.call_soon(cb)
+
+
+
+cur_task = [0, 0, 0]
+
+register(PollEventLoop)
+
+del register
+
+
+#
+ asm    dylink‚À   ` ``` ` `  ` |ËenvabortStackOverflow  env
+nullFunc_X  env_printf env__memory_base env__table_base envDYNAMICTOP_PTR envtempDoublePtr globalNaN| globalInfinity| envmemory €envtablep 
+	 c##A A A A A A |#|#A A A A |D        }C    }C    4__post_instantiate 
+_init_plus_one 	
+_init_test 	 #
+å	(#!#  j$#AjApq$##	N@     #   $
+   $ $	 #
+A F@  $
+ $8#!#Aj$##	N@A  !   #Aj6 # A j   $1#!#Aj$##	N@A   ! ! Aj! $  # A0j$#A€€Àj$	 A D        & #  hello from ffi wasm library: %p
