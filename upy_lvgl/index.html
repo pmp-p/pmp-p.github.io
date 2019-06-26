@@ -315,6 +315,7 @@ def run_from(url, module=globals(),patch=''):
         m = runc(''.join(code), globals(), file)
         if __compiled__:
             asyncio.auto = 1
+            print("Compilation ok")
         else:
             print("Compilation or interpretation not complete, not running lvgl loop")
     print('='*40)
@@ -333,9 +334,9 @@ run_from("https://wyz.fr/paste/9Aj/raw")
 # 2  : Complex demos, or run script from an url
 ------------------------------------------------
 run_from('lvgl:example1.py')
-#nope run_from('assets/lvgl_ae.py')
-#nope run_from("lvgl:chart_anim_example.py")
-#nope run_from("lvgl:advanced_demo.py")
+run_from('assets/lvgl_ae.py')
+run_from("lvgl:chart_anim_example.py")
+run_from("lvgl:advanced_demo.py")
 
 """)
 print("-"*78)
@@ -348,6 +349,8 @@ async def run_aloop():
 def run_loop():
     SDL.run_once()
 
+import lvgl as lv
+import SDL
 import asyncio
 asyncio.get_event_loop().create_task( run_loop )
 
