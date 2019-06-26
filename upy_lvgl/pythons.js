@@ -148,6 +148,7 @@ function init_loop(){
     console.log("init_loop:Begin (" + Module.arguments.length+")")
     var scripts = document.getElementsByTagName('script')
 
+    var doscripts = true
     if (Module.arguments.length>1) {
 
         var argv0 = ""+Module.arguments[1]
@@ -166,12 +167,16 @@ function init_loop(){
             console.log(ab.length)
             FS.createDataFile("/",'main.py', ab, true, true);
             PyRun_VerySimpleFile('main.py')
+            doscripts = false
         } else {
-            console.log("an error occured getting main.py from '"+argv0+"'")
-            term_impl("Javascript : error occured getting main.py from '"+argv0+"'")
+            console.log("error getting main.py from '"+argv0+"'")
+            term_impl("Javascript : error getting main.py from '"+argv0+"'\r\n")
+            //TODO: global control var to skip page scripts
         }
 
-    } else {
+    }
+
+    if (doscripts) {
 
         for(var i = 0; i < scripts.length; i++){
             var script = scripts[i]
@@ -233,6 +238,10 @@ function hack_open(url, cachefile){
     try {
         if (url[0]==":")
             url = url.substr(1)
+        else {
+            if (url.includes('/wyz.fr/'))
+                url = CORS_BROKER + url
+        }
 
         var ab = awfull_get(url)
         var ret = ab.length
@@ -270,106 +279,10 @@ function file_exists(urlToFile, need_dot) {
     //console.log(ret)
     return ret
 }
-// ================= ulink =================================================
-window.embed = {}
-window.embed.state = {}
-window.embed.ref = []
 
-function ID(){
-     return 'js|' + Math.random().toString(36).substr(2, 9);
-}
+// ================== uplink ===============================================
 
-
-
-function embed_call_impl(callid, fn, owner, params) {
-    var rv = null;
-    try {
-        rv = fn.apply(owner,params)
-    } catch(x){
-        console.log("call failed : "+fn+"("+params+") : "+ x )
-    }
-    if ( (rv !== null) && (typeof rv === 'object')) {
-        var seen = false
-        var rvid = null;
-        for (var i=0;i<window.embed.ref.length;i++) {
-            if ( Object.is(rv, window.embed.ref[i][1]) ){
-                rvid = window.embed.ref[i][0]
-                //console.log('re-using id = ', rvid)
-                seen = true
-                break
-            }
-        }
-
-        if (!seen) {
-            rvid = ID();
-            window[rvid] = rv;
-            window.embed.ref.push( [rvid, rv ] )
-            //transmit bloat only on first access to object
-            window.embed.state[""+callid ] =  rvid +"/"+ rv
-        } else
-            window.embed.state[""+callid ] =  rvid
-    } else
-        window.embed.state[""+callid ] =""+rv
-    //console.log("embed_call_impl:" + window.embed.state )
-}
-
-function isCallable(value) {
-    if (!value) { return false; }
-    if (typeof value !== 'function' && typeof value !== 'object') { return false; }
-    if (typeof value === 'function' && !value.prototype) { return true; }
-    if (hasToStringTag) { return tryFunctionObject(value); }
-    if (isES6ClassFn(value)) { return false; }
-    var strClass = toStr.call(value);
-    return strClass === fnClass || strClass === genClass;
-}
-
-
-function embed_call(jsdata) {
-    //var jsdata = JSON.parse(jsdata);
-
-    //always
-    var callid = jsdata['id'];
-    var name = jsdata['m'];
-    try {
-        var path = name.rsplit('.')
-        var solved = []
-        solved.push( window )
-
-        while (path){
-            var elem = path.shift()
-            if (elem){
-                var leaf = solved[ solved.length -1 ][ elem ]
-                console.log( solved[ solved.length -1 ]+" -> "+ leaf)
-                solved.push( leaf )
-            } else break
-        }
-        var target = solved[ solved.length -1 ]
-        var owner = solved[ solved.length -2 ]
-
-        if (!isCallable(target)) {
-            console.log("embed_call(query="+name+") == "+target)
-            window.embed.state[""+callid ] = ""+target;
-            return;
-        }
-
-        //only if method call
-        var params = jsdata['a'];
-        var env = jsdata['k'] || {};
-
-        console.log('embed_call:'+target +' call '+callid+' launched with',params,' on object ' +owner)
-
-        setTimeout( embed_call_impl ,1, callid, target, owner, params );
-    } catch (x) {
-        console.log('malformed RPC '+jsdata+" : "+x )
-    }
-}
-
-
-function log(msg) {
-    document.getElementById('log').textContent += msg + '\n'
-}
-
-
+// separate file clink for cpython , plink for micropython , entry point is embed_call(struct_from_json)
 
 // ================= STDIN =================================================
 window.stdin_array = []
@@ -386,18 +299,50 @@ function window_prompt(){
     return null
 }
 
-function stdin_tx(key){
-    window.stdin = window.stdin + key
+if (0) { // SLOW
+    function stdin_tx(key){
+        window.stdin += key
 
-    if (!window.stdin_raw) {
-        console.log("key:"+key);
-        return ;
+        if (!window.stdin_raw) {
+            console.log("key:"+key);
+            return ;
+        }
+        var utf8 = unescape(encodeURIComponent(key));
+        for(var i = 0; i < utf8.length; i++) {
+            window.stdin_array.push( utf8.charCodeAt(i) );
+        }
     }
-    var utf8 = unescape(encodeURIComponent(key));
-    for(var i = 0; i < utf8.length; i++) {
-        window.stdin_array.push( utf8.charCodeAt(i) );
+    window.stdin_tx =stdin_tx
+
+} else {
+    function stdin_tx(key){
+        window.stdin += key
     }
+
+    function stdin_poll(){
+        //pending draw ?
+        if (stdout_blit)
+            flush_stdout();
+
+        if (!window.stdin_raw)
+            return
+
+        if (!window.stdin.length)
+            return
+
+        var utf8 = unescape(encodeURIComponent(window.stdin));
+        for(var i = 0; i < utf8.length; i++) {
+            window.stdin_array.push( utf8.charCodeAt(i) );
+        }
+        window.stdin = ""
+    }
+    setInterval( stdin_poll , 16)
+    window.stdin_tx =stdin_tx
 }
+
+
+
+
 
 function stdin_tx_chr(chr){
     console.log("stdin:control charkey:"+chr);
@@ -409,28 +354,57 @@ function stdin_tx_chr(chr){
 // TODO: add a dupterm for stderr, and display error in color in xterm if not in stdin_raw mode
 
 
+window.stdout_blit = false
 window.stdout_array = []
 
-function flush_stdout(){
-    var uint8array = new Uint8Array(window.stdout_array)
-    var string = new TextDecoder().decode( uint8array )
-    term_impl(string)
-    window.stdout_array=[]
-}
 
-
-function stdout_process(cc) {
-
-    window.stdout_array.push(cc)
-
-    if (window.stdin_raw) {
-        if (cc<128)
-            flush_stdout()
-        return
+if (1) {
+    function flush_stdout_utf8(){
+        var uint8array = new Uint8Array(window.stdout_array)
+        var string = new TextDecoder().decode( uint8array )
+        term_impl(string)
+        window.stdout_array=[]
+        stdout_blit = false
     }
-    if (cc==10) flush_stdout()
-}
 
+    function stdout_process_utf8(cc) {
+        window.stdout_array.push(cc)
+
+        if (window.stdin_raw) {
+            if (cc<128)
+                stdout_blit = true
+            return
+        }
+
+        if (cc==10) {
+            stdout_blit = true
+            return
+        }
+        //no blit on non raw mode until crlf
+    }
+
+    window.stdout_process = stdout_process_utf8
+    window.flush_stdout = flush_stdout_utf8
+
+}
+/*
+ else {
+
+    function stdout_process_ascii(cc) {
+        window.stdout_array.push( String.fromCharCode(cc) )
+        stdout_blit = true
+    }
+
+    function flush_stdout_ascii(){
+        term_impl(window.stdout_array.join("") )
+        window.stdout_array=[]
+        stdout_blit = false
+    }
+
+    window.stdout_process = stdout_process_ascii
+    window.flush_stdout = flush_stdout_ascii
+}
+*/
 
 // this is a demultiplexer for stdout and os (DOM/js ...) control
 function pts_decode(text){
@@ -452,7 +426,7 @@ function pts_decode(text){
 
     } catch (x) {
         // found a raw C string via libc
-        console.log("C-STR:"+x+":"+text)
+        console.log("C-OUT ["+text+"]")
         flush_stdout()
         term_impl(text+"\r\n")
     }
