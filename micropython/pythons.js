@@ -1,5 +1,9 @@
 "use strict";
 
+// will hold embed I/O , stdin and stdout buffers.
+
+window.plink = {}
+
 
 function undef(e,o){
     if (typeof o === 'undefined' || o === null)
@@ -27,6 +31,17 @@ String.prototype.rsplit = function(sep, maxsplit) {
 String.prototype.endswith = String.prototype.endsWith
 String.prototype.startswith = String.prototype.startsWith
 
+function register(fn,fn_dn){
+    if ( undef(fn_dn) )
+        fn_dn = fn.name;
+    //console.log('  |-- added ' + fn_dn );
+    window[fn_dn]=fn;
+}
+
+//cyclic dep
+window.register = register
+register(undef)
+//register(module_load)
 
 function setdefault(n,v,o){
     if (o == null)
@@ -37,10 +52,11 @@ function setdefault(n,v,o){
         console.log('  |-- ['+n+'] set to ['+ o[n]+']' );
         return true;
     }
-    return false;
+    return false
 }
 
-setdefault('JSDIR','');
+setdefault('JSDIR','')
+
 
 function include(filename, filetype){
     if (filetype===null ||typeof filetype === 'undefined')
@@ -79,7 +95,9 @@ function include(filename, filetype){
         //fileref.src = window.URL.createObjectURL( window.EMScript );
         //document.body.appendChild(fileref);
 }
-window.include = include;
+register(include)
+
+
 
 function _until(fn_solver){
     return async function fwrapper(){
@@ -89,6 +107,7 @@ function _until(fn_solver){
             {};
     }
 }
+register(_until)
 
 
 
@@ -148,6 +167,7 @@ function init_loop(){
     console.log("init_loop:Begin (" + Module.arguments.length+")")
     var scripts = document.getElementsByTagName('script')
 
+    var doscripts = true
     if (Module.arguments.length>1) {
 
         var argv0 = ""+Module.arguments[1]
@@ -166,12 +186,16 @@ function init_loop(){
             console.log(ab.length)
             FS.createDataFile("/",'main.py', ab, true, true);
             PyRun_VerySimpleFile('main.py')
+            doscripts = false
         } else {
-            console.log("an error occured getting main.py from '"+argv0+"'")
-            term_impl("Javascript : error occured getting main.py from '"+argv0+"'")
+            console.log("error getting main.py from '"+argv0+"'")
+            term_impl("Javascript : error getting main.py from '"+argv0+"'\r\n")
+            //TODO: global control var to skip page scripts
         }
 
-    } else {
+    }
+
+    if (doscripts) {
 
         for(var i = 0; i < scripts.length; i++){
             var script = scripts[i]
@@ -195,6 +219,7 @@ function awfull_get(url) {
         var percentComplete = oEvent.loaded / oEvent.total;
       } else {
             // Unable to compute progress information since the total size is unknown
+          // on binary XHR
       }
     }
 
@@ -229,10 +254,50 @@ function awfull_get(url) {
     return oReq.response
 }
 
-function hack_open(url, cachefile){
+function wasm_file_open(url, cachefile){
+    var dirpath = ""
+    if ( url == cachefile ) {
+        //we need to build the target path, it could be a module import.
+
+        //transform to relative path to /
+        while (cachefile.startswith("/"))
+            cachefile = cachefile.substring(1)
+
+        while (url.startswith("/"))
+            url = url.substring(1)
+
+        // is it still a path with at least a one char folder ?
+        if (cachefile.indexOf('/')>0) {
+            var path = cachefile.split('/')
+
+            // last elem is the filename
+            while (path.length>1) {
+                var current_folder = path.shift()
+                try {
+                    FS.createFolder(dirpath, current_folder, true, true)
+                    //FS.createPath('/', dirname, true, true)
+                } catch (err) {
+                    if (err.code !== 'EEXIST') throw err
+                }
+                dirpath = dirpath + "/" + current_folder
+            }
+            console.log("+dir: "+dirpath+" +file: " + path.shift())
+        } else {
+            // this is a root folder, abort
+            if (url.indexOf(".") <1 )
+                return -1
+        }
+        cachefile = "/" + url
+        console.log("in /  +" + cachefile)
+    }
+
     try {
         if (url[0]==":")
             url = url.substr(1)
+        else {
+            if (url.includes('/wyz.fr/'))
+                url = CORS_BROKER + url
+        }
 
         var ab = awfull_get(url)
         var ret = ab.length
@@ -245,133 +310,77 @@ function hack_open(url, cachefile){
         FS.createDataFile("/", cachefile, ab, true, true);
         return ret
     } catch (x) {
-        console.log("hack_open :"+x)
-        return 0
+        console.log("wasm_file_open :"+x)
+        return -1
     }
 }
 
 
-function file_exists(urlToFile, need_dot) {
+window.USE_DIR_INDEX = "/index.html"
+
+function wasm_file_exists(url, need_dot) {
+
+    function url_exists(url,code) {
+        var xhr = new XMLHttpRequest()
+        xhr.open('HEAD', url, false)
+        xhr.send()
+        if (xhr.status == 200 )
+            return code
+        return -1
+    }
+
+    // we know those are all MEMFS local files.
+    // and yes it's the same folder name as in another OS apps
+    if (url.startswith('assets/'))
+        return -1
+
+    if (url.endswith('.mpy'))
+        return -1
+
+    // are we possibly doing folder checking ?
     if (need_dot) {
-        need_dot = urlToFile.split('.').pop()
-        if (need_dot==urlToFile) {
-            //console.log("file_exists not-a-file :"+urlToFile)
-            return 0
+        // .mpy is blacklisted for now
+        // so if it's not .py then it's a folder check.
+        if (!url.endswith('.py')) {
+            var found = -1
+
+            // package search
+            found = url_exists( url + '/__init__.py' , 2 )
+            console.log("wasm_([dir]/file)_exists ? :"+url+ ' --> ' + '/__init__.py => '+found)
+            if (found>0) return found
+
+            //namespace search
+            found = url_exists( url + USE_DIR_INDEX , 2 )
+            console.log("wasm_([dir]/file)_exists ? :"+url+ ' --> ' + USE_DIR_INDEX+" => "+found)
+            if (found>0) return found
         }
-        //console.log("file_exists ? :"+urlToFile)
+
+        // if name has no dot then it was a folder check
+        console.log("wasm_(dir/[file])_exists ? :"+url)
+        need_dot = url.split('.').pop()
+        if (need_dot==url) {
+            console.log("wasm_file_exists not-a-file :"+url)
+            return -1
+        }
     }
 
-    var xhr = new XMLHttpRequest()
-    xhr.open('HEAD', urlToFile, false)
-    xhr.send()
-    var ret=0
-    if (xhr.status == 200 )
-        ret=1
-    //console.log(ret)
-    return ret
-}
-// ================= ulink =================================================
-window.embed = {}
-window.embed.state = {}
-window.embed.ref = []
-
-function ID(){
-     return 'js|' + Math.random().toString(36).substr(2, 9);
+    // default is a file search
+    return url_exists(url, 1)
 }
 
+// ================== uplink ===============================================
 
-
-function embed_call_impl(callid, fn, owner, params) {
-    var rv = null;
-    try {
-        rv = fn.apply(owner,params)
-    } catch(x){
-        console.log("call failed : "+fn+"("+params+") : "+ x )
-    }
-    if ( (rv !== null) && (typeof rv === 'object')) {
-        var seen = false
-        var rvid = null;
-        for (var i=0;i<window.embed.ref.length;i++) {
-            if ( Object.is(rv, window.embed.ref[i][1]) ){
-                rvid = window.embed.ref[i][0]
-                //console.log('re-using id = ', rvid)
-                seen = true
-                break
-            }
-        }
-
-        if (!seen) {
-            rvid = ID();
-            window[rvid] = rv;
-            window.embed.ref.push( [rvid, rv ] )
-            //transmit bloat only on first access to object
-            window.embed.state[""+callid ] =  rvid +"/"+ rv
-        } else
-            window.embed.state[""+callid ] =  rvid
-    } else
-        window.embed.state[""+callid ] =""+rv
-    //console.log("embed_call_impl:" + window.embed.state )
-}
-
-function isCallable(value) {
-    if (!value) { return false; }
-    if (typeof value !== 'function' && typeof value !== 'object') { return false; }
-    if (typeof value === 'function' && !value.prototype) { return true; }
-    if (hasToStringTag) { return tryFunctionObject(value); }
-    if (isES6ClassFn(value)) { return false; }
-    var strClass = toStr.call(value);
-    return strClass === fnClass || strClass === genClass;
-}
-
-
-function embed_call(jsdata) {
-    //var jsdata = JSON.parse(jsdata);
-
-    //always
-    var callid = jsdata['id'];
-    var name = jsdata['m'];
-    try {
-        var path = name.rsplit('.')
-        var solved = []
-        solved.push( window )
-
-        while (path){
-            var elem = path.shift()
-            if (elem){
-                var leaf = solved[ solved.length -1 ][ elem ]
-                console.log( solved[ solved.length -1 ]+" -> "+ leaf)
-                solved.push( leaf )
-            } else break
-        }
-        var target = solved[ solved.length -1 ]
-        var owner = solved[ solved.length -2 ]
-
-        if (!isCallable(target)) {
-            console.log("embed_call(query="+name+") == "+target)
-            window.embed.state[""+callid ] = ""+target;
-            return;
-        }
-
-        //only if method call
-        var params = jsdata['a'];
-        var env = jsdata['k'] || {};
-
-        console.log('embed_call:'+target +' call '+callid+' launched with',params,' on object ' +owner)
-
-        setTimeout( embed_call_impl ,1, callid, target, owner, params );
-    } catch (x) {
-        console.log('malformed RPC '+jsdata+" : "+x )
-    }
-}
-
-
-function log(msg) {
-    document.getElementById('log').textContent += msg + '\n'
-}
-
-
+// separate file clink for cpython , plink for micropython , entry point is embed_call(struct_from_json)
 
 // ================= STDIN =================================================
+var pts = {}
+   pts.i = {}
+   pts.i.line = ""
+   pts.i.raw = true
+
+   pts.o = {}
+
+plink.pts = pts
 window.stdin_array = []
 window.stdin = ""
 window.stdin_raw = true
@@ -387,17 +396,32 @@ function window_prompt(){
 }
 
 function stdin_tx(key){
-    window.stdin = window.stdin + key
+    window.stdin += key
+}
 
-    if (!window.stdin_raw) {
-        console.log("key:"+key);
-        return ;
-    }
-    var utf8 = unescape(encodeURIComponent(key));
+function stdin_poll(){
+    //pending draw ?
+    if (stdout_blit)
+        flush_stdout();
+
+    if (!window.stdin_raw)
+        return
+
+    if (!window.stdin.length)
+        return
+
+    var utf8 = unescape(encodeURIComponent(window.stdin));
     for(var i = 0; i < utf8.length; i++) {
         window.stdin_array.push( utf8.charCodeAt(i) );
     }
+    window.stdin = ""
 }
+setInterval( stdin_poll , 16)
+window.stdin_tx =stdin_tx
+
+
+
+
 
 function stdin_tx_chr(chr){
     console.log("stdin:control charkey:"+chr);
@@ -409,28 +433,57 @@ function stdin_tx_chr(chr){
 // TODO: add a dupterm for stderr, and display error in color in xterm if not in stdin_raw mode
 
 
+window.stdout_blit = false
 window.stdout_array = []
 
-function flush_stdout(){
-    var uint8array = new Uint8Array(window.stdout_array)
-    var string = new TextDecoder().decode( uint8array )
-    term_impl(string)
-    window.stdout_array=[]
-}
 
-
-function stdout_process(cc) {
-
-    window.stdout_array.push(cc)
-
-    if (window.stdin_raw) {
-        if (cc<128)
-            flush_stdout()
-        return
+if (1) {
+    function flush_stdout_utf8(){
+        var uint8array = new Uint8Array(window.stdout_array)
+        var string = new TextDecoder().decode( uint8array )
+        term_impl(string)
+        window.stdout_array=[]
+        stdout_blit = false
     }
-    if (cc==10) flush_stdout()
-}
 
+    function stdout_process_utf8(cc) {
+        window.stdout_array.push(cc)
+
+        if (window.stdin_raw) {
+            if (cc<128)
+                stdout_blit = true
+            return
+        }
+
+        if (cc==10) {
+            stdout_blit = true
+            return
+        }
+        //no blit on non raw mode until crlf
+    }
+
+    window.stdout_process = stdout_process_utf8
+    window.flush_stdout = flush_stdout_utf8
+
+}
+/*
+ else {
+
+    function stdout_process_ascii(cc) {
+        window.stdout_array.push( String.fromCharCode(cc) )
+        stdout_blit = true
+    }
+
+    function flush_stdout_ascii(){
+        term_impl(window.stdout_array.join("") )
+        window.stdout_array=[]
+        stdout_blit = false
+    }
+
+    window.stdout_process = stdout_process_ascii
+    window.flush_stdout = flush_stdout_ascii
+}
+*/
 
 // this is a demultiplexer for stdout and os (DOM/js ...) control
 function pts_decode(text){
@@ -452,9 +505,14 @@ function pts_decode(text){
 
     } catch (x) {
         // found a raw C string via libc
-        console.log("C-STR:"+x+":"+text)
+        console.log("C-OUT ["+text+"]")
         flush_stdout()
-        term_impl(text+"\r\n")
+        try {
+            posix.syslog(text)
+        } catch (y) {
+            term_impl(text+"\r\n")
+        }
+
     }
 }
 
@@ -468,32 +526,27 @@ window.Module = {
 }
 
 
-
 async function pythons(argc, argv){
     var scripts = document.getElementsByTagName('script')
-    /*
-    for ?0=xxxxx&1=xxxx argv style
-    var argv = []
-    for (var i=0;i<10;i++) {
-        var arg = new URL(window.location.href).searchParams.get(i);
-        if (arg) {
-            console.log("argv["+i+"]=",arg)
-            argv.push(arg)
-        }
-        else break
-    }
-    if (argv.length>0) {
-        console.log('running with sys.argv',argv)
-        //Module.arguments = argv
-        include("micropython.js")
-        return;
-    }
-    */
+
     for(var i = 0; i < scripts.length; i++){
         var script = scripts[i]
         if(script.type == "text/µpython"){
-            console.log("starting upython")
-            include("micropython.js")
+
+            var emterpretURL = "micropython.binary"
+            var emterpretXHR = new XMLHttpRequest;
+                emterpretXHR.open("GET", emterpretURL, !0),
+                emterpretXHR.responseType = "arraybuffer",
+                emterpretXHR.onload = function() {
+                    if (200 === emterpretXHR.status || 0 === emterpretXHR.status) {
+                        Module.emterpreterFile = emterpretXHR.response
+                        console.log("Starting upython via emterpreter")
+                    } else {
+                        console.log("Starting upython synchronously : " + emterpretXHR.status )
+                    }
+                    include("micropython.js")
+                }
+                emterpretXHR.send(null)
             break
         }
     }
@@ -518,7 +571,7 @@ async function _get(url,trigger){
 }
 
 async function dlopen_lzma(lib,size_hint) {
-    if ( file_exists("lib/lib"+lib +".js") ){
+    if ( wasm_file_exists("lib/lib"+lib +".js") ){
         console.log(" =========== CAN RAW EVAL ========== ")
     }
     var lzma_file = "lib"+lib+".js.lzma"

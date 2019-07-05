@@ -283,7 +283,6 @@ testo = obj()
 
 
 
-print("assets.py")
 def new_module(module):
     import sys
     save = list(sys.path)
@@ -296,13 +295,12 @@ def new_module(module):
     try:
         m = __import__(module)
     except Exception as e :
-        sys.print_execption(e)
+        sys.print_exception(e)
     finally:
         import sys
         sys.path.clear()
         sys.path.extend(save)
-        print(sys.path, m)
-        #TODO: os.remove / unlink
+        print("#TODO: os.remove / unlink empty mod")
     return m
 
 def load_module(module, *argv):
@@ -321,34 +319,300 @@ print(""" This can provide a workaround for :
     https://github.com/pmp-p/micropython-ports-wasm/issues/5
 use imp.load_module(modulename) to load modules from /assets/*.py
 """)
-from . import core
+try:
+    assets_pre = 1
+    print("*assets.py*")
+    assets_post = 2
+except Exception as e:
+    assets_fail = repr(e)
+try:
+    assets_pre = 1
+    print("*assets.py*")
+    assets_post = 2
+except Exception as e:
+    assets_fail = repr(e)
+import utime
+import lvgl as lv
+import SDL
+import asyncio
 
-class Lock:
+# lvgl must be initialized before any lvgl function is called or object/struct is constructed!
 
-    def __init__(self):
-        self.locked = False
-        self.wlist = []
+lv.init()
 
-    def release(self):
-        assert self.locked
-        self.locked = False
-        if self.wlist:
-            #print(self.wlist)
-            coro = self.wlist.pop(0)
-            core.get_event_loop().call_soon(coro)
+# Create a style based on style_plain but with a symbol font
 
-    def acquire(self):
-        # As release() is not coro, assume we just released and going to acquire again
-        # so, yield first to let someone else to acquire it first
-        yield
-        #print("acquire:", self.locked)
-        while 1:
-            if not self.locked:
-                self.locked = True
-                return True
-            #print("putting", core.get_event_loop().cur_task, "on waiting list")
-            self.wlist.append(core.get_event_loop().cur_task)
-            yield False
+symbolstyle = lv.style_t(lv.style_plain)
+symbolstyle.text.font = lv.font_roboto_28
+
+# The following two lines do the same thing.
+# They show how to initialize struct either directly or through a dict
+
+symbolstyle.text.color = lv.color_hex(0xffffff)
+symbolstyle.text.color = {"ch": {"red":0xff, "green":0xff, "blue":0xff, "alpha":0xff}}
+
+def get_member_name(obj, value):
+    for member in dir(obj):
+        if getattr(obj, member) == value:
+            return member
+
+class SymbolButton(lv.btn):
+    def __init__(self, parent, symbol, text):
+        super().__init__(parent)
+        self.symbol = lv.label(self)
+        self.symbol.set_text(symbol)
+        self.symbol.set_style(lv.label.STYLE.MAIN, symbolstyle)
+
+        self.label = lv.label(self)
+        self.label.set_text(text)
+
+class Page_Buttons:
+    def __init__(self, app, page):
+        self.app = app
+        self.page = page
+
+        self.btn1 = SymbolButton(page, lv.SYMBOL.PLAY, "Play")
+        self.btn1.set_size(140,100)
+        self.btn1.align(page, lv.ALIGN.IN_TOP_LEFT, 30, 30)
+
+        self.btn2 = SymbolButton(page, lv.SYMBOL.PAUSE, "Pause")
+        self.btn2.set_size(140,100)
+        self.btn2.align(page, lv.ALIGN.IN_TOP_RIGHT, -30, 30)
+
+        self.label = lv.label(page)
+        self.label.align(page, lv.ALIGN.IN_BOTTOM_LEFT, 30, -30)
+
+        # Currently only single callback per object is supported
+
+        for btn, name in [(self.btn1, 'Play'), (self.btn2, 'Pause')]:
+            btn.set_event_cb(lambda obj=None, event=-1, name=name: self.label.set_text('%s %s' % (name, get_member_name(lv.EVENT, event))))
+
+
+class Page_Simple:
+    def __init__(self, app, page):
+        self.app = app
+        self.page = page
+
+        # slider
+        self.slider = lv.slider(page)
+        self.slider.align(page, lv.ALIGN.IN_TOP_LEFT, 20, 20)
+        self.slider_label = lv.label(page)
+        self.slider_label.align(self.slider, lv.ALIGN.OUT_RIGHT_MID, 15, 0)
+        self.slider.set_event_cb(self.on_slider_changed)
+        self.on_slider_changed(None)
+
+        # style selector
+        self.styles = [('Plain', lv.style_plain), ('Plain color', lv.style_plain_color), ('Pretty', lv.style_pretty), ('Pretty color', lv.style_pretty_color)]
+
+        self.style_selector = lv.ddlist(page)
+        self.style_selector.align(self.slider, lv.ALIGN.IN_BOTTOM_LEFT, 0, 40)
+        self.style_selector.set_options('\n'.join(x[0] for x in self.styles))
+        self.style_selector.set_event_cb(self.on_style_selector_changed)
+
+        self.counter_btn = lv.btn(page)
+        self.counter_btn.set_size(140,100)
+        self.counter_btn.align(self.page, lv.ALIGN.IN_TOP_RIGHT, -20, 20)
+        self.counter_label = lv.label(self.counter_btn)
+        self.counter_label.set_text('Count')
+        self.counter_btn.set_event_cb(self.on_counter_btn)
+        self.counter = 0
+
+
+    def on_slider_changed(self, obj=None, event=-1):
+        self.slider_label.set_text(str(self.slider.get_value()))
+
+    def on_style_selector_changed(self, obj=None, event=-1):
+        selected = self.style_selector.get_selected()
+        self.app.screen_main.tabview.set_style(lv.tabview.STYLE.BG, self.styles[selected][1])
+
+    def on_counter_btn(self, obj, event):
+        if event == lv.EVENT.CLICKED:
+            self.counter += 1
+            self.counter_label.set_text(str(self.counter))
+
+class Anim(lv.anim_t):
+    def __init__(self, obj, val, size, exec_cb, path_cb, time=500, playback = False, ready_cb=None):
+        super().__init__()
+        lv.anim_init(self)
+        lv.anim_set_time(self, time, 0)
+        lv.anim_set_values(self, val, val+size)
+        try:
+            lv.anim_set_exec_cb(self, obj, exec_cb)
+        except TypeError:
+            lv.anim_set_custom_exec_cb(self, exec_cb)
+        lv.anim_set_path_cb(self, path_cb )
+        if playback: lv.anim_set_playback(self, 0)
+        if ready_cb: lv.anim_set_ready_cb(self, ready_cb)
+        lv.anim_create(self)
+
+def animate_chart(chart, val, size):
+    def anim_phase1():
+        Anim(
+            chart,
+            val,
+            size,
+            lambda a, val: chart.set_range(0, val),
+            lv.anim_path_ease_in,
+            ready_cb=lambda a:anim_phase2(),
+            time=2000)
+
+    def anim_phase2():
+        Anim(
+            chart,
+            val+size,
+            -size,
+            lambda a, val: chart.set_range(0, val),
+            lv.anim_path_ease_out,
+            ready_cb=lambda a:anim_phase1(),
+            time=500)
+
+    anim_phase1()
+
+class Page_Chart():
+    def __init__(self, app, page):
+        self.app = app
+        self.page = page
+        self.chart = lv.chart(page)
+        self.chart.set_width(page.get_width() - 50)
+        self.chart.align(page, lv.ALIGN.CENTER, 0, 0)
+        self.series1 = self.chart.add_series(lv.color_hex(0xFF0000))
+        self.chart.set_type(self.chart.TYPE.POINT | self.chart.TYPE.LINE)
+        self.chart.set_series_width(3)
+        self.chart.set_range(0,100)
+        self.chart.init_points(self.series1, 10)
+        self.chart.set_points(self.series1, [10,20,30,20,10,40,50,90,95,90])
+        animate_chart(self.chart, 100, 1000)
+
+class Screen_Main(lv.obj):
+    def __init__(self, app, *args, **kwds):
+        self.app = app
+        super().__init__(*args, **kwds)
+
+        self.tabview = lv.tabview(self)
+        self.page_simple = Page_Simple(self.app, self.tabview.add_tab('Simple'))
+        self.page_buttons = Page_Buttons(self.app, self.tabview.add_tab('Buttons'))
+        self.page_chart = Page_Chart(self.app, self.tabview.add_tab('Chart'))
+
+
+class AdvancedDemoApplication():
+    def init_gui_SDL(self):
+
+        import SDL
+        SDL.init()
+
+        # Register SDL display driver.
+
+        disp_buf1 = lv.disp_buf_t()
+        buf1_1 = bytes(480*10)
+        lv.disp_buf_init(disp_buf1,buf1_1, None, len(buf1_1)//4)
+        disp_drv = lv.disp_drv_t()
+        lv.disp_drv_init(disp_drv)
+        disp_drv.buffer = disp_buf1
+        disp_drv.flush_cb = SDL.monitor_flush
+        disp_drv.hor_res = 480
+        disp_drv.ver_res = 320
+        lv.disp_drv_register(disp_drv)
+
+        # Regsiter SDL mouse driver
+
+        indev_drv = lv.indev_drv_t()
+        lv.indev_drv_init(indev_drv)
+        indev_drv.type = lv.INDEV_TYPE.POINTER;
+        indev_drv.read_cb = SDL.mouse_read;
+        lv.indev_drv_register(indev_drv);
+        asyncio.create_task( SDL.run_once )
+        asyncio.auto=1
+
+
+    def init_gui_esp32(self):
+
+        import lvesp32
+        import ILI9341 as ili
+
+        # Initialize ILI9341 display
+
+        disp = ili.display(miso=5, mosi=18, clk=19, cs=13, dc=12, rst=4, backlight=2)
+        disp.init()
+
+        # Register display driver
+
+        disp_drv = lv.disp_drv_t()
+        lv.disp_drv_init(disp_drv)
+        disp_drv.flush_cb = disp.flush
+        lv.disp_drv_register(disp_drv)
+
+        # Register raw resistive touch driver
+
+        import rtch
+        touch = rtch.touch(xp = 32, yp = 33, xm = 25, ym = 26, touch_rail = 27, touch_sense = 33)
+        touch.init()
+        indev_drv = lv.indev_drv_t()
+        lv.indev_drv_init(indev_drv)
+        indev_drv.type = lv.INDEV_TYPE.POINTER;
+        indev_drv.read_cb = touch.read;
+        lv.indev_drv_register(indev_drv);
+
+
+    def init_gui(self):
+
+        # Identify platform and initialize it
+
+        try:
+            self.init_gui_esp32()
+        except ImportError:
+            pass
+
+        try:
+            self.init_gui_SDL()
+        except ImportError:
+            pass
+
+        # Create the main screen and load it.
+
+        self.screen_main = Screen_Main(self)
+        lv.scr_load(self.screen_main)
+
+app = AdvancedDemoApplication()
+app.init_gui()
+
+
+
+import asyncio
+
+if 0: #__EMSCRIPTEN__:
+
+    class Lock:
+        def release(self):pass
+        def acquire(self):
+            return True
+else:
+    class Lock:
+
+        def __init__(self):
+            self.locked = False
+            self.wlist = []
+
+        def release(self):
+            assert self.locked
+            self.locked = False
+            if self.wlist:
+                #print(self.wlist)
+                coro = self.wlist.pop(0)
+                asyncio.get_event_loop().call_soon(coro)
+
+        def acquire(self):
+            # As release() is not coro, assume we just released and going to acquire again
+            # so, yield first to let someone else to acquire it first
+            yield
+            #print("acquire:", self.locked)
+            while 1:
+                if not self.locked:
+                    self.locked = True
+                    return True
+                #print("putting", core.get_event_loop().cur_task, "on waiting list")
+                self.wlist.append(asyncio.get_event_loop().cur_task)
+                yield False
+
 from collections.deque import deque
 from .core import sleep
 
@@ -509,11 +773,45 @@ def close(s):
     yield core.IOReadDone(s)
     s.close()
 # (c) 2014-2018 Paul Sokolovsky. MIT license.
-# import uerrno
+
+# (c) 2019- Paul P. MIT license.
+import sys
+
+type_gen = type((lambda: (yield))())
+
+cur_task = [0, 0, 0]
+
+auto = None
+
+def __auto__():
+    global _event_loop, auto
+    if auto :
+        try:
+            _event_loop.run_once()
+        except Exception as e:
+            auto = None
+            sys.print_exception(e)
+            print("asyncio, panic stopping auto loop",file=sys.stderr)
+    return None
+
 try:
     import uselect as select
 except:
+    print("TODO: a select.poll() implementation is required for", sys.platform)
 
+try:
+    __EMSCRIPTEN__
+except:
+    __import__('builtins').__EMSCRIPTEN__ = sys.platform in ('asm.js','wasm',)
+
+if __EMSCRIPTEN__:
+    print("""
+#FIXME: asyncio with time.time_ns() PEP 564
+""")
+#    https://www.python.org/dev/peps/pep-0564/
+#    https://vstinner.github.io/python37-pep-564-nanoseconds.html
+
+    import embed
     class select:
         class fake_poll:
 
@@ -523,25 +821,15 @@ except:
             def unregister(self,*argv):
                 print("register",argv)
 
-            def ipoll(self,delay,v):
-                print("ipoll",default,v)
+            def ipoll(*self):
+                #print("ipoll",self)
+                return ()
+
 
         instance = fake_poll()
         @classmethod
         def poll(cls):
-            print("TODO: a wasm select.poll() implementation is required")
             return cls.instance
-
-# import usocket as _socket
-# (c) 2014-2018 Paul Sokolovsky. MIT license.
-__EMSCRIPTEN__ = __import__('sys').platform in ('asm.js','wasm',)
-if __EMSCRIPTEN__ or 1:
-    print("""
-#FIXME: time with time.time_ns()
-    https://www.python.org/dev/peps/pep-0564/
-    https://vstinner.github.io/python37-pep-564-nanoseconds.html
-""")
-    import embed
 
 import utime as time
 import utimeq
@@ -549,7 +837,9 @@ import utimeq
 # import ucollections
 
 
-type_gen = type((lambda: (yield))())
+def iscoroutine(f):
+    global type_gen
+    return isinstance(f, type_gen)
 
 
 class CancelledError(Exception):
@@ -559,7 +849,6 @@ class CancelledError(Exception):
 class TimeoutError(CancelledError):
     pass
 
-
 class EventLoop:
     def __init__(self, runq_len=16, waitq_len=16):
         self.runq = []  # ucollections.deque((), runq_len, True)
@@ -568,51 +857,72 @@ class EventLoop:
         # in the event loop (sub-coroutines executed transparently by
         # yield from/await, event loop "doesn't see" them).
         self.cur_task = None
+        self.scheduler = []
 
-    if __EMSCRIPTEN__:
-        def time(self):
-            return int(time.time() * 1000)
-    else:
-        def time(self):
-            return time.ticks_ms()
+
+    def time_ms(self):
+        return time.ticks_ms()
 
     def create_task(self, coro):
         # CPython 3.4.2
-        self.call_later_ms(0, coro)
         # CPython asyncio incompatibility: we don't return Task object
+        if iscoroutine(coro):
+            self.call_later_ms(0, coro)
+            return
+        # CPython asyncio incompatibility: we assume non generator object as scheduled functions pointers
+        self.scheduler.append(coro)
+
 
     def call_soon(self, callback, *argv):
         self.runq.append(callback)
         if not isinstance(callback, type_gen):
             self.runq.append(argv)
 
-    def call_at_(self, time, callback, argv=()):
-        self.waitq.push(time, callback, argv)
-
     def call_later(self, delay, callback, *argv):
-        self.call_at_(time.ticks_add(self.time(), int(delay * 1000)), callback, argv)
+        self.call_at_( time.ticks_add( self.time_ms(), int(delay*1000) ) , callback, argv)
 
     def call_later_ms(self, delay, callback, *argv):
         if not delay:
             return self.call_soon(callback, *argv)
-        #self.call_at_(time.ticks_add(self.time(), int(delay)), callback, argv)
-        self.call_at_(time.ticks_add(self.time(), delay), callback, argv)
+        self.call_at_(time.ticks_add(self.time_ms(), int(delay)), callback, argv)
+
+
+    def call_at_(self, time, callback, argv=()):
+        self.waitq.push(time, callback, argv)
 
     def wait(self, delay):
         # Default wait implementation, to be overriden in subclasses
         # with IO scheduling
-        time.sleep_ms(int(delay))
+        if not __EMSCRIPTEN__:
+            time.sleep_ms( delay )
 
     def run_once(self):
         global cur_task
-        tnow = self.time()
+        tnow = self.time_ms()
+        for task in self.scheduler:
+            try:
+                task()
+            except Exception as e:
+                sys.print_exception(e)
+                try:
+                    print(tnow,':',"task", task.__name__, "removed from scheduler")
+                except:
+                    print(tnow,':',"task", task, "removed from scheduler")
+                self.scheduler.remove(task)
+                #list as changed and give a chance to read error
+                return
+
+        # Expire entries in waitq and move them to runq
+        # print('waitq', len(self.waitq) )
         while len(self.waitq):
-            t = self.waitq.peektime()
-            delay = time.ticks_diff(t, tnow)
+            delay = time.ticks_diff(self.waitq.peektime(), tnow)
+
             if delay > 0:
                 break
             self.waitq.pop(cur_task)
             self.call_soon(cur_task[1], *cur_task[2])
+
+        # print('runq',len(self.runq))
 
         # Process runq
         while len(self.runq):
@@ -624,7 +934,8 @@ class EventLoop:
                 try:
                     cb(*argv)
                     continue
-                except TypeError:print(cb,argv)
+                except TypeError:
+                    print("170:run_once",cb,argv)
 
             self.cur_task = cb
             delay = 0
@@ -633,6 +944,7 @@ class EventLoop:
                     ret = next(cb)
                 else:
                     ret = cb.send(*argv)
+
                 if isinstance(ret, SysCall1):
                     argv = ret.arg
                     if isinstance(ret, SleepMs):
@@ -653,22 +965,24 @@ class EventLoop:
                         return argv
                     else:
                         assert False, "Unknown syscall yielded: %r (of type %r)" % (ret, type(ret))
+
                 elif isinstance(ret, type_gen):
                     self.call_soon(ret)
                 elif isinstance(ret, int):
                     # Delay
                     delay = ret
-                elif isinstance(ret, float):
-                    # Delay
-                    delay = int(ret)
                 elif ret is None:
                     # Just reschedule
                     pass
                 elif ret is False:
                     # Don't reschedule
                     continue
+                elif isinstance(ret, float):
+                    # Delay
+                    delay = int(ret)
                 else:
                     assert False, "Unsupported coroutine yield value: %r (of type %r)" % (ret, type(ret))
+
             except StopIteration as e:
                 continue
             except CancelledError as e:
@@ -681,22 +995,21 @@ class EventLoop:
             else:
                 self.call_soon(cb)
 
+        # Wait until next waitq task or I/O availability
+        delay = 0
+        if not len(self.runq):
+            delay = -1
+            if self.waitq:
+                delay = time.ticks_diff(self.waitq.peektime(), self.time_ms())
+                if delay < 0:
+                    delay = 0
+        self.wait(delay)
+        return delay
+
     def run_forever(self):
         global cur_task
         while True:
-            # Expire entries in waitq and move them to runq
-            self.run_once(cur_task)
-            # Wait until next waitq task or I/O availability
-            delay = 0
-            if not len(self.runq):
-                delay = -1
-                if self.waitq:
-                    tnow = self.time()
-                    t = self.waitq.peektime()
-                    delay = time.ticks_diff(t, tnow)
-                    if delay < 0:
-                        delay = 0
-            self.wait(delay)
+            self.wait( self.run_once(cur_task) )
 
 
     def run_until_complete(self, coro):
@@ -827,8 +1140,9 @@ def wait_for(coro, timeout):
 
 
 def coroutine(f):
+    import sys
+    print("asyncio.coroutine is deprecated for 3.10",file=sys.stderr)
     return f
-
 
 #
 # The functions below are deprecated in asyncio, and provided only
@@ -845,6 +1159,9 @@ def coroutine(f):
 def Task(coro, loop=_event_loop):
     # Same as async()
     _event_loop.call_soon(coro)
+
+
+
 
 
 class PollEventLoop(EventLoop):
@@ -907,7 +1224,6 @@ class PollEventLoop(EventLoop):
 
 
 
-cur_task = [0, 0, 0]
 
 register(PollEventLoop)
 
