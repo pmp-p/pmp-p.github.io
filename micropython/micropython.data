@@ -283,6 +283,7 @@ testo = obj()
 
 
 
+
 def new_module(module):
     import sys
     save = list(sys.path)
@@ -315,7 +316,8 @@ def load_module(module, *argv):
         globals()[mroot] = m
         return m
 
-print(""" This can provide a workaround for :
+if not 'dev' in __import__('sys').argv:
+    print(""" This can provide a workaround for :
     https://github.com/pmp-p/micropython-ports-wasm/issues/5
 use imp.load_module(modulename) to load modules from /assets/*.py
 """)
@@ -1009,7 +1011,7 @@ class EventLoop:
     def run_forever(self):
         global cur_task
         while True:
-            self.wait( self.run_once(cur_task) )
+            self.wait( self.run_once() )
 
 
     def run_until_complete(self, coro):
