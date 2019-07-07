@@ -472,24 +472,6 @@ if (1) {
     window.flush_stdout = flush_stdout_utf8
 
 }
-/*
- else {
-
-    function stdout_process_ascii(cc) {
-        window.stdout_array.push( String.fromCharCode(cc) )
-        stdout_blit = true
-    }
-
-    function flush_stdout_ascii(){
-        term_impl(window.stdout_array.join("") )
-        window.stdout_array=[]
-        stdout_blit = false
-    }
-
-    window.stdout_process = stdout_process_ascii
-    window.flush_stdout = flush_stdout_ascii
-}
-*/
 
 // this is a demultiplexer for stdout and os (DOM/js ...) control
 function pts_decode(text){
@@ -522,6 +504,34 @@ function pts_decode(text){
     }
 }
 
+// Ctrl+L is mandatory ! need xterm.js 3.14+
+function xterm_helper(term, key) {
+    function ESC(data) {
+        return String.fromCharCode(27)+data
+    }
+    if ( key.charCodeAt(0)==12 ) {
+        var cy = 0+term.buffer.cursorY
+        if ( cy > 0) {
+            if (cy <= term.rows) {
+                term.write( ESC("[B") )
+                term.write( ESC("[J") )
+                term.write( ESC("[A") )
+            }
+
+            term.write( ESC("[A") )
+            term.write( ESC("[K") )
+            term.write( ESC("[1J"))
+
+            for (var i=1;i<cy;i++) {
+                term.write( ESC("[A") )
+                term.write( ESC("[M") )
+            }
+            term.write( ESC("[M") )
+        }
+        return false
+    }
+    return true
+}
 // ========================== startup hooks ======================================
 
 window.Module = {

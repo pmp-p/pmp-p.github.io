@@ -30,9 +30,9 @@
             vertical-align: middle;
         };
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.13.2/xterm.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.13.2/xterm.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.13.2/addons/fit/fit.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.4/xterm.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.4/xterm.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.4/addons/fit/fit.min.js"></script>
   </head>
 
   <body>
@@ -57,9 +57,6 @@
     <p>
 
 <script type="text/µpython">
-
-
-import embed
 
 import xpy.builtins
 import utime as Time
@@ -125,10 +122,9 @@ asyncio.auto =1
 <br/>
   </body>
 
-    <script src="pythons.js" ></script>
+    <script src="pythons.js"></script>
 
     <script>
-
         Module.canvas = (function() {
             var canvas = document.getElementById('canvas');
             return canvas;
@@ -146,6 +142,9 @@ asyncio.auto =1
                     cursorStyle : 'block',
                     applicationCursor : true,
                 });
+
+            //term.customKeydownHandler = kbd_handler
+
             mp_js_stdout = document.getElementById('mp_js_stdout');
             mp_js_stdout.value = "";
             term.open(mp_js_stdout);
@@ -164,18 +163,20 @@ asyncio.auto =1
             window.term_impl = function (text) { term.write(text) }
 
             /*Setup key input handler */
+
             term.on('data', function(key, e) {
-                window.stdin += key
-                //local echo
+                if ( xterm_helper(term, key) ) {
+                    if (key.charCodeAt(0) <=27)
+                        console.log("KBD : "+key.charCodeAt(0)+ " len= "+key.length)
+                    window.stdin += key
+                }
                 //term.write(key)
             });
-
             /*Initialize MicroPython itself*/
             /*Initialize the REPL.*/
             pythons()
-    }
-
-</script>
+        }
+    </script>
 
 
 </html>
