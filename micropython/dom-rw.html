@@ -134,24 +134,26 @@ window = ulink.window
 async def __main__():
     await asyncio.sleep(1)
 
-    # draw clock border
-    ctx = window.canvas.getContext("2d")
-    ctx.beginPath()
-    ctx.lineWidth = 10
-    ctx.arc(width / 2, height / 2, ray, 0, 2 * math.pi)
-    ctx.stroke()
-
-
     if 'dev' in sys.argv:
         ulink.DBG=0
         doc = window.document
         print('window.document.title = "{0}"'.format( await window.document.title ) )
         print('window.test.textContent = "{0}"'.format( await window.test.textContent ) )
+        return
 
-    if not 'dev' in sys.argv:
-        loop.create_task( scroll_banner() )
-        loop.create_task( scroll_test() )
+    if 'exp' in sys.argv:
+        # draw clock border
+        ctx = window.canvas.getContext("2d")
+        ctx.beginPath()
+        ctx.lineWidth = 10
+        ctx.arc(width / 2, height / 2, ray, 0, 2 * math.pi)
+        ctx.stroke()
 
+        return
+
+
+    loop.create_task( scroll_banner() )
+    loop.create_task( scroll_test() )
 
 loop.create_task(__main__())
 asyncio.auto =1
