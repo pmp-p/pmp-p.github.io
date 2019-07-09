@@ -339,7 +339,7 @@ class SyncProxy(Proxy):
     def io(self, cid, m, q):
         while len(q):
             jscmd = ubinascii.hexlify( q.pop(0) ).decode()
-            embed.os_write('{"dom-%s":{"id":"%s","m":"//S:%s"}}' % (cid, cid, jscmd) )
+            embed.os_write('{"dom-%s":{"id":"%s","m":"//%c:%s"}}' % (cid, cid, m, jscmd) )
 
 
     async def get(self, cp,argv,**kw):
