@@ -334,7 +334,7 @@ class SyncProxy(Proxy):
         cid = self.new_call()
 
         #IO
-        self.io('S', CallPath.proxy.q_sync )
+        self.io(cid, 'S', CallPath.proxy.q_sync )
 
     def io(self, cid, m, q):
         while len(q):
