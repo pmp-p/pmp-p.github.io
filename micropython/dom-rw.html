@@ -137,8 +137,8 @@ async def __main__():
     if 'dev' in sys.argv:
         ulink.DBG=0
         doc = window.document
-        print('window.document.title = "{0:r}"'.format( await window.document.title ) )
-        print('window.test.textContent = "{0:r}"'.format( await window.test.textContent ) )
+        print('window.document.title = "{0}"'.format( await window.document.title ) )
+        print('window.test.textContent = "{0}"'.format( await window.test.textContent ) )
 
     if not 'dev' in sys.argv:
         loop.create_task( scroll_banner() )
