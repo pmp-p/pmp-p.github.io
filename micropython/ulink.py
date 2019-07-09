@@ -77,7 +77,7 @@ class JSProxy(Proxy):
                 return self.q_return.pop(cid)
             await aio.asleep_ms(1)
 
-    def set(self, cp,argv,cs=None):
+    def set(self,cp, argv, cs=None):
         if cs is not None:
             if len(cs)>1:
                 raise Exception('please simplify assign via (await %s(...)).%s = %r' % (cs[0][0], name,argv))
@@ -244,7 +244,6 @@ class CallPath(dict):
     if __UPY__:
         def __iter__(self):
             global DBG
-            DBG=1
             yield from self.__solver()
             return self.__solved
     else:
