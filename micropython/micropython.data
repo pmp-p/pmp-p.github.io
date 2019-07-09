@@ -283,44 +283,6 @@ testo = obj()
 
 
 
-
-def new_module(module):
-    import sys
-    save = list(sys.path)
-    sys.path.clear()
-    sys.path.append('/tmp')
-    m = None
-    with open('/tmp/%s.py' % module,'w') as empty:
-        empty.write('#\n')
-
-    try:
-        m = __import__(module)
-    except Exception as e :
-        sys.print_exception(e)
-    finally:
-        import sys
-        sys.path.clear()
-        sys.path.extend(save)
-        print("#TODO: os.remove / unlink empty mod")
-    return m
-
-def load_module(module, *argv):
-    import sys
-    m = new_module(module)
-    if m:
-        import embed
-        file = '/assets/%s.py' % module
-        mroot = module.split('.')[0]
-        m = sys.modules[mroot]
-        runf(file, module=embed.vars(m), patch='\n\n__file__=%r\n' % file )
-        globals()[mroot] = m
-        return m
-
-if not 'dev' in __import__('sys').argv:
-    print(""" This can provide a workaround for :\r
-    https://github.com/pmp-p/micropython-ports-wasm/issues/5\r
-use imp.load_module(modulename) to load modules from /assets/*.py
-""")
 try:
     assets_pre = 1
     print("*assets.py*")
@@ -710,6 +672,27 @@ class Queue:
             return False
         else:
             return self.qsize() >= self.maxsize
+import sys
+import asyncio
+import ujson
+
+def step(*jsdata):
+    if len(jsdata):
+        if not asyncio.io_error:
+            try:
+                jsdata = ujson.loads(jsdata[0])
+                if jsdata:
+                    print("io:", jsdata)
+            except Exception as e :
+                sys.print_exception(e)
+    else:
+        if not asyncio.failure:
+            try:
+                asyncio.__auto__()
+            except  Exception as e :
+                sys.print_exception(e)
+                asyncio.failure = True
+    return None
 import usocket
 from . import core
 
@@ -775,8 +758,8 @@ def close(s):
     yield core.IOReadDone(s)
     s.close()
 # (c) 2014-2018 Paul Sokolovsky. MIT license.
-
 # (c) 2019- Paul P. MIT license.
+
 import sys
 
 type_gen = type((lambda: (yield))())
@@ -784,6 +767,9 @@ type_gen = type((lambda: (yield))())
 cur_task = [0, 0, 0]
 
 auto = None
+failure = False
+io_error = False
+
 
 def __auto__():
     global _event_loop, auto
@@ -832,6 +818,9 @@ if __EMSCRIPTEN__:
         @classmethod
         def poll(cls):
             return cls.instance
+
+    # on emscripten browser runs the loop both for IO and tasks
+    from .io import step
 
 import utime as time
 import utimeq
