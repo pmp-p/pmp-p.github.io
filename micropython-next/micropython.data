@@ -1,0 +1,552 @@
+__UPY__ = True
+# maybe related https://github.com/mavier/jsobject
+
+
+if __UPY__:
+    import embed
+    from ujson import dumps,loads
+    DBG=1
+else:
+    DBG=0
+
+
+class Proxy:
+
+    get = None
+    act = None
+    set = None
+    tmout = 300
+    cfg = {"get": {}, "set": {}, "act": {}}
+
+
+
+class JSProxy(Proxy):
+    def __init__(self):
+        self.caller_id = 0
+        self.tmout = 300
+        self.cache = {}
+        self.q_return = {}
+        self.q_reply = []
+        self.q_sync = []
+        self.q_async = []
+
+    def new_call(self):
+        self.caller_id += 1
+        return str(self.caller_id)
+
+    async def wait_answer(self,cid, fqn, solvepath):
+        #cid = str(self.caller_id)
+        if DBG:print('\tas id %s' % cid)
+        unsolved = fqn[len(solvepath)+1:]
+        tmout = self.tmout
+        if DBG and unsolved:
+            print('\twill remain', unsolved )
+        solved = None
+
+        while tmout>0:
+            if cid in self.q_return:
+                oid, solved = self.unref(cid)
+                if len(unsolved):
+                    solved = await self.get( "%s.%s" % ( oid, unsolved ) , None )
+                    unsolved = ''
+                    break
+                break
+            await aio.asleep_ms(1)
+            tmout -= 1
+        return solved, unsolved
+
+
+    def unref(self, cid):
+        oid = self.q_return.pop(cid)
+        tip="%s@%s"%( oid,cid )
+        if isinstance(oid,str) and oid.startswith('js|'):
+            if oid.find('/')>0:
+                oid,tip = oid.split('/',1)
+        if not oid in self.cache:
+           self.cache[oid] = CallPath(None,oid,tip=tip)
+        return oid, self.cache[oid]
+
+    async def get(self, cp,argv,**kw):
+        print('async_js_get',cp,argv)
+        cid = self.new_call()
+        self.q_async.append( {"id": cid, 'm':cp } )
+
+        while True:
+            if cid in self.q_return:
+                return self.q_return.pop(cid)
+            await aio.asleep_ms(1)
+
+    def set(self, cp,argv,cs=None):
+        if cs is not None:
+            if len(cs)>1:
+                raise Exception('please simplify assign via (await %s(...)).%s = %r' % (cs[0][0], name,argv))
+            value = argv
+            solvepath, argv, kw = cs.pop(0)
+            unsolved = cp[len(solvepath)+1:]
+
+            jsdata = "JSON.parse(`{}`)".format((json.dumps(argv)))
+            target = solvepath.rsplit('.',1)[0]
+            assign = 'JSON.parse(`{}`)'.format((json.dumps(value)))
+            doit = "{}.apply({},{}).{} = {}".format((solvepath), (target), (jsdata), (unsolved), (assign))
+            print("74:",doit)
+            return self.q_sync.append(doit)
+
+        if cp.count('|'):
+            cp  = cp.split('.')
+            cp[0] = 'window["{}"]'.format((cp[0]))
+            cp = '.'.join( cp )
+
+        if DBG:
+            print('82: set',cp,argv)
+        self.q_sync.append( '{} =  JSON.parse(`{}`)'.format((cp), (json.dumps(argv))) )
+
+    def act(self, cp,c_argv,c_kw,**kw):
+        cid = self.new_call()
+        self.q_async.append( {"m": cp, "a": c_argv, "k": c_kw, "id": cid} )
+        return cid
+
+
+class obj:
+
+    def __init__(self):
+        self.myattr = 666
+
+    def __delattr__(self, name):
+        print('delattr ',name)
+
+
+
+class CallPath(dict):
+
+    proxy = Proxy
+    cache = {}
+
+
+
+    def __setup__(self, host, fqn, default=None, tip='[object %s]'):
+        self.__fqn = fqn
+        self.__name = fqn.rsplit(".", 1)[-1]
+        self.__host = host
+
+
+        #empty call stack
+        self.__cs = []
+        self.__tmout = 500
+        self.__tip  = tip
+        if host:
+            self.__host._cp_setup(self.__name, default)
+        return self
+
+    if not __UPY__:
+        def __init__(self, host, fqn, default=None, tip='[object %s]'):
+            self.__setup__(host, fqn, default, tip)
+            dict.__init__(self)
+
+
+    @classmethod
+    def set_proxy(cls,proxy):
+        cls.proxy = proxy
+        proxy.cp = cls
+        cls.get = proxy.get
+        cls.set = proxy.set
+        cls.act = proxy.act
+
+    def __delattr__(self, name):
+        print('delattr ',name)
+
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        fqn = "%s.%s" % (self.__fqn, name)
+        if DBG:
+            print("72:cp-ast", fqn)
+        if __UPY__:
+            newattr = self.__class__().__setup__(self, fqn)
+        else:
+            newattr = self.__class__(self, fqn)
+        self._cp_setup(name, newattr)
+        return newattr
+
+    def __setattr__(self, name, value):
+        if name.startswith("_"):
+            self[name]=value
+            return
+
+        print('setattr',name,value)
+        fqn = "%s.%s" % (self.__fqn, name)
+        if DBG:
+            print("105:cp->pe", fqn, ":=", value, self.__cs)
+
+        if len(self.__cs):
+            self.proxy.set(fqn,value,self.__cs)
+            self.__cs.clear()
+            #can't assign path-end to a dynamic callpath
+            return
+
+#FIXME: caching type/value is flaky
+        #setattr(self.__class__, name, PathEnd(self, fqn, value))
+        self.proxy.set(fqn, value)
+
+#FIXME: caching type/value is flaky
+#    def __setitem__(self, name, v):
+#        fqn = "%s.%s" % (self.__fqn, name)
+#        setattr(self.__class__, key, PathEnd(host, fqn, default=v))
+
+    def _cp_setup(self, key, v):
+        if v is None:
+            print("86:cp-set None ????", key, v)
+            return
+
+        if not isinstance(v, self.__class__):
+            print("87:cp-set", key, v)
+            if self.__class__.set:
+                if DBG:
+                    print("93:cp-set", key, v)
+                self.proxy.set("%s.%s" % (self.__fqn, key), v)
+
+        dict.__setitem__(self, key, v)
+
+
+    async def __solver(self):
+        cs = []
+        p = self
+        while p.__host:
+            if p.__cs :
+                cs.extend(p.__cs)
+            p = p.__host
+        cs.reverse()
+
+        unsolved = self.__fqn
+        cid='?'
+        # FIXME: (maybe) for now just limit to only one level of call()
+        # horrors like "await window.document.getElementById('test').textContent.length" are long enough already.
+        if len(cs):
+            solvepath, argv, kw = cs.pop(0)
+            if DBG:print(self.__fqn,'about to solve', solvepath,argv,kw)
+            cid = self.proxy.act(solvepath, argv, kw )
+            solved, unsolved = await self.proxy.wait_answer(cid, unsolved, solvepath)
+#FIXME:         #timeout: raise ? or disconnect event ?
+#FIXME: strip solved part on fqn and continue in callstack
+            if not len(unsolved):
+                return solved
+        else:
+            if DBG:print('__solver about to solve',unsolved)
+            return await self.proxy.get( unsolved , None )
+
+        return 'future-async-unsolved[%s->%s]' % (cid,unsolved)
+
+    def __await__(self):
+        return self.__solver().__await__()
+
+    def __call__(self, *argv, **kw):
+        if DBG:
+            print("89:cp-call", self.__fqn, argv, kw)
+        #stack up the async call list
+        self.__cs.append( [self.__fqn, argv, kw ] )
+        return self
+
+
+# maybe yield from https://stackoverflow.com/questions/33409888/how-can-i-await-inside-future-like-objects-await
+#        async def __call__(self, *argv, **kw):
+#
+#            self.__class__.act(self.__fqn, argv, kw)
+#            cid  = str( self.__class__.caller_id )
+#            rv = ":async-cp-call:%s" % cid
+#            while True:
+#                if cid in self.q_return:
+#                    oid = self.q_return.pop(cid)
+#                    if oid in self.cache:
+#                        return self.cache[oid]
+#
+#                    rv = self.__class__(None,oid)
+#                    self.cache[oid]=rv
+#                    break
+#                await asleep_ms(1)
+#            return rv
+
+    def __repr__(self):
+        #if self.__fqn=='window' or self.__fqn.count('|'):
+        #print("FIXME: give tip about remote object proxy")
+        if self.__tip.count('%s'):
+            return self.__tip % self.__fqn
+        return self.__tip
+        #raise Exception("Giving cached value from previous await %s N/I" % self.__fqn)
+
+        #return ":async-pe-get:%s" % self.__fqn
+
+#CallPath.set_proxy(JSProxy())
+
+window = CallPath().__setup__(None, 'window', tip="[ object Window]")
+
+testo = obj()
+#window.document.title = 'pouet'
+
+
+
+try:
+    assets_pre = 1
+    print("*assets.py*")
+    assets_post = 2
+except Exception as e:
+    assets_fail = repr(e)
+try:
+    assets_pre = 1
+    print("*assets.py*")
+    assets_post = 2
+except Exception as e:
+    assets_fail = repr(e)
+import utime
+import lvgl as lv
+import SDL
+import asyncio
+
+# lvgl must be initialized before any lvgl function is called or object/struct is constructed!
+
+lv.init()
+
+# Create a style based on style_plain but with a symbol font
+
+symbolstyle = lv.style_t(lv.style_plain)
+symbolstyle.text.font = lv.font_roboto_28
+
+# The following two lines do the same thing.
+# They show how to initialize struct either directly or through a dict
+
+symbolstyle.text.color = lv.color_hex(0xffffff)
+symbolstyle.text.color = {"ch": {"red":0xff, "green":0xff, "blue":0xff, "alpha":0xff}}
+
+def get_member_name(obj, value):
+    for member in dir(obj):
+        if getattr(obj, member) == value:
+            return member
+
+class SymbolButton(lv.btn):
+    def __init__(self, parent, symbol, text):
+        super().__init__(parent)
+        self.symbol = lv.label(self)
+        self.symbol.set_text(symbol)
+        self.symbol.set_style(lv.label.STYLE.MAIN, symbolstyle)
+
+        self.label = lv.label(self)
+        self.label.set_text(text)
+
+class Page_Buttons:
+    def __init__(self, app, page):
+        self.app = app
+        self.page = page
+
+        self.btn1 = SymbolButton(page, lv.SYMBOL.PLAY, "Play")
+        self.btn1.set_size(140,100)
+        self.btn1.align(page, lv.ALIGN.IN_TOP_LEFT, 30, 30)
+
+        self.btn2 = SymbolButton(page, lv.SYMBOL.PAUSE, "Pause")
+        self.btn2.set_size(140,100)
+        self.btn2.align(page, lv.ALIGN.IN_TOP_RIGHT, -30, 30)
+
+        self.label = lv.label(page)
+        self.label.align(page, lv.ALIGN.IN_BOTTOM_LEFT, 30, -30)
+
+        # Currently only single callback per object is supported
+
+        for btn, name in [(self.btn1, 'Play'), (self.btn2, 'Pause')]:
+            btn.set_event_cb(lambda obj=None, event=-1, name=name: self.label.set_text('%s %s' % (name, get_member_name(lv.EVENT, event))))
+
+
+class Page_Simple:
+    def __init__(self, app, page):
+        self.app = app
+        self.page = page
+
+        # slider
+        self.slider = lv.slider(page)
+        self.slider.align(page, lv.ALIGN.IN_TOP_LEFT, 20, 20)
+        self.slider_label = lv.label(page)
+        self.slider_label.align(self.slider, lv.ALIGN.OUT_RIGHT_MID, 15, 0)
+        self.slider.set_event_cb(self.on_slider_changed)
+        self.on_slider_changed(None)
+
+        # style selector
+        self.styles = [('Plain', lv.style_plain), ('Plain color', lv.style_plain_color), ('Pretty', lv.style_pretty), ('Pretty color', lv.style_pretty_color)]
+
+        self.style_selector = lv.ddlist(page)
+        self.style_selector.align(self.slider, lv.ALIGN.IN_BOTTOM_LEFT, 0, 40)
+        self.style_selector.set_options('\n'.join(x[0] for x in self.styles))
+        self.style_selector.set_event_cb(self.on_style_selector_changed)
+
+        self.counter_btn = lv.btn(page)
+        self.counter_btn.set_size(140,100)
+        self.counter_btn.align(self.page, lv.ALIGN.IN_TOP_RIGHT, -20, 20)
+        self.counter_label = lv.label(self.counter_btn)
+        self.counter_label.set_text('Count')
+        self.counter_btn.set_event_cb(self.on_counter_btn)
+        self.counter = 0
+
+
+    def on_slider_changed(self, obj=None, event=-1):
+        self.slider_label.set_text(str(self.slider.get_value()))
+
+    def on_style_selector_changed(self, obj=None, event=-1):
+        selected = self.style_selector.get_selected()
+        self.app.screen_main.tabview.set_style(lv.tabview.STYLE.BG, self.styles[selected][1])
+
+    def on_counter_btn(self, obj, event):
+        if event == lv.EVENT.CLICKED:
+            self.counter += 1
+            self.counter_label.set_text(str(self.counter))
+
+class Anim(lv.anim_t):
+    def __init__(self, obj, val, size, exec_cb, path_cb, time=500, playback = False, ready_cb=None):
+        super().__init__()
+        lv.anim_init(self)
+        lv.anim_set_time(self, time, 0)
+        lv.anim_set_values(self, val, val+size)
+        try:
+            lv.anim_set_exec_cb(self, obj, exec_cb)
+        except TypeError:
+            lv.anim_set_custom_exec_cb(self, exec_cb)
+        lv.anim_set_path_cb(self, path_cb )
+        if playback: lv.anim_set_playback(self, 0)
+        if ready_cb: lv.anim_set_ready_cb(self, ready_cb)
+        lv.anim_create(self)
+
+def animate_chart(chart, val, size):
+    def anim_phase1():
+        Anim(
+            chart,
+            val,
+            size,
+            lambda a, val: chart.set_range(0, val),
+            lv.anim_path_ease_in,
+            ready_cb=lambda a:anim_phase2(),
+            time=2000)
+
+    def anim_phase2():
+        Anim(
+            chart,
+            val+size,
+            -size,
+            lambda a, val: chart.set_range(0, val),
+            lv.anim_path_ease_out,
+            ready_cb=lambda a:anim_phase1(),
+            time=500)
+
+    anim_phase1()
+
+class Page_Chart():
+    def __init__(self, app, page):
+        self.app = app
+        self.page = page
+        self.chart = lv.chart(page)
+        self.chart.set_width(page.get_width() - 50)
+        self.chart.align(page, lv.ALIGN.CENTER, 0, 0)
+        self.series1 = self.chart.add_series(lv.color_hex(0xFF0000))
+        self.chart.set_type(self.chart.TYPE.POINT | self.chart.TYPE.LINE)
+        self.chart.set_series_width(3)
+        self.chart.set_range(0,100)
+        self.chart.init_points(self.series1, 10)
+        self.chart.set_points(self.series1, [10,20,30,20,10,40,50,90,95,90])
+        animate_chart(self.chart, 100, 1000)
+
+class Screen_Main(lv.obj):
+    def __init__(self, app, *args, **kwds):
+        self.app = app
+        super().__init__(*args, **kwds)
+
+        self.tabview = lv.tabview(self)
+        self.page_simple = Page_Simple(self.app, self.tabview.add_tab('Simple'))
+        self.page_buttons = Page_Buttons(self.app, self.tabview.add_tab('Buttons'))
+        self.page_chart = Page_Chart(self.app, self.tabview.add_tab('Chart'))
+
+
+class AdvancedDemoApplication():
+    def init_gui_SDL(self):
+
+        import SDL
+        SDL.init()
+
+        # Register SDL display driver.
+
+        disp_buf1 = lv.disp_buf_t()
+        buf1_1 = bytes(480*10)
+        lv.disp_buf_init(disp_buf1,buf1_1, None, len(buf1_1)//4)
+        disp_drv = lv.disp_drv_t()
+        lv.disp_drv_init(disp_drv)
+        disp_drv.buffer = disp_buf1
+        disp_drv.flush_cb = SDL.monitor_flush
+        disp_drv.hor_res = 480
+        disp_drv.ver_res = 320
+        lv.disp_drv_register(disp_drv)
+
+        # Regsiter SDL mouse driver
+
+        indev_drv = lv.indev_drv_t()
+        lv.indev_drv_init(indev_drv)
+        indev_drv.type = lv.INDEV_TYPE.POINTER;
+        indev_drv.read_cb = SDL.mouse_read;
+        lv.indev_drv_register(indev_drv);
+        asyncio.create_task( SDL.run_once )
+        asyncio.auto=1
+
+
+    def init_gui_esp32(self):
+
+        import lvesp32
+        import ILI9341 as ili
+
+        # Initialize ILI9341 display
+
+        disp = ili.display(miso=5, mosi=18, clk=19, cs=13, dc=12, rst=4, backlight=2)
+        disp.init()
+
+        # Register display driver
+
+        disp_drv = lv.disp_drv_t()
+        lv.disp_drv_init(disp_drv)
+        disp_drv.flush_cb = disp.flush
+        lv.disp_drv_register(disp_drv)
+
+        # Register raw resistive touch driver
+
+        import rtch
+        touch = rtch.touch(xp = 32, yp = 33, xm = 25, ym = 26, touch_rail = 27, touch_sense = 33)
+        touch.init()
+        indev_drv = lv.indev_drv_t()
+        lv.indev_drv_init(indev_drv)
+        indev_drv.type = lv.INDEV_TYPE.POINTER;
+        indev_drv.read_cb = touch.read;
+        lv.indev_drv_register(indev_drv);
+
+
+    def init_gui(self):
+
+        # Identify platform and initialize it
+
+        try:
+            self.init_gui_esp32()
+        except ImportError:
+            pass
+
+        try:
+            self.init_gui_SDL()
+        except ImportError:
+            pass
+
+        # Create the main screen and load it.
+
+        self.screen_main = Screen_Main(self)
+        lv.scr_load(self.screen_main)
+
+app = AdvancedDemoApplication()
+app.init_gui()
+
+
+
+ asm    dylinkêÇ¿   ` ``` ` `  ` |ÀenvabortStackOverflow  env
+nullFunc_X  env_printf env__memory_base env__table_base envDYNAMICTOP_PTR envtempDoublePtr globalNaN| globalInfinity| envmemory Äenvtablep 
+	 c##A A A A A A |#|#A A A A |D        }C    }C    4__post_instantiate 
+_init_plus_one 	
+_init_test 	 #
+Â	(#!#  j$#AjApq$##	N@     #   $
+   $ $	 #
+A F@  $
+ $8#!#Aj$##	N@A  !   #Aj6 # A j   $1#!#Aj$##	N@A   ! ! Aj! $  # A0j$#AÄÄ¿j$	 A D        & #  hello from ffi wasm library: %p
