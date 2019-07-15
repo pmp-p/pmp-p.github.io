@@ -41,11 +41,11 @@ if(typeof(String.prototype.trim) === "undefined")
 */
 
 function trim(str) {
-	var	str = str.replace(/^\s\s*/, ''),
-		ws = /\s/,
-		i = str.length;
-	while (ws.test(str.charAt(--i)));
-	return str.slice(0, i + 1);
+    var str = str.replace(/^\s\s*/, ''),
+        ws = /\s/,
+        i = str.length;
+    while (ws.test(str.charAt(--i)));
+    return str.slice(0, i + 1);
 }
 
 
@@ -520,9 +520,6 @@ if ( undef("CORS_BROKER") ){
     window.CORS_BROKER = "https://cors-anywhere.herokuapp.com/"
     console.log("using default brooker CORS_BROKER="+CORS_BROKER)
 }
-
-
-
 
 
 

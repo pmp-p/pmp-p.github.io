@@ -2,11 +2,14 @@ if __UPY__:
     import embed
     from ujson import dumps, loads
     import ubinascii as binascii
-    DBG = 0
+    DBG = 1
 else:
     DBG = 0
     import binascii
     from json import dumps, loads
+
+ADBG = 1
+
 
 class Proxy:
     @classmethod
@@ -75,7 +78,14 @@ class CallPath(dict):
 
     def __getattr__(self, name):
         if name == 'finalize':
-            return self.__finalize('78:user call')
+            csp = list(self.__csp)
+            self.__csp.clear()
+            while len(csp):
+                flush = csp.pop(0)
+                self.proxy.act(*flush)  # does discard
+            asyncio.io.finalize()
+            return None
+
         if name in self:
             return self[name]
         fqn = "%s.%s" % (self.__fqn, name)
@@ -102,7 +112,7 @@ class CallPath(dict):
         # print('setattr',name,value)
         fqn = "%s.%s" % (self.__fqn, name)
         #if DBG: print(f"102: cp->pe {fqn} := {value}",*self.__csp)
-        self.__finalize("103: cp->pe)")
+        self.finalize
 
 #        if len(self.__csp):
 #            self.proxy.set(fqn, value, self.__csp)
@@ -159,6 +169,7 @@ class CallPath(dict):
             cid = self.proxy.act(solvepath, argv, kw)
             if DBG:
                 print(self.__fqn, '__solver about to wait_answer(%s)' % cid, solvepath, argv, kw)
+            self.proxy.q_req.append(cid)
             self.__solved, unsolved = await self.proxy.wait_answer(cid, unsolved, solvepath)
 
             # FIXME:         #timeout: raise ? or disconnect event ?
@@ -180,6 +191,7 @@ class CallPath(dict):
     if __UPY__:
 
         def __iter__(self):
+            if ADBG:print("195:cp-(async)iter", self.__fqn,*self.__csp)
             yield from self.__solver()
             try:
                 return self.__solved
@@ -187,9 +199,11 @@ class CallPath(dict):
                 self.__solved = None
 
     else:
+        pass
+    def __await__(self):
+        if ADBG:print("205:cp-(async)await", self.__fqn,*self.__csp)
+        return self.__solver().__await__()
 
-        def __await__(self):
-            return self.__solver().__await__()
 
     def __call__(self, *argv, **kw):
 #        if DBG:
@@ -203,25 +217,25 @@ class CallPath(dict):
         if DBG:print("280:cp-enter")
         return self
 
-    def __finalize(self,tip):
-        csp = list(self.__csp)
-        self.__csp.clear()
-        while len(csp):
-            flush = csp.pop(0)
-            cid = self.proxy.act(*flush)
-            #if DBG:
-            #    cid = f"{flush[0]}(*{flush[1]},**{{{flush[2]}}})"
-            #    print(f"{tip} {self.__fqn} flushing {cid} @", cid  )
-        return None
+    def __aenter__(self):
+        if ADBG:print("216:cp-(async)enter", self.__fqn,*self.__csp)
+        return self
 
 
     def __exit__(self, type, value, traceback):
         # this is a non-awaitable batch !
-        self.__finalize("216: cp-exit")
+        #  need async with !!!!!!
+
+        self.finalize
         # do io claims cleanup
-        self.proxy.finalize()
+        asyncio.io.finalize()
 
         print("#FIMXE: __del__ on proxy to release js obj")
+
+    def __aexit__(self, type, value, traceback):
+        if ADBG:print("231:cp-(async)exit", self.__fqn,*self.__csp)
+        self.__exit(type, value, traceback)
+
 
     # maybe yield from https://stackoverflow.com/questions/33409888/how-can-i-await-inside-future-like-objects-await
     #        async def __call__(self, *argv, **kw):
@@ -267,7 +281,8 @@ class SyncProxy(Proxy):
         self.cache = {}
         asyncio.io.DBG=1
         self.q_return = asyncio.io.q  # {}
-        self.q_discard = asyncio.io.discard # []
+        self.q_req = asyncio.io.req # []
+
         self.q_reply = []
         self.q_sync = []
         self.q_async = []
@@ -288,6 +303,10 @@ class SyncProxy(Proxy):
         return cid
 
     def unref(self, cid):
+        if cid in self.q_req:
+            self.q_req.remove(cid)
+        else:
+            print('308: %s was never awaited'%cid)
         oid = self.q_return.pop(cid)
         tip = "%s@%s" % (oid, cid)
         if isinstance(oid, str) and oid.startswith('js|'):
@@ -298,18 +317,11 @@ class SyncProxy(Proxy):
             self.cache[oid] = CallPath().__setup__(None, oid, [], tip=tip)
         return oid, self.cache[oid]
 
-    def finalize(self):
-        okdel = []
-        for todel in self.q_discard:
-            if todel in self.q_reply:
-                self.q_return.pop(todel)
-                okdel.append(todel)
-        okdel.reverse()
-        while len(okdel):
-            self.q_discard.remove( okdel.pop() )
+
 
 
     def set(self, cp, argv, cs=None):
+        cid = self.new_call()
         if cs is not None:
             if len(cs) > 1:
                 raise Exception('please simplify assign via (await %s(...)).%s = %r' % (cs[0][0], cp, argv))
@@ -322,8 +334,11 @@ class SyncProxy(Proxy):
             doit = "{}.apply({},{}).{} = {}\n".format((solvepath), (target), (jsdata), (unsolved), (assign))
             #if DBG:
             #    print("74:", doit)
-            #return self.q_sync.append(doit)
-            self.io( self.new_call(), raw=doit)
+
+            # TODO: get js exceptions ?
+            self.io( cid, raw=doit)
+
+            return
 
         if cp.count('|'):
             cp = cp.split('.')
@@ -336,14 +351,15 @@ class SyncProxy(Proxy):
         if isinstance(argv,str):
             argv = argv.replace('"', '\\\"')
 
-        #
+        # TODO: get js exceptions ?
         jscmd = '{} = JSON.parse(`{}`)'.format((cp), (dumps(argv)))
-        self.io( self.new_call() , m='S', jscmd=jscmd)
+        self.io( cid , m='S', jscmd=jscmd)
         #
 
 
     async def get(self, cp, argv, **kw):
         cid = self.new_call()
+        self.q_req.append(cid)
 
         # IO
         self.io(cid,raw='{"dom-%s":{"id":"%s","m":"%s"}}\n' % (cid, cid, cp))
@@ -352,6 +368,7 @@ class SyncProxy(Proxy):
         while True:
             if self.q_return:
                 if cid in self.q_return:
+                    self.q_req.remove(cid)
                     return self.q_return.pop(cid)
             await asyncio.sleep_ms(1)
 
@@ -359,11 +376,11 @@ class SyncProxy(Proxy):
     def act(self, cp, c_argv, c_kw, **kw):
         # self.q_async.append( {"m": cp, "a": c_argv, "k": c_kw, "id": cid} )
         cid = self.new_call()
-        self.q_discard.append(cid)
+        # TODO: get js exceptions ?
         c_argv = dumps(c_argv)
         c_kw = dumps(c_kw)
         raw = '{"dom-%s":{"id":"%s","m":"%s", "a": %s, "k": %s }}\n' % (cid, cid, cp, c_argv, c_kw)
-        return self.io( cid , raw=raw)
+        return self.io( cid , raw=raw) # return cid
 
 
     async def wait_answer(self, cid, fqn, solvepath):

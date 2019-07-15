@@ -34,6 +34,7 @@ var miss = [
 "uselect.py",
 "uselect/__init__.py",
 "uselect/index.html",
+"xpy/__init__.py",
 "xpy/builtins/__init__.py",
 "xpy/builtins/index.html",
 "imp_pivot/__init__.py",
