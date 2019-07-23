@@ -88,10 +88,9 @@ asyncio.start()
         function PYTHONSTARTUP() {
             window.urls.cors = function (url){
                 if (url.includes('/wyz.fr/'))
-                    return CORS_BROKER + url
+                    return "https://cors-anywhere.herokuapp.com/" + url
                 return url
             }
-
         }
 
         /*Initialization function*/
