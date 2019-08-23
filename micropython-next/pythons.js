@@ -163,10 +163,10 @@ function preRun(){
     var argv = window.location.href.split('?',2)
     var e;
     while (e=argv.shift())
-        Module.arguments.push(e)
-    argv = Module.arguments.pop().split('&')
+        arguments_.push(e)
+    argv = arguments_.pop().split('&')
     while (e=argv.shift())
-        Module.arguments.push(e)
+        arguments_.push(e)
 
     if ( defined('PYTHONSTARTUP') )
         PYTHONSTARTUP()
@@ -191,22 +191,23 @@ function postRun() {
 
 function init_repl_begin(){
 
-    console.log("init_repl: Begin (" + Module.arguments.length+")")
+    console.log("init_repl: Begin (" + arguments_.length+")")
     var scripts = document.getElementsByTagName('script')
 
     window.pyscripts = new Array()
 
     window.plink.shm =  Module._shm_ptr()
 
+    window.plink.io_port_kbd = Module._shm_get_ptr(0, 0) // IO_KBD dev0
 
     // get repl max buffer size but don't start it yet
     window.PyRun_SimpleString_MAXSIZE = Module._repl_run(1)
 
     console.log("init_repl: shm "+window.plink.shm+"["+PyRun_SimpleString_MAXSIZE +"]")
 
-    if (Module.arguments.length>1) {
+    if (arguments_.length>1) {
 
-        var argv0 = ""+Module.arguments[1]
+        var argv0 = "" + arguments_[1]
         if (argv0.startsWith('http'))
             if (window.urls.cors)
                 argv0 = window.urls.cors(argv0)
@@ -246,20 +247,36 @@ function init_repl_begin(){
 }
 
 
+function interact() {
+    Module._repl_run(0)
+    console.log(" ----------- repl interact  ---------")
+    setInterval( stdin_poll , 16)
+}
+
+/*
+function interact() {
+    setTimeout(interact_do,16)
+}
+*/
+
+
+
 function init_repl_end() {
 
     console.log("shared memory ptr : " + window.plink.shm )
 
     // go for banner and prompt
+    /*
     if (Module._repl_run(0)) {
         // feed repl, roughly 1000/60 ( usual screen sync )
         setInterval( stdin_poll , 16)
-    }
-
-    console.log("init_repl: End")
+    } else
+    */
+        console.log("REPL will not start until you call interact() from code")
+    //interact()
+    window.init_repl_begin = null
     window.init_repl_end = null
-    Module._show_os_loop(1)
-
+    console.log("init_repl: End")
 }
 
 // =========================== REPL shm interface ===============================
@@ -394,10 +411,15 @@ function stdin_poll(){
     if (!window.stdin.length)
         return
 
-    var utf8 = unescape(encodeURIComponent(window.stdin));
-    for(var i = 0; i < utf8.length; i++) {
-        window.stdin_array.push( utf8.charCodeAt(i) );
+
+    if ( getValue( plink.io_port_kbd, 'i8') ) {
+        console.log("kbd port locked, retrying later")
+        return //
     }
+    var utf8 = unescape(encodeURIComponent(window.stdin));
+    /// flush whole buffer to shared memory as a null terminated str
+    stringToUTF8( utf8, plink.io_port_kbd, 1024) // MP_IO_SIZE
+
     window.stdin = ""
 }
 
