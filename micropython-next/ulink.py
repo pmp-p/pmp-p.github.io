@@ -19,7 +19,7 @@ class Proxy:
     get = ni
     act = ni
     set = ni
-    tmout = 300
+    tmout = 800
     cfg = {"get": {}, "set": {}, "act": {}}
 
 class obj:
@@ -55,7 +55,7 @@ class CallPath(dict):
 
         # that shoul be an empty call stack pipeline for new object paths.
         self.__csp = csp
-        self.__tmout = 500
+        self.__tmout = Proxy.tmout
         self.__tip = tip
         if host:
             self.__host._cp_setup(self.__name, default)
