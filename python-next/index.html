@@ -1,0 +1,341 @@
+<html>
+<head>
+
+<script type="text/xpython">
+async def main():
+    while 1:
+        print(".")
+        await aio.sleep(1)
+interact()
+</script>
+
+<script type="text/python">
+
+import math
+import datetime
+
+async def main():
+    await asyncio.sleep(2)
+
+    plink.DBG = 'dev' in sys.argv
+    print(plink.window)
+    window = plink.window
+    doc = window.document
+
+    #print('window.document.title = "{0}"'.format( await window.document.title ) )
+    #print('window.test.textContent = "{0}"'.format( await window.test.textContent ) )
+
+    #loop.create_task( scroll_banner() )
+    #loop.create_task( scroll_test() )
+
+
+    #ctx =  window.crt.getContext("2d") ; print(ctx)
+
+    if 1: #'exp' in sys.argv:
+
+
+        window.test.textContent = "/////////////////////////"
+
+        print('-----------ASYNC python -------------')
+        with await window.crt.getContext("2d") as ctx:
+            def show_hours():
+                ctx.beginPath()
+                ctx.arc(width / 2, height / 2, ray * 0.05, 0, 2 * math.pi)
+                ctx.fillStyle = "#000"
+                ctx.fill()
+                for i in range(1, 13):
+                    angle = i * math.pi / 6 - math.pi / 2
+                    x3 = width / 2 + ray * cos(angle) * 0.75
+                    y3 = height / 2 + ray * sin(angle) * 0.75
+                    ctx.font = "20px Arial"
+                    ctx.textAlign = "center"
+                    ctx.textBaseline = "middle"
+                    ctx.fillText(i, x3, y3)
+                # cell for day
+                ctx.fillStyle = "#000"
+                ctx.fillRect(width * 0.65, height * 0.47, width * 0.1, height * 0.06)
+
+            def needle(angle, r1, r2, color="#000000"):
+                # draw a needle at specified angle in specified color
+                # r1 and r2 are percentages of clock ray
+                x1 = width / 2 - ray * cos(angle) * r1
+                y1 = height / 2 - ray * sin(angle) * r1
+                x2 = width / 2 + ray * cos(angle) * r2
+                y2 = height / 2 + ray * sin(angle) * r2
+                ctx.beginPath()
+                ctx.strokeStyle = color
+                ctx.moveTo(x1, y1)
+                ctx.lineTo(x2, y2)
+                ctx.stroke()
+
+            def set_clock():
+                # erase clock
+                ctx.beginPath()
+                ctx.fillStyle = "#fff"
+                ctx.arc(width / 2, height / 2, ray * 0.89, 0, 2 * math.pi)
+                ctx.fill()
+
+                # redraw hours
+                show_hours()
+
+                # print day
+                now = datetime.datetime.now()
+                day = now.day
+                ctx.font = "bold 14px Arial"
+                ctx.textAlign = "center"
+                ctx.textBaseline = "middle"
+                ctx.fillStyle = "#fff"
+                ctx.fillText(day, width * 0.7, height * 0.5)
+
+                # draw needles for hour, minute, seconds
+                ctx.lineWidth = 3
+                hour = now.hour % 12 + now.minute / 60
+                angle = hour * 2 * math.pi / 12 - math.pi / 2
+                needle(angle, 0.05, 0.5)
+                minute = now.minute
+                angle = minute * 2 * math.pi / 60 - math.pi / 2
+                needle(angle, 0.05, 0.85)
+                ctx.lineWidth = 1
+                second = now.second + now.microsecond / 1000000
+                angle = second * 2 * math.pi / 60 - math.pi / 2
+                needle(angle, 0.05, 0.85, "#f00") # in red
+
+
+            # draw clock border
+            width, height = 240, 240 # canvas dimensions
+            ray = 100 # clock ray
+            sin, cos = math.sin, math.cos
+
+            ctx.beginPath()
+            ctx.lineWidth = 10
+            ctx.arc(width / 2, height / 2, ray, 0, 2 * math.pi)
+            ctx.stroke()
+            ctx.finalize
+            plink.DBG= 0
+
+            for i in range(60):
+                ctx.lineWidth = 1
+                if i % 5 == 0:
+                    ctx.lineWidth = 3
+                angle = i * 2 * math.pi / 60 - math.pi / 3
+                x1 = width / 2 + ray * cos(angle)
+                y1 = height / 2 + ray * sin(angle)
+                x2 = width / 2 + ray * cos(angle) * 0.9
+                y2 = height / 2 + ray * sin(angle) * 0.9
+                ctx.beginPath()
+                ctx.moveTo(x1, y1)
+                ctx.lineTo(x2, y2)
+                ctx.stroke()
+
+            ctx.finalize
+
+            while 1:
+                set_clock()
+                ctx.finalize
+                window.test.textContent = 'tic/---'
+                await asyncio.sleep(.5)
+                window.test.textContent = '---/tac'
+                await asyncio.sleep(.5)
+
+
+
+            #no return
+
+        return
+interact()
+</script>
+
+
+
+
+<meta charset="utf-8">
+<meta name=viewport content='width=device-width,initial-scale=1'>
+
+    <style>
+        body {
+            width: 100%;
+            box-sizing: border-bo
+            padding: 0;
+            margin: 0;
+            text-align: center;
+        }
+        a { white-space: nowrap; }
+        table {
+            display: inline-block;
+        }
+        #mp_js_stdout {
+            display: inline-block;
+            max-width: 90%;
+            height: 80%;
+            max-height: 600px;
+            vertical-align: middle;
+        }
+        #canvas {
+            border: 4px black solid;
+            border-radius: 4px;
+            vertical-align: middle;
+        };
+
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.4/xterm.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.4/xterm.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.4/addons/fit/fit.min.js"></script>
+  </head>
+
+  <body>
+
+    <h1>cpython TEXT+DOM UI</h1>
+    <p>
+    cpython wasm + asyncio DOM link
+    <br>
+    You can type your own Python code into the prompt in the usual way.
+    <br>
+
+    <pre id="url"></pre>
+
+    <pre id="status"></pre>
+
+    <pre id="test"></pre>
+
+    <pre id="log"></pre>
+
+    <canvas id="crt" width="240" height="320" tabindex="-1"></canvas>
+    <br/>
+    <div id="mp_js_stdout"></div>
+<!--
+
+-->
+    <canvas id="canvas" width="640" height="480" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+
+    <p>
+
+<br/>
+  </body>
+    <script>
+    window.cpython = true
+    //no repl autostart (helps avoid prompt display in async main)
+    window.repl = false
+    </script>
+
+    <script src="pp/pythons.001.js"></script>
+
+    <script src="pp/plink.001.js"></script>
+
+    <script defer>
+        //Module.canvas = canvas;
+
+        function PYTHONSTARTUP() {
+
+
+            window.posix.cors = function (url){
+                if (url.includes('/wyz.fr/'))
+                    return CORS_BROKER + url
+                return url
+            }
+if (0){
+            var canvas = document.getElementById('canvas');
+            var gl_aa = true
+
+            // 3D canvas
+            try {
+                gl = canvas.getContext("experimental-webgl", {antialias:gl_aa}) || canvas.getContext("webgl", {antialias:gl_aa});
+            } catch (x) {
+                console.log("WebGL : error "+x)
+                gl = null;
+            }
+
+            if (!gl) {
+                var msg = "WebGL : your browser doesn't support WebGL. This application won't work.\r\n";
+                console.log(msg);
+                term_impl(msg);
+                return;
+
+            }
+
+            var ext = gl.getExtension('OES_standard_derivatives');
+            if (!ext)
+                console.log('WebGL : [OES_standard_derivatives] supported');
+            else
+                console.log('WebGL : Error [OES_standard_derivatives] derivatives *not* supported');
+
+
+            var antialias = gl.getContextAttributes().antialias;
+            console.log('WebGL : antialias = '+antialias);
+
+            var aasize = gl.getParameter(gl.SAMPLES);
+            console.log('WebGL : antialias size = '+aasize );
+
+            Module.canvas = canvas;
+}
+        }
+
+        /*Initialization function*/
+        window.onload = function() {
+
+            Terminal.applyAddon(fit);
+            term = new Terminal({
+                    cols : 132,
+                    rows : 40,
+                    tabStopWidth : 8,
+                    cursorBlink : true,
+                    cursorStyle : 'block',
+                    applicationCursor : true,
+                });
+
+
+
+            mp_js_stdout = document.getElementById('mp_js_stdout');
+            mp_js_stdout.value = "";
+            term.open(mp_js_stdout);
+            term.fit();
+
+            /*Setup key input handler */
+            // window_prompt is the pythons.js function that will flush
+            // pseudo-readline buffer toward upy core
+            window.prompt = window_prompt
+
+
+            /*Write text to the terminal */
+            window.term_impl = function (text) { term.write(text) }
+
+            /*Setup key input handler */
+
+            term.on('data', function(key, e) {
+                if ( xterm_helper(term, key) ) {
+                    var kc = key.charCodeAt(0)
+
+                    // default repl of cpython is not event driven.
+                    if (window.cpython) {
+                        if (kc <=27)
+                            console.log("KBD : "+ kc+ " len= "+key.length+ " tmp=" + window.stdin_tmp)
+
+                        if (kc == 13) {
+                            // !!!! window.prompt does *NOT* send newlines
+                            window.stdin_buf = window.stdin_tmp || "#" // + "\n"
+                            window.stdin_tmp = ""
+                            window.stdin_flush = true
+                            console.log("flushing kbd")
+                        } else
+                            window.stdin_tmp += key
+
+                    } else {
+                        if (kc <=27)
+                            console.log("KBD : "+ kc+ " len= "+key.length+ "buf " + window.stdin)
+                        window.stdin += key
+                    }
+
+                    if (window.stdin_echo) {
+                        term.write(key)
+                        if (kc == 13) term.write("\n")
+                    }
+                }
+                //term.write(key)
+            });
+            /*Initialize Python itself*/
+            /*Initialize the REPL.*/
+            console.log('⚡Starting Python⚡')
+            pythons()
+        }
+    </script>
+</html>
+
