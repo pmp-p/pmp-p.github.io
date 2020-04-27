@@ -10,6 +10,7 @@ class self:pass
 
 
 async def main_panda():
+    await asyncio.sleep(2)
 
     embed.panda3d()
 
@@ -21,11 +22,11 @@ async def main_panda():
 
 #    p3d.loadPrcFileData("", "load-display pandagles2")
 #    p3d.loadPrcFileData("", "win-origin -2 -2")
-    p3d.loadPrcFileData("", "win-size 640 480")
+    p3d.loadPrcFileData("", "win-size 320 240")
     p3d.loadPrcFileData("", "support-threads #f")
     p3d.loadPrcFileData("", "textures-power-2 down")
     p3d.loadPrcFileData("", "textures-square down")
-    p3d.loadPrcFileData("", "show-frame-rate-meter #t")
+#    p3d.loadPrcFileData("", "show-frame-rate-meter #t")
 
     import direct
     import direct.task
@@ -161,7 +162,7 @@ async def main_panda():
     return 1
 
 async def main_clock():
-    await asyncio.sleep(2)
+    await asyncio.sleep(1)
 
     plink.DBG = 'dev' in sys.argv
     print(plink.window)
@@ -289,11 +290,13 @@ async def main_clock():
 
         return
 
-async def main_empty():
+async def main():
+    aio.task( main_clock )
+    aio.task( main_panda )
     while 1:
         await aio.asleep(1)
 
-main = main_panda
+#main = main_panda
 
 interact()
 </script>
@@ -337,9 +340,9 @@ interact()
 
   <body>
 
-    <h1>cpython TEXT+DOM UI</h1>
+    <h1>CPython TEXT (fd multiplexer via stdio) + DOM ( via async RPC) + Canvas 2D (clock code from brython samples) + Canvas 3D (Panda3D spinning cube)</h1>
     <p>
-    cpython wasm + asyncio DOM link
+    CPython wasm (clang11) + asyncio rmi link
     <br>
     You can type your own Python code into the prompt in the usual way.
     <br>
@@ -351,12 +354,11 @@ interact()
     <pre id="test"></pre>
 
     <pre id="log"></pre>
-<!--
+
     <canvas id="crt" width="240" height="320" tabindex="-1"></canvas>
--->
+
     <br/>
     <div id="mp_js_stdout"></div>
-
 
 
     <canvas id="canvas" width="640" height="480" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
@@ -386,57 +388,6 @@ interact()
                 return url
             }
 
-
-if (0){
-            const canvas = document.querySelector("#canvas");
-//            Module.canvas = canvas;
-            var gl_aa = true
-
-            var gl = null;
-            // 3D canvas
-            try {
-                gl = canvas.getContext("webgl2", {antialias:gl_aa});
-                console.log("WebGL2 selected")
-            } catch (x) {
-                console.log("WebGL2 : error "+x)
-            }
-
-            if (!gl)
-                try {
-                    gl = canvas.getContext("experimental-webgl", {antialias:gl_aa}) || canvas.getContext("webgl", {antialias:gl_aa});
-                    console.log("WebGL1 selected")
-                } catch (x) {
-                    console.log("WebGL1 : error "+x)
-                }
-
-            if (!gl) {
-                var msg = "WebGL : your browser doesn't support WebGL(1 or 2). This application won't work.\r\n";
-                console.log(msg);
-                term_impl(msg);
-                return;
-            }
-
-            gl.clearColor(0.0, 0.0, 1, 1.0)
-            // Clear the color buffer with specified clear color
-            gl.clear(gl.COLOR_BUFFER_BIT)
-
-            var ext = gl.getExtension('OES_standard_derivatives');
-            if (!ext)
-                console.log('WebGL : [OES_standard_derivatives] supported');
-            else
-                console.log('WebGL : Error [OES_standard_derivatives] derivatives *not* supported');
-
-
-            var antialias = gl.getContextAttributes().antialias;
-            console.log('WebGL : antialias = '+antialias);
-
-            var aasize = gl.getParameter(gl.SAMPLES);
-            console.log('WebGL : antialias size = '+aasize );
-
-//            GL.currentContext.GLctx =
-    //        Module.ctx = gl
-
-}
         }
 
         /*Initialization function*/
