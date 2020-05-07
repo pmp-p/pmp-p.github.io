@@ -1,0 +1,60 @@
+<!DOCTYPE html><html><script type="text/python">
+
+print("Hello")
+#interact()
+
+</script>
+
+  <link rel="stylesheet" href="win.css">
+  <head>
+  </head>
+  
+
+  <body>
+    <div id="aio_fd_0"></div>
+    <div>Hello, world!</div>
+        <canvas id="canvas" width="240" height="320" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+    
+    <button id="btn_popup">popup</button>
+    <div id="win_anchor" >...</div>
+    <div id="popup"> 
+      <div id="win_handle">vt100<span id="btn_close" style="float:right;cursor:pointer;padding-right:6px;"[X]</span></div>
+
+    </div>
+  </body>
+
+  <script defer src="lib_example/pyterm.js"></script>
+
+<!-- // the python core either wapy or cpython -->
+<script src="lib/pythons.003.js"></script>
+
+<!-- // the js link part beetween js engine main loop and python main loop -->
+<script src="lib/plink.002.js"></script>
+
+<script src="win.js"></script>
+      
+<script>
+window.repl = 1
+window.stock = false
+
+function PYTHONSTARTUP(){
+    console.log("PYTHONSTARTUP")
+}
+
+// ============================== FILE I/O (sync => bad) =================================
+include("lib/file_api_002.js")
+
+// ================= web->sockets (async, may work) ===============================
+include("lib/socket_api_002.js")
+
+
+// cors handling thanks to https://github.com/Rob--W/cors-anywhere https://robwu.nl/cors-anywhere.html
+if ( undef("CORS_BROKER") ){
+    window.CORS_BROKER = "https://cors-anywhere.herokuapp.com/"
+    console.log("Using default brooker CORS_BROKER="+CORS_BROKER)
+}
+
+
+</script>
+      
+</html>

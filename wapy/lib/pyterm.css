@@ -1,0 +1,23 @@
+        body {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0;
+            margin: 0;
+            text-align: center;
+        }
+        a { white-space: nowrap; }
+        table {
+            display: inline-block;
+        }
+        #mp_js_stdout {
+            display: inline-block;
+            max-width: 90%;
+            height: 80%;
+            max-height: 600px;
+            vertical-align: middle;
+        }
+        #canvas {
+            border: 4px black solid;
+            border-radius: 4px;
+            vertical-align: middle;
+        };

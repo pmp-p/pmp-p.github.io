@@ -1,0 +1,39 @@
+div#win_anchor {
+    display:none;        	   
+    position:absolute;
+    top:-30px;
+    left:-30px;
+    opacity:0.3;
+    background-color:black;
+    z-index:9998";
+}
+
+div#aio_fd_0 {
+    position:relative;
+    width: 90%;
+    height: 440px;
+    //display:none;
+}
+div#popup {
+    display:none;
+    background-color:lightgrey;
+    position:absolute;
+    top:0px;
+    z-index:9999;
+    box-shadow: 6px 6px 5px #888888;
+    border-radius:6px;
+    border:1px solid #4f4f4f;
+    width : 800px;
+    height: 480px;
+}
+
+div#win_handle {
+    width:100%;
+    background-color:darkgray;
+    position:relative;
+    top:0;
+    border-radius:6px 6px 0 0;
+    text-align:center;
+    height:24px;
+    cursor:move;
+}
