@@ -59,7 +59,7 @@ function mdi_vt(mdi_name, dlay) {
 
     // reset div position
     popup.style.top = "40px";
-    popup.style.left = "640px";
+    popup.style.left = "720px";
     popup.style.height = "480px";
 
     //popup.style.width = window.innerWidth - SCROLL_WIDTH + "px";
@@ -100,7 +100,7 @@ function mdi_vt(mdi_name, dlay) {
 }
 
 
-mdi_vt("mdi_vt",500)
+mdi_vt("mdi_vt",16)
 
 
 

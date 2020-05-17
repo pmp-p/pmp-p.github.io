@@ -147,8 +147,15 @@ Module['FS_createPath']('/assets/python3/aio', 'cpy', true, true);
         finish: function(byteArray) {
           var that = this;
   
-          Module['FS_createDataFile'](this.name, null, byteArray, true, true, true); // canOwn this data in the filesystem, it is a slide into the heap that will never change
-          Module['removeRunDependency']('fp ' + that.name);
+          Module['FS_createPreloadedFile'](this.name, null, byteArray, true, true, function() {
+            Module['removeRunDependency']('fp ' + that.name);
+          }, function() {
+            if (that.audio) {
+              Module['removeRunDependency']('fp ' + that.name); // workaround for chromium bug 124926 (still no audio with this, but at least we don't hang)
+            } else {
+              err('Preloading file ' + that.name + ' failed');
+            }
+          }, false, true); // canOwn this data in the filesystem, it is a slide into the heap that will never change
   
           this.requests[this.name] = null;
         }
@@ -201,7 +208,7 @@ Module['FS_createPath']('/assets/python3/aio', 'cpy', true, true);
     }
   
    }
-   loadPackage({"files": [{"filename": "/lib/libtest.so", "start": 0, "end": 488, "audio": 0}, {"filename": "/assets/python3/__init__.py", "start": 488, "end": 511, "audio": 0}, {"filename": "/assets/python3/python3.py", "start": 511, "end": 9353, "audio": 0}, {"filename": "/assets/python3/aio/__init__.py", "start": 9353, "end": 9775, "audio": 0}, {"filename": "/assets/python3/aio/plink_android.py", "start": 9775, "end": 15538, "audio": 0}, {"filename": "/assets/python3/aio/plink.py", "start": 15538, "end": 32981, "audio": 0}, {"filename": "/assets/python3/aio/irc/__init__.py", "start": 32981, "end": 32982, "audio": 0}, {"filename": "/assets/python3/aio/irc/client.py", "start": 32982, "end": 35899, "audio": 0}, {"filename": "/assets/python3/aio/cpy/aio.py", "start": 35899, "end": 38949, "audio": 0}, {"filename": "/assets/python3/aio/cpy/__init__.py", "start": 38949, "end": 38949, "audio": 0}, {"filename": "/assets/python3/aio/cpy/websocket.py", "start": 38949, "end": 38991, "audio": 0}, {"filename": "/assets/site_wapy.py", "start": 38991, "end": 38991, "audio": 0}], "remote_package_size": 38991, "package_uuid": "fb840784-0eca-42ca-83d4-04a316290dbc"});
+   loadPackage({"files": [{"filename": "/lib/libtest.so", "start": 0, "end": 488, "audio": 0}, {"filename": "/hello.bmp", "start": 488, "end": 1089822, "audio": 0}, {"filename": "/assets/python3/__init__.py", "start": 1089822, "end": 1089845, "audio": 0}, {"filename": "/assets/python3/python3.py", "start": 1089845, "end": 1098687, "audio": 0}, {"filename": "/assets/python3/aio/__init__.py", "start": 1098687, "end": 1099109, "audio": 0}, {"filename": "/assets/python3/aio/plink_android.py", "start": 1099109, "end": 1104872, "audio": 0}, {"filename": "/assets/python3/aio/plink.py", "start": 1104872, "end": 1122315, "audio": 0}, {"filename": "/assets/python3/aio/irc/__init__.py", "start": 1122315, "end": 1122316, "audio": 0}, {"filename": "/assets/python3/aio/irc/client.py", "start": 1122316, "end": 1125233, "audio": 0}, {"filename": "/assets/python3/aio/cpy/aio.py", "start": 1125233, "end": 1128283, "audio": 0}, {"filename": "/assets/python3/aio/cpy/__init__.py", "start": 1128283, "end": 1128283, "audio": 0}, {"filename": "/assets/python3/aio/cpy/websocket.py", "start": 1128283, "end": 1128325, "audio": 0}, {"filename": "/assets/site_wapy.py", "start": 1128325, "end": 1128325, "audio": 0}], "remote_package_size": 1128325, "package_uuid": "b5df5d3a-a049-406e-b7b6-cb009ba427a3"});
   
   })();
   
@@ -1242,7 +1249,7 @@ var wasmMemory;
 // In the wasm backend, we polyfill the WebAssembly object,
 // so this creates a (non-native-wasm) table for us.
 var wasmTable = new WebAssembly.Table({
-  'initial': 1090,
+  'initial': 1132,
   'element': 'anyfunc'
 });
 
@@ -1863,11 +1870,11 @@ function updateGlobalBufferAndViews(buf) {
 }
 
 var STATIC_BASE = 1024,
-    STACK_BASE = 17459168,
+    STACK_BASE = 18898624,
     STACKTOP = STACK_BASE,
-    STACK_MAX = 681952,
-    DYNAMIC_BASE = 17459168,
-    DYNAMICTOP_PTR = 681776;
+    STACK_MAX = 2121408,
+    DYNAMIC_BASE = 18898624,
+    DYNAMICTOP_PTR = 2121232;
 
 assert(STACK_BASE % 16 === 0, 'stack must start aligned');
 assert(DYNAMIC_BASE % 16 === 0, 'heap must start aligned');
@@ -2485,31 +2492,31 @@ var ASM_CONSTS = {
   43: function($0) {return wasm_file_open(UTF8ToString($0));},  
  120: function($0) {return wasm_file_exists(UTF8ToString($0), true);},  
  172: function($0) {return wasm_file_open(UTF8ToString($0),UTF8ToString($0));},  
- 316896: function($0, $1, $2) {window.plink.shm = $0; window.plink.io_port_kbd = $1; window.PyRun_SimpleString_MAXSIZE = $2; console.log("window.plink.shm=" + window.plink.shm); console.log("window.plink.io_port_kbd=" + window.plink.io_port_kbd); window.setTimeout( init_repl_begin , 1000 );},  
- 427856: function($0, $1, $2, $3) {var cif = $0; var fn = $1; var rvalue = $2; var avalue = $3; var cif_abi = HEAPU32[cif >> 2]; var cif_nargs = HEAPU32[(cif + 4) >> 2]; var cif_arg_types = HEAPU32[(cif + 8) >> 2]; var cif_rtype = HEAPU32[(cif + 12) >> 2]; var args = [fn]; var sig = ""; var sigFloat = Module['usingWasm'] ? "f" : "d"; var rtype = HEAPU16[(cif_rtype + 6 ) >> 1]; if (rtype === 0) { sig = 'v'; } else if (rtype === 1 || rtype === 5 || rtype === 6 || rtype === 7 || rtype === 8 || rtype === 9 || rtype === 10 || rtype === 14) { sig = 'i'; } else if (rtype === 2) { sig = sigFloat; } else if (rtype === 3 || rtype === 4) { sig = 'd'; } else if (rtype === 11 || rtype === 12) { sig = 'j'; } else if (rtype === 13) { throw new Error('struct ret marshalling nyi'); } else if (rtype === 15) { throw new Error('complex ret marshalling nyi'); } else { throw new Error('Unexpected rtype ' + rtype); } for (var i = 0; i < cif_nargs; i++) { var ptr = HEAPU32[(avalue >> 2) + i]; var arg_type = HEAPU32[(cif_arg_types >> 2) + i]; var typ = HEAPU16[(arg_type + 6) >> 1]; if (typ === 1 || typ === 10) { args.push(HEAP32[ptr >> 2]); sig += 'i'; } else if (typ === 2) { args.push(HEAPF32[ptr >> 2]); sig += sigFloat; } else if (typ === 3 || typ === 4) { args.push(HEAPF64[ptr >> 3]); sig += 'd'; } else if (typ === 5) { args.push(HEAPU8[ptr]); sig += 'i'; } else if (typ === 6) { args.push(HEAP8[ptr]); sig += 'i'; } else if (typ === 7) { args.push(HEAPU16[ptr >> 1]); sig += 'i'; } else if (typ === 8) { args.push(HEAP16[ptr >> 1]); sig += 'i'; } else if (typ === 9 || typ === 14) { args.push(HEAPU32[ptr >> 2]); sig += 'i'; } else if (typ === 11 || typ === 12) { args.push(HEAPU32[ptr >> 2]); args.push(HEAPU32[(ptr + 4) >> 2]); sig += 'j'; } else if (typ === 13) { throw new Error('struct marshalling nyi'); } else if (typ === 15) { throw new Error('complex marshalling nyi'); } else { throw new Error('Unexpected type ' + typ); } } var func = Module['dynCall_' + sig]; if (func) { var result = func.apply(null, args); } else { console.error('fn is', fn); console.error('sig is', sig); console.error('args is', args); for (var x in Module) { console.error('-- ' + x); } throw new Error('invalid function pointer in ffi_call'); } if (rtype === 0) { } else if (rtype === 1 || rtype === 9 || rtype === 10 || rtype === 14) { HEAP32[rvalue >> 2] = result; } else if (rtype === 2) { HEAPF32[rvalue >> 2] = result; } else if (rtype === 3 || rtype === 4) { HEAPF64[rvalue >> 3] = result; } else if (rtype === 5 || rtype === 6) { HEAP8[rvalue] = result; } else if (rtype === 7 || rtype === 8) { HEAP16[rvalue >> 1] = result; } else if (rtype === 11 || rtype === 12) { HEAP32[rvalue >> 2] = result; HEAP32[(rvalue + 4) >> 2] = Module.getTempRet0(); } else if (rtype === 13) { throw new Error('struct ret marshalling nyi'); } else if (rtype === 15) { throw new Error('complex ret marshalling nyi'); } else { throw new Error('Unexpected rtype ' + rtype); }},  
- 432336: function() {console.log("91:SystemExit");},  
- 433322: function($0) {var str = UTF8ToString($0) + '\n\n' + 'Abort/Retry/Ignore/AlwaysIgnore? [ariA] :'; var reply = window.prompt(str, "i"); if (reply === null) { reply = "i"; } return allocate(intArrayFromString(reply), 'i8', ALLOC_NORMAL);},  
- 471054: function($0, $1, $2, $3, $4) {return Browser.safeSetTimeout(function() { dynCall('viiii', $0, [$1, $2, $3, $4]); }, $2);},  
- 471149: function($0) {window.clearTimeout($0);},  
- 489675: function($0, $1) {alert(UTF8ToString($0) + "\n\n" + UTF8ToString($1));},  
- 491945: function($0, $1, $2) {var w = $0; var h = $1; var pixels = $2; if (!Module['SDL2']) Module['SDL2'] = {}; var SDL2 = Module['SDL2']; if (SDL2.ctxCanvas !== Module['canvas']) { SDL2.ctx = Module['createContext'](Module['canvas'], false, true); SDL2.ctxCanvas = Module['canvas']; } if (SDL2.w !== w || SDL2.h !== h || SDL2.imageCtx !== SDL2.ctx) { SDL2.image = SDL2.ctx.createImageData(w, h); SDL2.w = w; SDL2.h = h; SDL2.imageCtx = SDL2.ctx; } var data = SDL2.image.data; var src = pixels >> 2; var dst = 0; var num; if (typeof CanvasPixelArray !== 'undefined' && data instanceof CanvasPixelArray) { num = data.length; while (dst < num) { var val = HEAP32[src]; data[dst ] = val & 0xff; data[dst+1] = (val >> 8) & 0xff; data[dst+2] = (val >> 16) & 0xff; data[dst+3] = 0xff; src++; dst += 4; } } else { if (SDL2.data32Data !== data) { SDL2.data32 = new Int32Array(data.buffer); SDL2.data8 = new Uint8Array(data.buffer); } var data32 = SDL2.data32; num = data32.length; data32.set(HEAP32.subarray(src, src + num)); var data8 = SDL2.data8; var i = 3; var j = i + 4*num; if (num % 8 == 0) { while (i < j) { data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; } } else { while (i < j) { data8[i] = 0xff; i = i + 4 | 0; } } } SDL2.ctx.putImageData(SDL2.image, 0, 0); return 0;},  
- 493400: function($0, $1, $2, $3, $4) {var w = $0; var h = $1; var hot_x = $2; var hot_y = $3; var pixels = $4; var canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h; var ctx = canvas.getContext("2d"); var image = ctx.createImageData(w, h); var data = image.data; var src = pixels >> 2; var dst = 0; var num; if (typeof CanvasPixelArray !== 'undefined' && data instanceof CanvasPixelArray) { num = data.length; while (dst < num) { var val = HEAP32[src]; data[dst ] = val & 0xff; data[dst+1] = (val >> 8) & 0xff; data[dst+2] = (val >> 16) & 0xff; data[dst+3] = (val >> 24) & 0xff; src++; dst += 4; } } else { var data32 = new Int32Array(data.buffer); num = data32.length; data32.set(HEAP32.subarray(src, src + num)); } ctx.putImageData(image, 0, 0); var url = hot_x === 0 && hot_y === 0 ? "url(" + canvas.toDataURL() + "), auto" : "url(" + canvas.toDataURL() + ") " + hot_x + " " + hot_y + ", auto"; var urlBuf = _malloc(url.length + 1); stringToUTF8(url, urlBuf, url.length + 1); return urlBuf;},  
- 494389: function($0) {if (Module['canvas']) { Module['canvas'].style['cursor'] = UTF8ToString($0); } return 0;},  
- 494482: function() {if (Module['canvas']) { Module['canvas'].style['cursor'] = 'none'; }},  
- 494851: function() {return screen.width;},  
- 494878: function() {return screen.height;},  
- 494906: function() {return window.innerWidth;},  
- 494938: function() {return window.innerHeight;},  
- 495016: function($0) {if (typeof setWindowTitle !== 'undefined') { setWindowTitle(UTF8ToString($0)); } return 0;},  
- 495168: function() {if (typeof(AudioContext) !== 'undefined') { return 1; } else if (typeof(webkitAudioContext) !== 'undefined') { return 1; } return 0;},  
- 495334: function() {if ((typeof(navigator.mediaDevices) !== 'undefined') && (typeof(navigator.mediaDevices.getUserMedia) !== 'undefined')) { return 1; } else if (typeof(navigator.webkitGetUserMedia) !== 'undefined') { return 1; } return 0;},  
- 495560: function($0) {if(typeof(Module['SDL2']) === 'undefined') { Module['SDL2'] = {}; } var SDL2 = Module['SDL2']; if (!$0) { SDL2.audio = {}; } else { SDL2.capture = {}; } if (!SDL2.audioContext) { if (typeof(AudioContext) !== 'undefined') { SDL2.audioContext = new AudioContext(); } else if (typeof(webkitAudioContext) !== 'undefined') { SDL2.audioContext = new webkitAudioContext(); } } return SDL2.audioContext === undefined ? -1 : 0;},  
- 496043: function() {var SDL2 = Module['SDL2']; return SDL2.audioContext.sampleRate;},  
- 496113: function($0, $1, $2, $3) {var SDL2 = Module['SDL2']; var have_microphone = function(stream) { if (SDL2.capture.silenceTimer !== undefined) { clearTimeout(SDL2.capture.silenceTimer); SDL2.capture.silenceTimer = undefined; } SDL2.capture.mediaStreamNode = SDL2.audioContext.createMediaStreamSource(stream); SDL2.capture.scriptProcessorNode = SDL2.audioContext.createScriptProcessor($1, $0, 1); SDL2.capture.scriptProcessorNode.onaudioprocess = function(audioProcessingEvent) { if ((SDL2 === undefined) || (SDL2.capture === undefined)) { return; } audioProcessingEvent.outputBuffer.getChannelData(0).fill(0.0); SDL2.capture.currentCaptureBuffer = audioProcessingEvent.inputBuffer; dynCall('vi', $2, [$3]); }; SDL2.capture.mediaStreamNode.connect(SDL2.capture.scriptProcessorNode); SDL2.capture.scriptProcessorNode.connect(SDL2.audioContext.destination); SDL2.capture.stream = stream; }; var no_microphone = function(error) { }; SDL2.capture.silenceBuffer = SDL2.audioContext.createBuffer($0, $1, SDL2.audioContext.sampleRate); SDL2.capture.silenceBuffer.getChannelData(0).fill(0.0); var silence_callback = function() { SDL2.capture.currentCaptureBuffer = SDL2.capture.silenceBuffer; dynCall('vi', $2, [$3]); }; SDL2.capture.silenceTimer = setTimeout(silence_callback, ($1 / SDL2.audioContext.sampleRate) * 1000); if ((navigator.mediaDevices !== undefined) && (navigator.mediaDevices.getUserMedia !== undefined)) { navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(have_microphone).catch(no_microphone); } else if (navigator.webkitGetUserMedia !== undefined) { navigator.webkitGetUserMedia({ audio: true, video: false }, have_microphone, no_microphone); }},  
- 497765: function($0, $1, $2, $3) {var SDL2 = Module['SDL2']; SDL2.audio.scriptProcessorNode = SDL2.audioContext['createScriptProcessor']($1, 0, $0); SDL2.audio.scriptProcessorNode['onaudioprocess'] = function (e) { if ((SDL2 === undefined) || (SDL2.audio === undefined)) { return; } SDL2.audio.currentOutputBuffer = e['outputBuffer']; dynCall('vi', $2, [$3]); }; SDL2.audio.scriptProcessorNode['connect'](SDL2.audioContext['destination']);},  
- 498175: function($0, $1) {var SDL2 = Module['SDL2']; var numChannels = SDL2.capture.currentCaptureBuffer.numberOfChannels; for (var c = 0; c < numChannels; ++c) { var channelData = SDL2.capture.currentCaptureBuffer.getChannelData(c); if (channelData.length != $1) { throw 'Web Audio capture buffer length mismatch! Destination size: ' + channelData.length + ' samples vs expected ' + $1 + ' samples!'; } if (numChannels == 1) { for (var j = 0; j < $1; ++j) { setValue($0 + (j * 4), channelData[j], 'float'); } } else { for (var j = 0; j < $1; ++j) { setValue($0 + (((j * numChannels) + c) * 4), channelData[j], 'float'); } } }},  
- 498780: function($0, $1) {var SDL2 = Module['SDL2']; var numChannels = SDL2.audio.currentOutputBuffer['numberOfChannels']; for (var c = 0; c < numChannels; ++c) { var channelData = SDL2.audio.currentOutputBuffer['getChannelData'](c); if (channelData.length != $1) { throw 'Web Audio output buffer length mismatch! Destination size: ' + channelData.length + ' samples vs expected ' + $1 + ' samples!'; } for (var j = 0; j < $1; ++j) { channelData[j] = HEAPF32[$0 + ((j*numChannels + c) << 2) >> 2]; } }},  
- 499260: function($0) {var SDL2 = Module['SDL2']; if ($0) { if (SDL2.capture.silenceTimer !== undefined) { clearTimeout(SDL2.capture.silenceTimer); } if (SDL2.capture.stream !== undefined) { var tracks = SDL2.capture.stream.getAudioTracks(); for (var i = 0; i < tracks.length; i++) { SDL2.capture.stream.removeTrack(tracks[i]); } SDL2.capture.stream = undefined; } if (SDL2.capture.scriptProcessorNode !== undefined) { SDL2.capture.scriptProcessorNode.onaudioprocess = function(audioProcessingEvent) {}; SDL2.capture.scriptProcessorNode.disconnect(); SDL2.capture.scriptProcessorNode = undefined; } if (SDL2.capture.mediaStreamNode !== undefined) { SDL2.capture.mediaStreamNode.disconnect(); SDL2.capture.mediaStreamNode = undefined; } if (SDL2.capture.silenceBuffer !== undefined) { SDL2.capture.silenceBuffer = undefined } SDL2.capture = undefined; } else { if (SDL2.audio.scriptProcessorNode != undefined) { SDL2.audio.scriptProcessorNode.disconnect(); SDL2.audio.scriptProcessorNode = undefined; } SDL2.audio = undefined; } if ((SDL2.audioContext !== undefined) && (SDL2.audio === undefined) && (SDL2.capture === undefined)) { SDL2.audioContext.close(); SDL2.audioContext = undefined; }}
+ 1103328: function($0, $1, $2) {window.plink.shm = $0; window.plink.io_port_kbd = $1; window.PyRun_SimpleString_MAXSIZE = $2; console.log("window.plink.shm=" + window.plink.shm); console.log("window.plink.io_port_kbd=" + window.plink.io_port_kbd); window.setTimeout( init_repl_begin , 1000 );},  
+ 1301648: function($0, $1, $2, $3) {var cif = $0; var fn = $1; var rvalue = $2; var avalue = $3; var cif_abi = HEAPU32[cif >> 2]; var cif_nargs = HEAPU32[(cif + 4) >> 2]; var cif_arg_types = HEAPU32[(cif + 8) >> 2]; var cif_rtype = HEAPU32[(cif + 12) >> 2]; var args = [fn]; var sig = ""; var sigFloat = Module['usingWasm'] ? "f" : "d"; var rtype = HEAPU16[(cif_rtype + 6 ) >> 1]; if (rtype === 0) { sig = 'v'; } else if (rtype === 1 || rtype === 5 || rtype === 6 || rtype === 7 || rtype === 8 || rtype === 9 || rtype === 10 || rtype === 14) { sig = 'i'; } else if (rtype === 2) { sig = sigFloat; } else if (rtype === 3 || rtype === 4) { sig = 'd'; } else if (rtype === 11 || rtype === 12) { sig = 'j'; } else if (rtype === 13) { throw new Error('struct ret marshalling nyi'); } else if (rtype === 15) { throw new Error('complex ret marshalling nyi'); } else { throw new Error('Unexpected rtype ' + rtype); } for (var i = 0; i < cif_nargs; i++) { var ptr = HEAPU32[(avalue >> 2) + i]; var arg_type = HEAPU32[(cif_arg_types >> 2) + i]; var typ = HEAPU16[(arg_type + 6) >> 1]; if (typ === 1 || typ === 10) { args.push(HEAP32[ptr >> 2]); sig += 'i'; } else if (typ === 2) { args.push(HEAPF32[ptr >> 2]); sig += sigFloat; } else if (typ === 3 || typ === 4) { args.push(HEAPF64[ptr >> 3]); sig += 'd'; } else if (typ === 5) { args.push(HEAPU8[ptr]); sig += 'i'; } else if (typ === 6) { args.push(HEAP8[ptr]); sig += 'i'; } else if (typ === 7) { args.push(HEAPU16[ptr >> 1]); sig += 'i'; } else if (typ === 8) { args.push(HEAP16[ptr >> 1]); sig += 'i'; } else if (typ === 9 || typ === 14) { args.push(HEAPU32[ptr >> 2]); sig += 'i'; } else if (typ === 11 || typ === 12) { args.push(HEAPU32[ptr >> 2]); args.push(HEAPU32[(ptr + 4) >> 2]); sig += 'j'; } else if (typ === 13) { throw new Error('struct marshalling nyi'); } else if (typ === 15) { throw new Error('complex marshalling nyi'); } else { throw new Error('Unexpected type ' + typ); } } var func = Module['dynCall_' + sig]; if (func) { var result = func.apply(null, args); } else { console.error('fn is', fn); console.error('sig is', sig); console.error('args is', args); for (var x in Module) { console.error('-- ' + x); } throw new Error('invalid function pointer in ffi_call'); } if (rtype === 0) { } else if (rtype === 1 || rtype === 9 || rtype === 10 || rtype === 14) { HEAP32[rvalue >> 2] = result; } else if (rtype === 2) { HEAPF32[rvalue >> 2] = result; } else if (rtype === 3 || rtype === 4) { HEAPF64[rvalue >> 3] = result; } else if (rtype === 5 || rtype === 6) { HEAP8[rvalue] = result; } else if (rtype === 7 || rtype === 8) { HEAP16[rvalue >> 1] = result; } else if (rtype === 11 || rtype === 12) { HEAP32[rvalue >> 2] = result; HEAP32[(rvalue + 4) >> 2] = Module.getTempRet0(); } else if (rtype === 13) { throw new Error('struct ret marshalling nyi'); } else if (rtype === 15) { throw new Error('complex ret marshalling nyi'); } else { throw new Error('Unexpected rtype ' + rtype); }},  
+ 1306144: function() {console.log("91:SystemExit");},  
+ 1307130: function($0) {var str = UTF8ToString($0) + '\n\n' + 'Abort/Retry/Ignore/AlwaysIgnore? [ariA] :'; var reply = window.prompt(str, "i"); if (reply === null) { reply = "i"; } return allocate(intArrayFromString(reply), 'i8', ALLOC_NORMAL);},  
+ 1349886: function($0, $1, $2, $3, $4) {return Browser.safeSetTimeout(function() { dynCall('viiii', $0, [$1, $2, $3, $4]); }, $2);},  
+ 1349981: function($0) {window.clearTimeout($0);},  
+ 1369115: function($0, $1) {alert(UTF8ToString($0) + "\n\n" + UTF8ToString($1));},  
+ 1371385: function($0, $1, $2) {var w = $0; var h = $1; var pixels = $2; if (!Module['SDL2']) Module['SDL2'] = {}; var SDL2 = Module['SDL2']; if (SDL2.ctxCanvas !== Module['canvas']) { SDL2.ctx = Module['createContext'](Module['canvas'], false, true); SDL2.ctxCanvas = Module['canvas']; } if (SDL2.w !== w || SDL2.h !== h || SDL2.imageCtx !== SDL2.ctx) { SDL2.image = SDL2.ctx.createImageData(w, h); SDL2.w = w; SDL2.h = h; SDL2.imageCtx = SDL2.ctx; } var data = SDL2.image.data; var src = pixels >> 2; var dst = 0; var num; if (typeof CanvasPixelArray !== 'undefined' && data instanceof CanvasPixelArray) { num = data.length; while (dst < num) { var val = HEAP32[src]; data[dst ] = val & 0xff; data[dst+1] = (val >> 8) & 0xff; data[dst+2] = (val >> 16) & 0xff; data[dst+3] = 0xff; src++; dst += 4; } } else { if (SDL2.data32Data !== data) { SDL2.data32 = new Int32Array(data.buffer); SDL2.data8 = new Uint8Array(data.buffer); } var data32 = SDL2.data32; num = data32.length; data32.set(HEAP32.subarray(src, src + num)); var data8 = SDL2.data8; var i = 3; var j = i + 4*num; if (num % 8 == 0) { while (i < j) { data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; data8[i] = 0xff; i = i + 4 | 0; } } else { while (i < j) { data8[i] = 0xff; i = i + 4 | 0; } } } SDL2.ctx.putImageData(SDL2.image, 0, 0); return 0;},  
+ 1372864: function($0, $1, $2, $3, $4) {var w = $0; var h = $1; var hot_x = $2; var hot_y = $3; var pixels = $4; var canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h; var ctx = canvas.getContext("2d"); var image = ctx.createImageData(w, h); var data = image.data; var src = pixels >> 2; var dst = 0; var num; if (typeof CanvasPixelArray !== 'undefined' && data instanceof CanvasPixelArray) { num = data.length; while (dst < num) { var val = HEAP32[src]; data[dst ] = val & 0xff; data[dst+1] = (val >> 8) & 0xff; data[dst+2] = (val >> 16) & 0xff; data[dst+3] = (val >> 24) & 0xff; src++; dst += 4; } } else { var data32 = new Int32Array(data.buffer); num = data32.length; data32.set(HEAP32.subarray(src, src + num)); } ctx.putImageData(image, 0, 0); var url = hot_x === 0 && hot_y === 0 ? "url(" + canvas.toDataURL() + "), auto" : "url(" + canvas.toDataURL() + ") " + hot_x + " " + hot_y + ", auto"; var urlBuf = _malloc(url.length + 1); stringToUTF8(url, urlBuf, url.length + 1); return urlBuf;},  
+ 1373853: function($0) {if (Module['canvas']) { Module['canvas'].style['cursor'] = UTF8ToString($0); } return 0;},  
+ 1373946: function() {if (Module['canvas']) { Module['canvas'].style['cursor'] = 'none'; }},  
+ 1374339: function() {return screen.width;},  
+ 1374366: function() {return screen.height;},  
+ 1374394: function() {return window.innerWidth;},  
+ 1374426: function() {return window.innerHeight;},  
+ 1374504: function($0) {if (typeof setWindowTitle !== 'undefined') { setWindowTitle(UTF8ToString($0)); } return 0;},  
+ 1374656: function() {if (typeof(AudioContext) !== 'undefined') { return 1; } else if (typeof(webkitAudioContext) !== 'undefined') { return 1; } return 0;},  
+ 1374822: function() {if ((typeof(navigator.mediaDevices) !== 'undefined') && (typeof(navigator.mediaDevices.getUserMedia) !== 'undefined')) { return 1; } else if (typeof(navigator.webkitGetUserMedia) !== 'undefined') { return 1; } return 0;},  
+ 1375048: function($0) {if(typeof(Module['SDL2']) === 'undefined') { Module['SDL2'] = {}; } var SDL2 = Module['SDL2']; if (!$0) { SDL2.audio = {}; } else { SDL2.capture = {}; } if (!SDL2.audioContext) { if (typeof(AudioContext) !== 'undefined') { SDL2.audioContext = new AudioContext(); } else if (typeof(webkitAudioContext) !== 'undefined') { SDL2.audioContext = new webkitAudioContext(); } } return SDL2.audioContext === undefined ? -1 : 0;},  
+ 1375531: function() {var SDL2 = Module['SDL2']; return SDL2.audioContext.sampleRate;},  
+ 1375601: function($0, $1, $2, $3) {var SDL2 = Module['SDL2']; var have_microphone = function(stream) { if (SDL2.capture.silenceTimer !== undefined) { clearTimeout(SDL2.capture.silenceTimer); SDL2.capture.silenceTimer = undefined; } SDL2.capture.mediaStreamNode = SDL2.audioContext.createMediaStreamSource(stream); SDL2.capture.scriptProcessorNode = SDL2.audioContext.createScriptProcessor($1, $0, 1); SDL2.capture.scriptProcessorNode.onaudioprocess = function(audioProcessingEvent) { if ((SDL2 === undefined) || (SDL2.capture === undefined)) { return; } audioProcessingEvent.outputBuffer.getChannelData(0).fill(0.0); SDL2.capture.currentCaptureBuffer = audioProcessingEvent.inputBuffer; dynCall('vi', $2, [$3]); }; SDL2.capture.mediaStreamNode.connect(SDL2.capture.scriptProcessorNode); SDL2.capture.scriptProcessorNode.connect(SDL2.audioContext.destination); SDL2.capture.stream = stream; }; var no_microphone = function(error) { }; SDL2.capture.silenceBuffer = SDL2.audioContext.createBuffer($0, $1, SDL2.audioContext.sampleRate); SDL2.capture.silenceBuffer.getChannelData(0).fill(0.0); var silence_callback = function() { SDL2.capture.currentCaptureBuffer = SDL2.capture.silenceBuffer; dynCall('vi', $2, [$3]); }; SDL2.capture.silenceTimer = setTimeout(silence_callback, ($1 / SDL2.audioContext.sampleRate) * 1000); if ((navigator.mediaDevices !== undefined) && (navigator.mediaDevices.getUserMedia !== undefined)) { navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(have_microphone).catch(no_microphone); } else if (navigator.webkitGetUserMedia !== undefined) { navigator.webkitGetUserMedia({ audio: true, video: false }, have_microphone, no_microphone); }},  
+ 1377253: function($0, $1, $2, $3) {var SDL2 = Module['SDL2']; SDL2.audio.scriptProcessorNode = SDL2.audioContext['createScriptProcessor']($1, 0, $0); SDL2.audio.scriptProcessorNode['onaudioprocess'] = function (e) { if ((SDL2 === undefined) || (SDL2.audio === undefined)) { return; } SDL2.audio.currentOutputBuffer = e['outputBuffer']; dynCall('vi', $2, [$3]); }; SDL2.audio.scriptProcessorNode['connect'](SDL2.audioContext['destination']);},  
+ 1377663: function($0, $1) {var SDL2 = Module['SDL2']; var numChannels = SDL2.capture.currentCaptureBuffer.numberOfChannels; for (var c = 0; c < numChannels; ++c) { var channelData = SDL2.capture.currentCaptureBuffer.getChannelData(c); if (channelData.length != $1) { throw 'Web Audio capture buffer length mismatch! Destination size: ' + channelData.length + ' samples vs expected ' + $1 + ' samples!'; } if (numChannels == 1) { for (var j = 0; j < $1; ++j) { setValue($0 + (j * 4), channelData[j], 'float'); } } else { for (var j = 0; j < $1; ++j) { setValue($0 + (((j * numChannels) + c) * 4), channelData[j], 'float'); } } }},  
+ 1378268: function($0, $1) {var SDL2 = Module['SDL2']; var numChannels = SDL2.audio.currentOutputBuffer['numberOfChannels']; for (var c = 0; c < numChannels; ++c) { var channelData = SDL2.audio.currentOutputBuffer['getChannelData'](c); if (channelData.length != $1) { throw 'Web Audio output buffer length mismatch! Destination size: ' + channelData.length + ' samples vs expected ' + $1 + ' samples!'; } for (var j = 0; j < $1; ++j) { channelData[j] = HEAPF32[$0 + ((j*numChannels + c) << 2) >> 2]; } }},  
+ 1378748: function($0) {var SDL2 = Module['SDL2']; if ($0) { if (SDL2.capture.silenceTimer !== undefined) { clearTimeout(SDL2.capture.silenceTimer); } if (SDL2.capture.stream !== undefined) { var tracks = SDL2.capture.stream.getAudioTracks(); for (var i = 0; i < tracks.length; i++) { SDL2.capture.stream.removeTrack(tracks[i]); } SDL2.capture.stream = undefined; } if (SDL2.capture.scriptProcessorNode !== undefined) { SDL2.capture.scriptProcessorNode.onaudioprocess = function(audioProcessingEvent) {}; SDL2.capture.scriptProcessorNode.disconnect(); SDL2.capture.scriptProcessorNode = undefined; } if (SDL2.capture.mediaStreamNode !== undefined) { SDL2.capture.mediaStreamNode.disconnect(); SDL2.capture.mediaStreamNode = undefined; } if (SDL2.capture.silenceBuffer !== undefined) { SDL2.capture.silenceBuffer = undefined } SDL2.capture = undefined; } else { if (SDL2.audio.scriptProcessorNode != undefined) { SDL2.audio.scriptProcessorNode.disconnect(); SDL2.audio.scriptProcessorNode = undefined; } SDL2.audio = undefined; } if ((SDL2.audioContext !== undefined) && (SDL2.audio === undefined) && (SDL2.capture === undefined)) { SDL2.audioContext.close(); SDL2.audioContext = undefined; }}
 };
 
 function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
@@ -2521,7 +2528,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
 
 
 
-// STATICTOP = STATIC_BASE + 680928;
+// STATICTOP = STATIC_BASE + 2120384;
 /* global initializers */  __ATINIT__.push({ func: function() { ___assign_got_enties() } }, { func: function() { ___wasm_call_ctors() } });
 
 
@@ -2530,6 +2537,823 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
 /* no memory initializer */
 // {{PRE_LIBRARY}}
 
+
+  
+  
+  function _emscripten_set_main_loop_timing(mode, value) {
+      Browser.mainLoop.timingMode = mode;
+      Browser.mainLoop.timingValue = value;
+  
+      if (!Browser.mainLoop.func) {
+        console.error('emscripten_set_main_loop_timing: Cannot set timing mode for main loop since a main loop does not exist! Call emscripten_set_main_loop first to set one up.');
+        return 1; // Return non-zero on failure, can't set timing mode when there is no main loop.
+      }
+  
+      if (mode == 0 /*EM_TIMING_SETTIMEOUT*/) {
+        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_setTimeout() {
+          var timeUntilNextTick = Math.max(0, Browser.mainLoop.tickStartTime + value - _emscripten_get_now())|0;
+          setTimeout(Browser.mainLoop.runner, timeUntilNextTick); // doing this each time means that on exception, we stop
+        };
+        Browser.mainLoop.method = 'timeout';
+      } else if (mode == 1 /*EM_TIMING_RAF*/) {
+        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_rAF() {
+          Browser.requestAnimationFrame(Browser.mainLoop.runner);
+        };
+        Browser.mainLoop.method = 'rAF';
+      } else if (mode == 2 /*EM_TIMING_SETIMMEDIATE*/) {
+        if (typeof setImmediate === 'undefined') {
+          // Emulate setImmediate. (note: not a complete polyfill, we don't emulate clearImmediate() to keep code size to minimum, since not needed)
+          var setImmediates = [];
+          var emscriptenMainLoopMessageId = 'setimmediate';
+          var Browser_setImmediate_messageHandler = function(event) {
+            // When called in current thread or Worker, the main loop ID is structured slightly different to accommodate for --proxy-to-worker runtime listening to Worker events,
+            // so check for both cases.
+            if (event.data === emscriptenMainLoopMessageId || event.data.target === emscriptenMainLoopMessageId) {
+              event.stopPropagation();
+              setImmediates.shift()();
+            }
+          }
+          addEventListener("message", Browser_setImmediate_messageHandler, true);
+          setImmediate = /** @type{function(function(): ?, ...?): number} */(function Browser_emulated_setImmediate(func) {
+            setImmediates.push(func);
+            if (ENVIRONMENT_IS_WORKER) {
+              if (Module['setImmediates'] === undefined) Module['setImmediates'] = [];
+              Module['setImmediates'].push(func);
+              postMessage({target: emscriptenMainLoopMessageId}); // In --proxy-to-worker, route the message via proxyClient.js
+            } else postMessage(emscriptenMainLoopMessageId, "*"); // On the main thread, can just send the message to itself.
+          })
+        }
+        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_setImmediate() {
+          setImmediate(Browser.mainLoop.runner);
+        };
+        Browser.mainLoop.method = 'immediate';
+      }
+      return 0;
+    }
+  Module["_emscripten_set_main_loop_timing"] = _emscripten_set_main_loop_timing;
+  
+  var _emscripten_get_now;_emscripten_get_now = function() { return performance.now(); }
+  ;
+  Module["_emscripten_get_now"] = _emscripten_get_now;/** @param {number|boolean=} noSetTiming */
+  function _emscripten_set_main_loop(func, fps, simulateInfiniteLoop, arg, noSetTiming) {
+      noExitRuntime = true;
+  
+      assert(!Browser.mainLoop.func, 'emscripten_set_main_loop: there can only be one main loop function at once: call emscripten_cancel_main_loop to cancel the previous one before setting a new one with different parameters.');
+  
+      Browser.mainLoop.func = func;
+      Browser.mainLoop.arg = arg;
+  
+      var browserIterationFunc;
+      if (typeof arg !== 'undefined') {
+        browserIterationFunc = function() {
+          Module['dynCall_vi'](func, arg);
+        };
+      } else {
+        browserIterationFunc = function() {
+          Module['dynCall_v'](func);
+        };
+      }
+  
+      var thisMainLoopId = Browser.mainLoop.currentlyRunningMainloop;
+  
+      Browser.mainLoop.runner = function Browser_mainLoop_runner() {
+        if (ABORT) return;
+        if (Browser.mainLoop.queue.length > 0) {
+          var start = Date.now();
+          var blocker = Browser.mainLoop.queue.shift();
+          blocker.func(blocker.arg);
+          if (Browser.mainLoop.remainingBlockers) {
+            var remaining = Browser.mainLoop.remainingBlockers;
+            var next = remaining%1 == 0 ? remaining-1 : Math.floor(remaining);
+            if (blocker.counted) {
+              Browser.mainLoop.remainingBlockers = next;
+            } else {
+              // not counted, but move the progress along a tiny bit
+              next = next + 0.5; // do not steal all the next one's progress
+              Browser.mainLoop.remainingBlockers = (8*remaining + next)/9;
+            }
+          }
+          console.log('main loop blocker "' + blocker.name + '" took ' + (Date.now() - start) + ' ms'); //, left: ' + Browser.mainLoop.remainingBlockers);
+          Browser.mainLoop.updateStatus();
+  
+          // catches pause/resume main loop from blocker execution
+          if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
+  
+          setTimeout(Browser.mainLoop.runner, 0);
+          return;
+        }
+  
+        // catch pauses from non-main loop sources
+        if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
+  
+        // Implement very basic swap interval control
+        Browser.mainLoop.currentFrameNumber = Browser.mainLoop.currentFrameNumber + 1 | 0;
+        if (Browser.mainLoop.timingMode == 1/*EM_TIMING_RAF*/ && Browser.mainLoop.timingValue > 1 && Browser.mainLoop.currentFrameNumber % Browser.mainLoop.timingValue != 0) {
+          // Not the scheduled time to render this frame - skip.
+          Browser.mainLoop.scheduler();
+          return;
+        } else if (Browser.mainLoop.timingMode == 0/*EM_TIMING_SETTIMEOUT*/) {
+          Browser.mainLoop.tickStartTime = _emscripten_get_now();
+        }
+  
+        // Signal GL rendering layer that processing of a new frame is about to start. This helps it optimize
+        // VBO double-buffering and reduce GPU stalls.
+  
+  
+  
+        if (Browser.mainLoop.method === 'timeout' && Module.ctx) {
+          warnOnce('Looks like you are rendering without using requestAnimationFrame for the main loop. You should use 0 for the frame rate in emscripten_set_main_loop in order to use requestAnimationFrame, as that can greatly improve your frame rates!');
+          Browser.mainLoop.method = ''; // just warn once per call to set main loop
+        }
+  
+        Browser.mainLoop.runIter(browserIterationFunc);
+  
+        checkStackCookie();
+  
+        // catch pauses from the main loop itself
+        if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
+  
+        // Queue new audio data. This is important to be right after the main loop invocation, so that we will immediately be able
+        // to queue the newest produced audio samples.
+        // TODO: Consider adding pre- and post- rAF callbacks so that GL.newRenderingFrameStarted() and SDL.audio.queueNewAudioData()
+        //       do not need to be hardcoded into this function, but can be more generic.
+        if (typeof SDL === 'object' && SDL.audio && SDL.audio.queueNewAudioData) SDL.audio.queueNewAudioData();
+  
+        Browser.mainLoop.scheduler();
+      }
+  
+      if (!noSetTiming) {
+        if (fps && fps > 0) _emscripten_set_main_loop_timing(0/*EM_TIMING_SETTIMEOUT*/, 1000.0 / fps);
+        else _emscripten_set_main_loop_timing(1/*EM_TIMING_RAF*/, 1); // Do rAF by rendering each frame (no decimating)
+  
+        Browser.mainLoop.scheduler();
+      }
+  
+      if (simulateInfiniteLoop) {
+        throw 'unwind';
+      }
+    }
+  Module["_emscripten_set_main_loop"] = _emscripten_set_main_loop;var Browser={mainLoop:{scheduler:null,method:"",currentlyRunningMainloop:0,func:null,arg:0,timingMode:0,timingValue:0,currentFrameNumber:0,queue:[],pause:function() {
+          Browser.mainLoop.scheduler = null;
+          Browser.mainLoop.currentlyRunningMainloop++; // Incrementing this signals the previous main loop that it's now become old, and it must return.
+        },resume:function() {
+          Browser.mainLoop.currentlyRunningMainloop++;
+          var timingMode = Browser.mainLoop.timingMode;
+          var timingValue = Browser.mainLoop.timingValue;
+          var func = Browser.mainLoop.func;
+          Browser.mainLoop.func = null;
+          _emscripten_set_main_loop(func, 0, false, Browser.mainLoop.arg, true /* do not set timing and call scheduler, we will do it on the next lines */);
+          _emscripten_set_main_loop_timing(timingMode, timingValue);
+          Browser.mainLoop.scheduler();
+        },updateStatus:function() {
+          if (Module['setStatus']) {
+            var message = Module['statusMessage'] || 'Please wait...';
+            var remaining = Browser.mainLoop.remainingBlockers;
+            var expected = Browser.mainLoop.expectedBlockers;
+            if (remaining) {
+              if (remaining < expected) {
+                Module['setStatus'](message + ' (' + (expected - remaining) + '/' + expected + ')');
+              } else {
+                Module['setStatus'](message);
+              }
+            } else {
+              Module['setStatus']('');
+            }
+          }
+        },runIter:function(func) {
+          if (ABORT) return;
+          if (Module['preMainLoop']) {
+            var preRet = Module['preMainLoop']();
+            if (preRet === false) {
+              return; // |return false| skips a frame
+            }
+          }
+          try {
+            func();
+          } catch (e) {
+            if (e instanceof ExitStatus) {
+              return;
+            } else {
+              if (e && typeof e === 'object' && e.stack) err('exception thrown: ' + [e, e.stack]);
+              throw e;
+            }
+          }
+          if (Module['postMainLoop']) Module['postMainLoop']();
+        }},isFullscreen:false,pointerLock:false,moduleContextCreatedCallbacks:[],workers:[],init:function() {
+        if (!Module["preloadPlugins"]) Module["preloadPlugins"] = []; // needs to exist even in workers
+  
+        if (Browser.initted) return;
+        Browser.initted = true;
+  
+        try {
+          new Blob();
+          Browser.hasBlobConstructor = true;
+        } catch(e) {
+          Browser.hasBlobConstructor = false;
+          console.log("warning: no blob constructor, cannot create blobs with mimetypes");
+        }
+        Browser.BlobBuilder = typeof MozBlobBuilder != "undefined" ? MozBlobBuilder : (typeof WebKitBlobBuilder != "undefined" ? WebKitBlobBuilder : (!Browser.hasBlobConstructor ? console.log("warning: no BlobBuilder") : null));
+        Browser.URLObject = typeof window != "undefined" ? (window.URL ? window.URL : window.webkitURL) : undefined;
+        if (!Module.noImageDecoding && typeof Browser.URLObject === 'undefined') {
+          console.log("warning: Browser does not support creating object URLs. Built-in browser image decoding will not be available.");
+          Module.noImageDecoding = true;
+        }
+  
+        // Support for plugins that can process preloaded files. You can add more of these to
+        // your app by creating and appending to Module.preloadPlugins.
+        //
+        // Each plugin is asked if it can handle a file based on the file's name. If it can,
+        // it is given the file's raw data. When it is done, it calls a callback with the file's
+        // (possibly modified) data. For example, a plugin might decompress a file, or it
+        // might create some side data structure for use later (like an Image element, etc.).
+  
+        var imagePlugin = {};
+        imagePlugin['canHandle'] = function imagePlugin_canHandle(name) {
+          return !Module.noImageDecoding && /\.(jpg|jpeg|png|bmp)$/i.test(name);
+        };
+        imagePlugin['handle'] = function imagePlugin_handle(byteArray, name, onload, onerror) {
+          var b = null;
+          if (Browser.hasBlobConstructor) {
+            try {
+              b = new Blob([byteArray], { type: Browser.getMimetype(name) });
+              if (b.size !== byteArray.length) { // Safari bug #118630
+                // Safari's Blob can only take an ArrayBuffer
+                b = new Blob([(new Uint8Array(byteArray)).buffer], { type: Browser.getMimetype(name) });
+              }
+            } catch(e) {
+              warnOnce('Blob constructor present but fails: ' + e + '; falling back to blob builder');
+            }
+          }
+          if (!b) {
+            var bb = new Browser.BlobBuilder();
+            bb.append((new Uint8Array(byteArray)).buffer); // we need to pass a buffer, and must copy the array to get the right data range
+            b = bb.getBlob();
+          }
+          var url = Browser.URLObject.createObjectURL(b);
+          assert(typeof url == 'string', 'createObjectURL must return a url as a string');
+          var img = new Image();
+          img.onload = function img_onload() {
+            assert(img.complete, 'Image ' + name + ' could not be decoded');
+            var canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            Module["preloadedImages"][name] = canvas;
+            Browser.URLObject.revokeObjectURL(url);
+            if (onload) onload(byteArray);
+          };
+          img.onerror = function img_onerror(event) {
+            console.log('Image ' + url + ' could not be decoded');
+            if (onerror) onerror();
+          };
+          img.src = url;
+        };
+        Module['preloadPlugins'].push(imagePlugin);
+  
+        var audioPlugin = {};
+        audioPlugin['canHandle'] = function audioPlugin_canHandle(name) {
+          return !Module.noAudioDecoding && name.substr(-4) in { '.ogg': 1, '.wav': 1, '.mp3': 1 };
+        };
+        audioPlugin['handle'] = function audioPlugin_handle(byteArray, name, onload, onerror) {
+          var done = false;
+          function finish(audio) {
+            if (done) return;
+            done = true;
+            Module["preloadedAudios"][name] = audio;
+            if (onload) onload(byteArray);
+          }
+          function fail() {
+            if (done) return;
+            done = true;
+            Module["preloadedAudios"][name] = new Audio(); // empty shim
+            if (onerror) onerror();
+          }
+          if (Browser.hasBlobConstructor) {
+            try {
+              var b = new Blob([byteArray], { type: Browser.getMimetype(name) });
+            } catch(e) {
+              return fail();
+            }
+            var url = Browser.URLObject.createObjectURL(b); // XXX we never revoke this!
+            assert(typeof url == 'string', 'createObjectURL must return a url as a string');
+            var audio = new Audio();
+            audio.addEventListener('canplaythrough', function() { finish(audio) }, false); // use addEventListener due to chromium bug 124926
+            audio.onerror = function audio_onerror(event) {
+              if (done) return;
+              console.log('warning: browser could not fully decode audio ' + name + ', trying slower base64 approach');
+              function encode64(data) {
+                var BASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+                var PAD = '=';
+                var ret = '';
+                var leftchar = 0;
+                var leftbits = 0;
+                for (var i = 0; i < data.length; i++) {
+                  leftchar = (leftchar << 8) | data[i];
+                  leftbits += 8;
+                  while (leftbits >= 6) {
+                    var curr = (leftchar >> (leftbits-6)) & 0x3f;
+                    leftbits -= 6;
+                    ret += BASE[curr];
+                  }
+                }
+                if (leftbits == 2) {
+                  ret += BASE[(leftchar&3) << 4];
+                  ret += PAD + PAD;
+                } else if (leftbits == 4) {
+                  ret += BASE[(leftchar&0xf) << 2];
+                  ret += PAD;
+                }
+                return ret;
+              }
+              audio.src = 'data:audio/x-' + name.substr(-3) + ';base64,' + encode64(byteArray);
+              finish(audio); // we don't wait for confirmation this worked - but it's worth trying
+            };
+            audio.src = url;
+            // workaround for chrome bug 124926 - we do not always get oncanplaythrough or onerror
+            Browser.safeSetTimeout(function() {
+              finish(audio); // try to use it even though it is not necessarily ready to play
+            }, 10000);
+          } else {
+            return fail();
+          }
+        };
+        Module['preloadPlugins'].push(audioPlugin);
+  
+        var wasmPlugin = {};
+        wasmPlugin['asyncWasmLoadPromise'] = new Promise(
+          function(resolve, reject) { return resolve(); });
+        wasmPlugin['canHandle'] = function(name) {
+          return !Module.noWasmDecoding && name.endsWith('.so');
+        };
+        wasmPlugin['handle'] = function(byteArray, name, onload, onerror) {
+          // loadWebAssemblyModule can not load modules out-of-order, so rather
+          // than just running the promises in parallel, this makes a chain of
+          // promises to run in series.
+          this['asyncWasmLoadPromise'] = this['asyncWasmLoadPromise'].then(
+            function() {
+              return loadWebAssemblyModule(byteArray, {loadAsync: true, nodelete: true});
+            }).then(
+              function(module) {
+                Module['preloadedWasm'][name] = module;
+                onload();
+              },
+              function(err) {
+                console.warn("Couldn't instantiate wasm: " + name + " '" + err + "'");
+                onerror();
+              });
+        };
+        Module['preloadPlugins'].push(wasmPlugin);
+  
+        // Canvas event setup
+  
+        function pointerLockChange() {
+          Browser.pointerLock = document['pointerLockElement'] === Module['canvas'] ||
+                                document['mozPointerLockElement'] === Module['canvas'] ||
+                                document['webkitPointerLockElement'] === Module['canvas'] ||
+                                document['msPointerLockElement'] === Module['canvas'];
+        }
+        var canvas = Module['canvas'];
+        if (canvas) {
+          // forced aspect ratio can be enabled by defining 'forcedAspectRatio' on Module
+          // Module['forcedAspectRatio'] = 4 / 3;
+  
+          canvas.requestPointerLock = canvas['requestPointerLock'] ||
+                                      canvas['mozRequestPointerLock'] ||
+                                      canvas['webkitRequestPointerLock'] ||
+                                      canvas['msRequestPointerLock'] ||
+                                      function(){};
+          canvas.exitPointerLock = document['exitPointerLock'] ||
+                                   document['mozExitPointerLock'] ||
+                                   document['webkitExitPointerLock'] ||
+                                   document['msExitPointerLock'] ||
+                                   function(){}; // no-op if function does not exist
+          canvas.exitPointerLock = canvas.exitPointerLock.bind(document);
+  
+          document.addEventListener('pointerlockchange', pointerLockChange, false);
+          document.addEventListener('mozpointerlockchange', pointerLockChange, false);
+          document.addEventListener('webkitpointerlockchange', pointerLockChange, false);
+          document.addEventListener('mspointerlockchange', pointerLockChange, false);
+  
+          if (Module['elementPointerLock']) {
+            canvas.addEventListener("click", function(ev) {
+              if (!Browser.pointerLock && Module['canvas'].requestPointerLock) {
+                Module['canvas'].requestPointerLock();
+                ev.preventDefault();
+              }
+            }, false);
+          }
+        }
+      },createContext:function(canvas, useWebGL, setInModule, webGLContextAttributes) {
+        if (useWebGL && Module.ctx && canvas == Module.canvas) return Module.ctx; // no need to recreate GL context if it's already been created for this canvas.
+  
+        var ctx;
+        var contextHandle;
+        if (useWebGL) {
+          // For GLES2/desktop GL compatibility, adjust a few defaults to be different to WebGL defaults, so that they align better with the desktop defaults.
+          var contextAttributes = {
+            antialias: false,
+            alpha: false,
+            majorVersion: 1,
+          };
+  
+          if (webGLContextAttributes) {
+            for (var attribute in webGLContextAttributes) {
+              contextAttributes[attribute] = webGLContextAttributes[attribute];
+            }
+          }
+  
+          // This check of existence of GL is here to satisfy Closure compiler, which yells if variable GL is referenced below but GL object is not
+          // actually compiled in because application is not doing any GL operations. TODO: Ideally if GL is not being used, this function
+          // Browser.createContext() should not even be emitted.
+          if (typeof GL !== 'undefined') {
+            contextHandle = GL.createContext(canvas, contextAttributes);
+            if (contextHandle) {
+              ctx = GL.getContext(contextHandle).GLctx;
+            }
+          }
+        } else {
+          ctx = canvas.getContext('2d');
+        }
+  
+        if (!ctx) return null;
+  
+        if (setInModule) {
+          if (!useWebGL) assert(typeof GLctx === 'undefined', 'cannot set in module if GLctx is used, but we are a non-GL context that would replace it');
+  
+          Module.ctx = ctx;
+          if (useWebGL) GL.makeContextCurrent(contextHandle);
+          Module.useWebGL = useWebGL;
+          Browser.moduleContextCreatedCallbacks.forEach(function(callback) { callback() });
+          Browser.init();
+        }
+        return ctx;
+      },destroyContext:function(canvas, useWebGL, setInModule) {},fullscreenHandlersInstalled:false,lockPointer:undefined,resizeCanvas:undefined,requestFullscreen:function(lockPointer, resizeCanvas) {
+        Browser.lockPointer = lockPointer;
+        Browser.resizeCanvas = resizeCanvas;
+        if (typeof Browser.lockPointer === 'undefined') Browser.lockPointer = true;
+        if (typeof Browser.resizeCanvas === 'undefined') Browser.resizeCanvas = false;
+  
+        var canvas = Module['canvas'];
+        function fullscreenChange() {
+          Browser.isFullscreen = false;
+          var canvasContainer = canvas.parentNode;
+          if ((document['fullscreenElement'] || document['mozFullScreenElement'] ||
+               document['msFullscreenElement'] || document['webkitFullscreenElement'] ||
+               document['webkitCurrentFullScreenElement']) === canvasContainer) {
+            canvas.exitFullscreen = Browser.exitFullscreen;
+            if (Browser.lockPointer) canvas.requestPointerLock();
+            Browser.isFullscreen = true;
+            if (Browser.resizeCanvas) {
+              Browser.setFullscreenCanvasSize();
+            } else {
+              Browser.updateCanvasDimensions(canvas);
+            }
+          } else {
+            // remove the full screen specific parent of the canvas again to restore the HTML structure from before going full screen
+            canvasContainer.parentNode.insertBefore(canvas, canvasContainer);
+            canvasContainer.parentNode.removeChild(canvasContainer);
+  
+            if (Browser.resizeCanvas) {
+              Browser.setWindowedCanvasSize();
+            } else {
+              Browser.updateCanvasDimensions(canvas);
+            }
+          }
+          if (Module['onFullScreen']) Module['onFullScreen'](Browser.isFullscreen);
+          if (Module['onFullscreen']) Module['onFullscreen'](Browser.isFullscreen);
+        }
+  
+        if (!Browser.fullscreenHandlersInstalled) {
+          Browser.fullscreenHandlersInstalled = true;
+          document.addEventListener('fullscreenchange', fullscreenChange, false);
+          document.addEventListener('mozfullscreenchange', fullscreenChange, false);
+          document.addEventListener('webkitfullscreenchange', fullscreenChange, false);
+          document.addEventListener('MSFullscreenChange', fullscreenChange, false);
+        }
+  
+        // create a new parent to ensure the canvas has no siblings. this allows browsers to optimize full screen performance when its parent is the full screen root
+        var canvasContainer = document.createElement("div");
+        canvas.parentNode.insertBefore(canvasContainer, canvas);
+        canvasContainer.appendChild(canvas);
+  
+        // use parent of canvas as full screen root to allow aspect ratio correction (Firefox stretches the root to screen size)
+        canvasContainer.requestFullscreen = canvasContainer['requestFullscreen'] ||
+                                            canvasContainer['mozRequestFullScreen'] ||
+                                            canvasContainer['msRequestFullscreen'] ||
+                                           (canvasContainer['webkitRequestFullscreen'] ? function() { canvasContainer['webkitRequestFullscreen'](Element['ALLOW_KEYBOARD_INPUT']) } : null) ||
+                                           (canvasContainer['webkitRequestFullScreen'] ? function() { canvasContainer['webkitRequestFullScreen'](Element['ALLOW_KEYBOARD_INPUT']) } : null);
+  
+        canvasContainer.requestFullscreen();
+      },requestFullScreen:function() {
+        abort('Module.requestFullScreen has been replaced by Module.requestFullscreen (without a capital S)');
+      },exitFullscreen:function() {
+        // This is workaround for chrome. Trying to exit from fullscreen
+        // not in fullscreen state will cause "TypeError: Document not active"
+        // in chrome. See https://github.com/emscripten-core/emscripten/pull/8236
+        if (!Browser.isFullscreen) {
+          return false;
+        }
+  
+        var CFS = document['exitFullscreen'] ||
+                  document['cancelFullScreen'] ||
+                  document['mozCancelFullScreen'] ||
+                  document['msExitFullscreen'] ||
+                  document['webkitCancelFullScreen'] ||
+            (function() {});
+        CFS.apply(document, []);
+        return true;
+      },nextRAF:0,fakeRequestAnimationFrame:function(func) {
+        // try to keep 60fps between calls to here
+        var now = Date.now();
+        if (Browser.nextRAF === 0) {
+          Browser.nextRAF = now + 1000/60;
+        } else {
+          while (now + 2 >= Browser.nextRAF) { // fudge a little, to avoid timer jitter causing us to do lots of delay:0
+            Browser.nextRAF += 1000/60;
+          }
+        }
+        var delay = Math.max(Browser.nextRAF - now, 0);
+        setTimeout(func, delay);
+      },requestAnimationFrame:function(func) {
+        if (typeof requestAnimationFrame === 'function') {
+          requestAnimationFrame(func);
+          return;
+        }
+        var RAF = Browser.fakeRequestAnimationFrame;
+        RAF(func);
+      },safeCallback:function(func) {
+        return function() {
+          if (!ABORT) return func.apply(null, arguments);
+        };
+      },allowAsyncCallbacks:true,queuedAsyncCallbacks:[],pauseAsyncCallbacks:function() {
+        Browser.allowAsyncCallbacks = false;
+      },resumeAsyncCallbacks:function() { // marks future callbacks as ok to execute, and synchronously runs any remaining ones right now
+        Browser.allowAsyncCallbacks = true;
+        if (Browser.queuedAsyncCallbacks.length > 0) {
+          var callbacks = Browser.queuedAsyncCallbacks;
+          Browser.queuedAsyncCallbacks = [];
+          callbacks.forEach(function(func) {
+            func();
+          });
+        }
+      },safeRequestAnimationFrame:function(func) {
+        return Browser.requestAnimationFrame(function() {
+          if (ABORT) return;
+          if (Browser.allowAsyncCallbacks) {
+            func();
+          } else {
+            Browser.queuedAsyncCallbacks.push(func);
+          }
+        });
+      },safeSetTimeout:function(func, timeout) {
+        noExitRuntime = true;
+        return setTimeout(function() {
+          if (ABORT) return;
+          if (Browser.allowAsyncCallbacks) {
+            func();
+          } else {
+            Browser.queuedAsyncCallbacks.push(func);
+          }
+        }, timeout);
+      },safeSetInterval:function(func, timeout) {
+        noExitRuntime = true;
+        return setInterval(function() {
+          if (ABORT) return;
+          if (Browser.allowAsyncCallbacks) {
+            func();
+          } // drop it on the floor otherwise, next interval will kick in
+        }, timeout);
+      },getMimetype:function(name) {
+        return {
+          'jpg': 'image/jpeg',
+          'jpeg': 'image/jpeg',
+          'png': 'image/png',
+          'bmp': 'image/bmp',
+          'ogg': 'audio/ogg',
+          'wav': 'audio/wav',
+          'mp3': 'audio/mpeg'
+        }[name.substr(name.lastIndexOf('.')+1)];
+      },getUserMedia:function(func) {
+        if(!window.getUserMedia) {
+          window.getUserMedia = navigator['getUserMedia'] ||
+                                navigator['mozGetUserMedia'];
+        }
+        window.getUserMedia(func);
+      },getMovementX:function(event) {
+        return event['movementX'] ||
+               event['mozMovementX'] ||
+               event['webkitMovementX'] ||
+               0;
+      },getMovementY:function(event) {
+        return event['movementY'] ||
+               event['mozMovementY'] ||
+               event['webkitMovementY'] ||
+               0;
+      },getMouseWheelDelta:function(event) {
+        var delta = 0;
+        switch (event.type) {
+          case 'DOMMouseScroll':
+            // 3 lines make up a step
+            delta = event.detail / 3;
+            break;
+          case 'mousewheel':
+            // 120 units make up a step
+            delta = event.wheelDelta / 120;
+            break;
+          case 'wheel':
+            delta = event.deltaY
+            switch(event.deltaMode) {
+              case 0:
+                // DOM_DELTA_PIXEL: 100 pixels make up a step
+                delta /= 100;
+                break;
+              case 1:
+                // DOM_DELTA_LINE: 3 lines make up a step
+                delta /= 3;
+                break;
+              case 2:
+                // DOM_DELTA_PAGE: A page makes up 80 steps
+                delta *= 80;
+                break;
+              default:
+                throw 'unrecognized mouse wheel delta mode: ' + event.deltaMode;
+            }
+            break;
+          default:
+            throw 'unrecognized mouse wheel event: ' + event.type;
+        }
+        return delta;
+      },mouseX:0,mouseY:0,mouseMovementX:0,mouseMovementY:0,touches:{},lastTouches:{},calculateMouseEvent:function(event) { // event should be mousemove, mousedown or mouseup
+        if (Browser.pointerLock) {
+          // When the pointer is locked, calculate the coordinates
+          // based on the movement of the mouse.
+          // Workaround for Firefox bug 764498
+          if (event.type != 'mousemove' &&
+              ('mozMovementX' in event)) {
+            Browser.mouseMovementX = Browser.mouseMovementY = 0;
+          } else {
+            Browser.mouseMovementX = Browser.getMovementX(event);
+            Browser.mouseMovementY = Browser.getMovementY(event);
+          }
+  
+          // check if SDL is available
+          if (typeof SDL != "undefined") {
+            Browser.mouseX = SDL.mouseX + Browser.mouseMovementX;
+            Browser.mouseY = SDL.mouseY + Browser.mouseMovementY;
+          } else {
+            // just add the mouse delta to the current absolut mouse position
+            // FIXME: ideally this should be clamped against the canvas size and zero
+            Browser.mouseX += Browser.mouseMovementX;
+            Browser.mouseY += Browser.mouseMovementY;
+          }
+        } else {
+          // Otherwise, calculate the movement based on the changes
+          // in the coordinates.
+          var rect = Module["canvas"].getBoundingClientRect();
+          var cw = Module["canvas"].width;
+          var ch = Module["canvas"].height;
+  
+          // Neither .scrollX or .pageXOffset are defined in a spec, but
+          // we prefer .scrollX because it is currently in a spec draft.
+          // (see: http://www.w3.org/TR/2013/WD-cssom-view-20131217/)
+          var scrollX = ((typeof window.scrollX !== 'undefined') ? window.scrollX : window.pageXOffset);
+          var scrollY = ((typeof window.scrollY !== 'undefined') ? window.scrollY : window.pageYOffset);
+          // If this assert lands, it's likely because the browser doesn't support scrollX or pageXOffset
+          // and we have no viable fallback.
+          assert((typeof scrollX !== 'undefined') && (typeof scrollY !== 'undefined'), 'Unable to retrieve scroll position, mouse positions likely broken.');
+  
+          if (event.type === 'touchstart' || event.type === 'touchend' || event.type === 'touchmove') {
+            var touch = event.touch;
+            if (touch === undefined) {
+              return; // the "touch" property is only defined in SDL
+  
+            }
+            var adjustedX = touch.pageX - (scrollX + rect.left);
+            var adjustedY = touch.pageY - (scrollY + rect.top);
+  
+            adjustedX = adjustedX * (cw / rect.width);
+            adjustedY = adjustedY * (ch / rect.height);
+  
+            var coords = { x: adjustedX, y: adjustedY };
+  
+            if (event.type === 'touchstart') {
+              Browser.lastTouches[touch.identifier] = coords;
+              Browser.touches[touch.identifier] = coords;
+            } else if (event.type === 'touchend' || event.type === 'touchmove') {
+              var last = Browser.touches[touch.identifier];
+              if (!last) last = coords;
+              Browser.lastTouches[touch.identifier] = last;
+              Browser.touches[touch.identifier] = coords;
+            }
+            return;
+          }
+  
+          var x = event.pageX - (scrollX + rect.left);
+          var y = event.pageY - (scrollY + rect.top);
+  
+          // the canvas might be CSS-scaled compared to its backbuffer;
+          // SDL-using content will want mouse coordinates in terms
+          // of backbuffer units.
+          x = x * (cw / rect.width);
+          y = y * (ch / rect.height);
+  
+          Browser.mouseMovementX = x - Browser.mouseX;
+          Browser.mouseMovementY = y - Browser.mouseY;
+          Browser.mouseX = x;
+          Browser.mouseY = y;
+        }
+      },asyncLoad:function(url, onload, onerror, noRunDep) {
+        var dep = !noRunDep ? getUniqueRunDependency('al ' + url) : '';
+        readAsync(url, function(arrayBuffer) {
+          assert(arrayBuffer, 'Loading data file "' + url + '" failed (no arrayBuffer).');
+          onload(new Uint8Array(arrayBuffer));
+          if (dep) removeRunDependency(dep);
+        }, function(event) {
+          if (onerror) {
+            onerror();
+          } else {
+            throw 'Loading data file "' + url + '" failed.';
+          }
+        });
+        if (dep) addRunDependency(dep);
+      },resizeListeners:[],updateResizeListeners:function() {
+        var canvas = Module['canvas'];
+        Browser.resizeListeners.forEach(function(listener) {
+          listener(canvas.width, canvas.height);
+        });
+      },setCanvasSize:function(width, height, noUpdates) {
+        var canvas = Module['canvas'];
+        Browser.updateCanvasDimensions(canvas, width, height);
+        if (!noUpdates) Browser.updateResizeListeners();
+      },windowedWidth:0,windowedHeight:0,setFullscreenCanvasSize:function() {
+        // check if SDL is available
+        if (typeof SDL != "undefined") {
+          var flags = HEAPU32[((SDL.screen)>>2)];
+          flags = flags | 0x00800000; // set SDL_FULLSCREEN flag
+          HEAP32[((SDL.screen)>>2)]=flags
+        }
+        Browser.updateCanvasDimensions(Module['canvas']);
+        Browser.updateResizeListeners();
+      },setWindowedCanvasSize:function() {
+        // check if SDL is available
+        if (typeof SDL != "undefined") {
+          var flags = HEAPU32[((SDL.screen)>>2)];
+          flags = flags & ~0x00800000; // clear SDL_FULLSCREEN flag
+          HEAP32[((SDL.screen)>>2)]=flags
+        }
+        Browser.updateCanvasDimensions(Module['canvas']);
+        Browser.updateResizeListeners();
+      },updateCanvasDimensions:function(canvas, wNative, hNative) {
+        if (wNative && hNative) {
+          canvas.widthNative = wNative;
+          canvas.heightNative = hNative;
+        } else {
+          wNative = canvas.widthNative;
+          hNative = canvas.heightNative;
+        }
+        var w = wNative;
+        var h = hNative;
+        if (Module['forcedAspectRatio'] && Module['forcedAspectRatio'] > 0) {
+          if (w/h < Module['forcedAspectRatio']) {
+            w = Math.round(h * Module['forcedAspectRatio']);
+          } else {
+            h = Math.round(w / Module['forcedAspectRatio']);
+          }
+        }
+        if (((document['fullscreenElement'] || document['mozFullScreenElement'] ||
+             document['msFullscreenElement'] || document['webkitFullscreenElement'] ||
+             document['webkitCurrentFullScreenElement']) === canvas.parentNode) && (typeof screen != 'undefined')) {
+           var factor = Math.min(screen.width / w, screen.height / h);
+           w = Math.round(w * factor);
+           h = Math.round(h * factor);
+        }
+        if (Browser.resizeCanvas) {
+          if (canvas.width  != w) canvas.width  = w;
+          if (canvas.height != h) canvas.height = h;
+          if (typeof canvas.style != 'undefined') {
+            canvas.style.removeProperty( "width");
+            canvas.style.removeProperty("height");
+          }
+        } else {
+          if (canvas.width  != wNative) canvas.width  = wNative;
+          if (canvas.height != hNative) canvas.height = hNative;
+          if (typeof canvas.style != 'undefined') {
+            if (w != wNative || h != hNative) {
+              canvas.style.setProperty( "width", w + "px", "important");
+              canvas.style.setProperty("height", h + "px", "important");
+            } else {
+              canvas.style.removeProperty( "width");
+              canvas.style.removeProperty("height");
+            }
+          }
+        }
+      },wgetRequests:{},nextWgetRequestHandle:0,getNextWgetRequestHandle:function() {
+        var handle = Browser.nextWgetRequestHandle;
+        Browser.nextWgetRequestHandle++;
+        return handle;
+      }};
+  Module["Browser"] = Browser;
 
   function demangle(func) {
       warnOnce('warning: build with  -s DEMANGLE_SUPPORT=1  to link in libcxxabi demangling');
@@ -2597,10 +3421,6 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   Module["___assert_fail"] = ___assert_fail;
 
   
-  
-  var _emscripten_get_now;_emscripten_get_now = function() { return performance.now(); }
-  ;
-  Module["_emscripten_get_now"] = _emscripten_get_now;
   
   var _emscripten_get_now_is_monotonic=true;;
   Module["_emscripten_get_now_is_monotonic"] = _emscripten_get_now_is_monotonic;
@@ -7484,7 +8304,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   Module["__emscripten_fetch_get_response_headers_length"] = __emscripten_fetch_get_response_headers_length;
 
   
-  var _fetch_work_queue=681936;
+  var _fetch_work_queue=2121392;
   Module["_fetch_work_queue"] = _fetch_work_queue;function __emscripten_get_fetch_work_queue() {
       return _fetch_work_queue;
     }
@@ -7655,819 +8475,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   Module["_dlsym"] = _dlsym;
 
   
-  
-  
-  
-  function _emscripten_set_main_loop_timing(mode, value) {
-      Browser.mainLoop.timingMode = mode;
-      Browser.mainLoop.timingValue = value;
-  
-      if (!Browser.mainLoop.func) {
-        console.error('emscripten_set_main_loop_timing: Cannot set timing mode for main loop since a main loop does not exist! Call emscripten_set_main_loop first to set one up.');
-        return 1; // Return non-zero on failure, can't set timing mode when there is no main loop.
-      }
-  
-      if (mode == 0 /*EM_TIMING_SETTIMEOUT*/) {
-        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_setTimeout() {
-          var timeUntilNextTick = Math.max(0, Browser.mainLoop.tickStartTime + value - _emscripten_get_now())|0;
-          setTimeout(Browser.mainLoop.runner, timeUntilNextTick); // doing this each time means that on exception, we stop
-        };
-        Browser.mainLoop.method = 'timeout';
-      } else if (mode == 1 /*EM_TIMING_RAF*/) {
-        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_rAF() {
-          Browser.requestAnimationFrame(Browser.mainLoop.runner);
-        };
-        Browser.mainLoop.method = 'rAF';
-      } else if (mode == 2 /*EM_TIMING_SETIMMEDIATE*/) {
-        if (typeof setImmediate === 'undefined') {
-          // Emulate setImmediate. (note: not a complete polyfill, we don't emulate clearImmediate() to keep code size to minimum, since not needed)
-          var setImmediates = [];
-          var emscriptenMainLoopMessageId = 'setimmediate';
-          var Browser_setImmediate_messageHandler = function(event) {
-            // When called in current thread or Worker, the main loop ID is structured slightly different to accommodate for --proxy-to-worker runtime listening to Worker events,
-            // so check for both cases.
-            if (event.data === emscriptenMainLoopMessageId || event.data.target === emscriptenMainLoopMessageId) {
-              event.stopPropagation();
-              setImmediates.shift()();
-            }
-          }
-          addEventListener("message", Browser_setImmediate_messageHandler, true);
-          setImmediate = /** @type{function(function(): ?, ...?): number} */(function Browser_emulated_setImmediate(func) {
-            setImmediates.push(func);
-            if (ENVIRONMENT_IS_WORKER) {
-              if (Module['setImmediates'] === undefined) Module['setImmediates'] = [];
-              Module['setImmediates'].push(func);
-              postMessage({target: emscriptenMainLoopMessageId}); // In --proxy-to-worker, route the message via proxyClient.js
-            } else postMessage(emscriptenMainLoopMessageId, "*"); // On the main thread, can just send the message to itself.
-          })
-        }
-        Browser.mainLoop.scheduler = function Browser_mainLoop_scheduler_setImmediate() {
-          setImmediate(Browser.mainLoop.runner);
-        };
-        Browser.mainLoop.method = 'immediate';
-      }
-      return 0;
-    }
-  Module["_emscripten_set_main_loop_timing"] = _emscripten_set_main_loop_timing;/** @param {number|boolean=} noSetTiming */
-  function _emscripten_set_main_loop(func, fps, simulateInfiniteLoop, arg, noSetTiming) {
-      noExitRuntime = true;
-  
-      assert(!Browser.mainLoop.func, 'emscripten_set_main_loop: there can only be one main loop function at once: call emscripten_cancel_main_loop to cancel the previous one before setting a new one with different parameters.');
-  
-      Browser.mainLoop.func = func;
-      Browser.mainLoop.arg = arg;
-  
-      var browserIterationFunc;
-      if (typeof arg !== 'undefined') {
-        browserIterationFunc = function() {
-          Module['dynCall_vi'](func, arg);
-        };
-      } else {
-        browserIterationFunc = function() {
-          Module['dynCall_v'](func);
-        };
-      }
-  
-      var thisMainLoopId = Browser.mainLoop.currentlyRunningMainloop;
-  
-      Browser.mainLoop.runner = function Browser_mainLoop_runner() {
-        if (ABORT) return;
-        if (Browser.mainLoop.queue.length > 0) {
-          var start = Date.now();
-          var blocker = Browser.mainLoop.queue.shift();
-          blocker.func(blocker.arg);
-          if (Browser.mainLoop.remainingBlockers) {
-            var remaining = Browser.mainLoop.remainingBlockers;
-            var next = remaining%1 == 0 ? remaining-1 : Math.floor(remaining);
-            if (blocker.counted) {
-              Browser.mainLoop.remainingBlockers = next;
-            } else {
-              // not counted, but move the progress along a tiny bit
-              next = next + 0.5; // do not steal all the next one's progress
-              Browser.mainLoop.remainingBlockers = (8*remaining + next)/9;
-            }
-          }
-          console.log('main loop blocker "' + blocker.name + '" took ' + (Date.now() - start) + ' ms'); //, left: ' + Browser.mainLoop.remainingBlockers);
-          Browser.mainLoop.updateStatus();
-  
-          // catches pause/resume main loop from blocker execution
-          if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
-  
-          setTimeout(Browser.mainLoop.runner, 0);
-          return;
-        }
-  
-        // catch pauses from non-main loop sources
-        if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
-  
-        // Implement very basic swap interval control
-        Browser.mainLoop.currentFrameNumber = Browser.mainLoop.currentFrameNumber + 1 | 0;
-        if (Browser.mainLoop.timingMode == 1/*EM_TIMING_RAF*/ && Browser.mainLoop.timingValue > 1 && Browser.mainLoop.currentFrameNumber % Browser.mainLoop.timingValue != 0) {
-          // Not the scheduled time to render this frame - skip.
-          Browser.mainLoop.scheduler();
-          return;
-        } else if (Browser.mainLoop.timingMode == 0/*EM_TIMING_SETTIMEOUT*/) {
-          Browser.mainLoop.tickStartTime = _emscripten_get_now();
-        }
-  
-        // Signal GL rendering layer that processing of a new frame is about to start. This helps it optimize
-        // VBO double-buffering and reduce GPU stalls.
-  
-  
-  
-        if (Browser.mainLoop.method === 'timeout' && Module.ctx) {
-          warnOnce('Looks like you are rendering without using requestAnimationFrame for the main loop. You should use 0 for the frame rate in emscripten_set_main_loop in order to use requestAnimationFrame, as that can greatly improve your frame rates!');
-          Browser.mainLoop.method = ''; // just warn once per call to set main loop
-        }
-  
-        Browser.mainLoop.runIter(browserIterationFunc);
-  
-        checkStackCookie();
-  
-        // catch pauses from the main loop itself
-        if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
-  
-        // Queue new audio data. This is important to be right after the main loop invocation, so that we will immediately be able
-        // to queue the newest produced audio samples.
-        // TODO: Consider adding pre- and post- rAF callbacks so that GL.newRenderingFrameStarted() and SDL.audio.queueNewAudioData()
-        //       do not need to be hardcoded into this function, but can be more generic.
-        if (typeof SDL === 'object' && SDL.audio && SDL.audio.queueNewAudioData) SDL.audio.queueNewAudioData();
-  
-        Browser.mainLoop.scheduler();
-      }
-  
-      if (!noSetTiming) {
-        if (fps && fps > 0) _emscripten_set_main_loop_timing(0/*EM_TIMING_SETTIMEOUT*/, 1000.0 / fps);
-        else _emscripten_set_main_loop_timing(1/*EM_TIMING_RAF*/, 1); // Do rAF by rendering each frame (no decimating)
-  
-        Browser.mainLoop.scheduler();
-      }
-  
-      if (simulateInfiniteLoop) {
-        throw 'unwind';
-      }
-    }
-  Module["_emscripten_set_main_loop"] = _emscripten_set_main_loop;var Browser={mainLoop:{scheduler:null,method:"",currentlyRunningMainloop:0,func:null,arg:0,timingMode:0,timingValue:0,currentFrameNumber:0,queue:[],pause:function() {
-          Browser.mainLoop.scheduler = null;
-          Browser.mainLoop.currentlyRunningMainloop++; // Incrementing this signals the previous main loop that it's now become old, and it must return.
-        },resume:function() {
-          Browser.mainLoop.currentlyRunningMainloop++;
-          var timingMode = Browser.mainLoop.timingMode;
-          var timingValue = Browser.mainLoop.timingValue;
-          var func = Browser.mainLoop.func;
-          Browser.mainLoop.func = null;
-          _emscripten_set_main_loop(func, 0, false, Browser.mainLoop.arg, true /* do not set timing and call scheduler, we will do it on the next lines */);
-          _emscripten_set_main_loop_timing(timingMode, timingValue);
-          Browser.mainLoop.scheduler();
-        },updateStatus:function() {
-          if (Module['setStatus']) {
-            var message = Module['statusMessage'] || 'Please wait...';
-            var remaining = Browser.mainLoop.remainingBlockers;
-            var expected = Browser.mainLoop.expectedBlockers;
-            if (remaining) {
-              if (remaining < expected) {
-                Module['setStatus'](message + ' (' + (expected - remaining) + '/' + expected + ')');
-              } else {
-                Module['setStatus'](message);
-              }
-            } else {
-              Module['setStatus']('');
-            }
-          }
-        },runIter:function(func) {
-          if (ABORT) return;
-          if (Module['preMainLoop']) {
-            var preRet = Module['preMainLoop']();
-            if (preRet === false) {
-              return; // |return false| skips a frame
-            }
-          }
-          try {
-            func();
-          } catch (e) {
-            if (e instanceof ExitStatus) {
-              return;
-            } else {
-              if (e && typeof e === 'object' && e.stack) err('exception thrown: ' + [e, e.stack]);
-              throw e;
-            }
-          }
-          if (Module['postMainLoop']) Module['postMainLoop']();
-        }},isFullscreen:false,pointerLock:false,moduleContextCreatedCallbacks:[],workers:[],init:function() {
-        if (!Module["preloadPlugins"]) Module["preloadPlugins"] = []; // needs to exist even in workers
-  
-        if (Browser.initted) return;
-        Browser.initted = true;
-  
-        try {
-          new Blob();
-          Browser.hasBlobConstructor = true;
-        } catch(e) {
-          Browser.hasBlobConstructor = false;
-          console.log("warning: no blob constructor, cannot create blobs with mimetypes");
-        }
-        Browser.BlobBuilder = typeof MozBlobBuilder != "undefined" ? MozBlobBuilder : (typeof WebKitBlobBuilder != "undefined" ? WebKitBlobBuilder : (!Browser.hasBlobConstructor ? console.log("warning: no BlobBuilder") : null));
-        Browser.URLObject = typeof window != "undefined" ? (window.URL ? window.URL : window.webkitURL) : undefined;
-        if (!Module.noImageDecoding && typeof Browser.URLObject === 'undefined') {
-          console.log("warning: Browser does not support creating object URLs. Built-in browser image decoding will not be available.");
-          Module.noImageDecoding = true;
-        }
-  
-        // Support for plugins that can process preloaded files. You can add more of these to
-        // your app by creating and appending to Module.preloadPlugins.
-        //
-        // Each plugin is asked if it can handle a file based on the file's name. If it can,
-        // it is given the file's raw data. When it is done, it calls a callback with the file's
-        // (possibly modified) data. For example, a plugin might decompress a file, or it
-        // might create some side data structure for use later (like an Image element, etc.).
-  
-        var imagePlugin = {};
-        imagePlugin['canHandle'] = function imagePlugin_canHandle(name) {
-          return !Module.noImageDecoding && /\.(jpg|jpeg|png|bmp)$/i.test(name);
-        };
-        imagePlugin['handle'] = function imagePlugin_handle(byteArray, name, onload, onerror) {
-          var b = null;
-          if (Browser.hasBlobConstructor) {
-            try {
-              b = new Blob([byteArray], { type: Browser.getMimetype(name) });
-              if (b.size !== byteArray.length) { // Safari bug #118630
-                // Safari's Blob can only take an ArrayBuffer
-                b = new Blob([(new Uint8Array(byteArray)).buffer], { type: Browser.getMimetype(name) });
-              }
-            } catch(e) {
-              warnOnce('Blob constructor present but fails: ' + e + '; falling back to blob builder');
-            }
-          }
-          if (!b) {
-            var bb = new Browser.BlobBuilder();
-            bb.append((new Uint8Array(byteArray)).buffer); // we need to pass a buffer, and must copy the array to get the right data range
-            b = bb.getBlob();
-          }
-          var url = Browser.URLObject.createObjectURL(b);
-          assert(typeof url == 'string', 'createObjectURL must return a url as a string');
-          var img = new Image();
-          img.onload = function img_onload() {
-            assert(img.complete, 'Image ' + name + ' could not be decoded');
-            var canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            var ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            Module["preloadedImages"][name] = canvas;
-            Browser.URLObject.revokeObjectURL(url);
-            if (onload) onload(byteArray);
-          };
-          img.onerror = function img_onerror(event) {
-            console.log('Image ' + url + ' could not be decoded');
-            if (onerror) onerror();
-          };
-          img.src = url;
-        };
-        Module['preloadPlugins'].push(imagePlugin);
-  
-        var audioPlugin = {};
-        audioPlugin['canHandle'] = function audioPlugin_canHandle(name) {
-          return !Module.noAudioDecoding && name.substr(-4) in { '.ogg': 1, '.wav': 1, '.mp3': 1 };
-        };
-        audioPlugin['handle'] = function audioPlugin_handle(byteArray, name, onload, onerror) {
-          var done = false;
-          function finish(audio) {
-            if (done) return;
-            done = true;
-            Module["preloadedAudios"][name] = audio;
-            if (onload) onload(byteArray);
-          }
-          function fail() {
-            if (done) return;
-            done = true;
-            Module["preloadedAudios"][name] = new Audio(); // empty shim
-            if (onerror) onerror();
-          }
-          if (Browser.hasBlobConstructor) {
-            try {
-              var b = new Blob([byteArray], { type: Browser.getMimetype(name) });
-            } catch(e) {
-              return fail();
-            }
-            var url = Browser.URLObject.createObjectURL(b); // XXX we never revoke this!
-            assert(typeof url == 'string', 'createObjectURL must return a url as a string');
-            var audio = new Audio();
-            audio.addEventListener('canplaythrough', function() { finish(audio) }, false); // use addEventListener due to chromium bug 124926
-            audio.onerror = function audio_onerror(event) {
-              if (done) return;
-              console.log('warning: browser could not fully decode audio ' + name + ', trying slower base64 approach');
-              function encode64(data) {
-                var BASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-                var PAD = '=';
-                var ret = '';
-                var leftchar = 0;
-                var leftbits = 0;
-                for (var i = 0; i < data.length; i++) {
-                  leftchar = (leftchar << 8) | data[i];
-                  leftbits += 8;
-                  while (leftbits >= 6) {
-                    var curr = (leftchar >> (leftbits-6)) & 0x3f;
-                    leftbits -= 6;
-                    ret += BASE[curr];
-                  }
-                }
-                if (leftbits == 2) {
-                  ret += BASE[(leftchar&3) << 4];
-                  ret += PAD + PAD;
-                } else if (leftbits == 4) {
-                  ret += BASE[(leftchar&0xf) << 2];
-                  ret += PAD;
-                }
-                return ret;
-              }
-              audio.src = 'data:audio/x-' + name.substr(-3) + ';base64,' + encode64(byteArray);
-              finish(audio); // we don't wait for confirmation this worked - but it's worth trying
-            };
-            audio.src = url;
-            // workaround for chrome bug 124926 - we do not always get oncanplaythrough or onerror
-            Browser.safeSetTimeout(function() {
-              finish(audio); // try to use it even though it is not necessarily ready to play
-            }, 10000);
-          } else {
-            return fail();
-          }
-        };
-        Module['preloadPlugins'].push(audioPlugin);
-  
-        var wasmPlugin = {};
-        wasmPlugin['asyncWasmLoadPromise'] = new Promise(
-          function(resolve, reject) { return resolve(); });
-        wasmPlugin['canHandle'] = function(name) {
-          return !Module.noWasmDecoding && name.endsWith('.so');
-        };
-        wasmPlugin['handle'] = function(byteArray, name, onload, onerror) {
-          // loadWebAssemblyModule can not load modules out-of-order, so rather
-          // than just running the promises in parallel, this makes a chain of
-          // promises to run in series.
-          this['asyncWasmLoadPromise'] = this['asyncWasmLoadPromise'].then(
-            function() {
-              return loadWebAssemblyModule(byteArray, {loadAsync: true, nodelete: true});
-            }).then(
-              function(module) {
-                Module['preloadedWasm'][name] = module;
-                onload();
-              },
-              function(err) {
-                console.warn("Couldn't instantiate wasm: " + name + " '" + err + "'");
-                onerror();
-              });
-        };
-        Module['preloadPlugins'].push(wasmPlugin);
-  
-        // Canvas event setup
-  
-        function pointerLockChange() {
-          Browser.pointerLock = document['pointerLockElement'] === Module['canvas'] ||
-                                document['mozPointerLockElement'] === Module['canvas'] ||
-                                document['webkitPointerLockElement'] === Module['canvas'] ||
-                                document['msPointerLockElement'] === Module['canvas'];
-        }
-        var canvas = Module['canvas'];
-        if (canvas) {
-          // forced aspect ratio can be enabled by defining 'forcedAspectRatio' on Module
-          // Module['forcedAspectRatio'] = 4 / 3;
-  
-          canvas.requestPointerLock = canvas['requestPointerLock'] ||
-                                      canvas['mozRequestPointerLock'] ||
-                                      canvas['webkitRequestPointerLock'] ||
-                                      canvas['msRequestPointerLock'] ||
-                                      function(){};
-          canvas.exitPointerLock = document['exitPointerLock'] ||
-                                   document['mozExitPointerLock'] ||
-                                   document['webkitExitPointerLock'] ||
-                                   document['msExitPointerLock'] ||
-                                   function(){}; // no-op if function does not exist
-          canvas.exitPointerLock = canvas.exitPointerLock.bind(document);
-  
-          document.addEventListener('pointerlockchange', pointerLockChange, false);
-          document.addEventListener('mozpointerlockchange', pointerLockChange, false);
-          document.addEventListener('webkitpointerlockchange', pointerLockChange, false);
-          document.addEventListener('mspointerlockchange', pointerLockChange, false);
-  
-          if (Module['elementPointerLock']) {
-            canvas.addEventListener("click", function(ev) {
-              if (!Browser.pointerLock && Module['canvas'].requestPointerLock) {
-                Module['canvas'].requestPointerLock();
-                ev.preventDefault();
-              }
-            }, false);
-          }
-        }
-      },createContext:function(canvas, useWebGL, setInModule, webGLContextAttributes) {
-        if (useWebGL && Module.ctx && canvas == Module.canvas) return Module.ctx; // no need to recreate GL context if it's already been created for this canvas.
-  
-        var ctx;
-        var contextHandle;
-        if (useWebGL) {
-          // For GLES2/desktop GL compatibility, adjust a few defaults to be different to WebGL defaults, so that they align better with the desktop defaults.
-          var contextAttributes = {
-            antialias: false,
-            alpha: false,
-            majorVersion: 1,
-          };
-  
-          if (webGLContextAttributes) {
-            for (var attribute in webGLContextAttributes) {
-              contextAttributes[attribute] = webGLContextAttributes[attribute];
-            }
-          }
-  
-          // This check of existence of GL is here to satisfy Closure compiler, which yells if variable GL is referenced below but GL object is not
-          // actually compiled in because application is not doing any GL operations. TODO: Ideally if GL is not being used, this function
-          // Browser.createContext() should not even be emitted.
-          if (typeof GL !== 'undefined') {
-            contextHandle = GL.createContext(canvas, contextAttributes);
-            if (contextHandle) {
-              ctx = GL.getContext(contextHandle).GLctx;
-            }
-          }
-        } else {
-          ctx = canvas.getContext('2d');
-        }
-  
-        if (!ctx) return null;
-  
-        if (setInModule) {
-          if (!useWebGL) assert(typeof GLctx === 'undefined', 'cannot set in module if GLctx is used, but we are a non-GL context that would replace it');
-  
-          Module.ctx = ctx;
-          if (useWebGL) GL.makeContextCurrent(contextHandle);
-          Module.useWebGL = useWebGL;
-          Browser.moduleContextCreatedCallbacks.forEach(function(callback) { callback() });
-          Browser.init();
-        }
-        return ctx;
-      },destroyContext:function(canvas, useWebGL, setInModule) {},fullscreenHandlersInstalled:false,lockPointer:undefined,resizeCanvas:undefined,requestFullscreen:function(lockPointer, resizeCanvas) {
-        Browser.lockPointer = lockPointer;
-        Browser.resizeCanvas = resizeCanvas;
-        if (typeof Browser.lockPointer === 'undefined') Browser.lockPointer = true;
-        if (typeof Browser.resizeCanvas === 'undefined') Browser.resizeCanvas = false;
-  
-        var canvas = Module['canvas'];
-        function fullscreenChange() {
-          Browser.isFullscreen = false;
-          var canvasContainer = canvas.parentNode;
-          if ((document['fullscreenElement'] || document['mozFullScreenElement'] ||
-               document['msFullscreenElement'] || document['webkitFullscreenElement'] ||
-               document['webkitCurrentFullScreenElement']) === canvasContainer) {
-            canvas.exitFullscreen = Browser.exitFullscreen;
-            if (Browser.lockPointer) canvas.requestPointerLock();
-            Browser.isFullscreen = true;
-            if (Browser.resizeCanvas) {
-              Browser.setFullscreenCanvasSize();
-            } else {
-              Browser.updateCanvasDimensions(canvas);
-            }
-          } else {
-            // remove the full screen specific parent of the canvas again to restore the HTML structure from before going full screen
-            canvasContainer.parentNode.insertBefore(canvas, canvasContainer);
-            canvasContainer.parentNode.removeChild(canvasContainer);
-  
-            if (Browser.resizeCanvas) {
-              Browser.setWindowedCanvasSize();
-            } else {
-              Browser.updateCanvasDimensions(canvas);
-            }
-          }
-          if (Module['onFullScreen']) Module['onFullScreen'](Browser.isFullscreen);
-          if (Module['onFullscreen']) Module['onFullscreen'](Browser.isFullscreen);
-        }
-  
-        if (!Browser.fullscreenHandlersInstalled) {
-          Browser.fullscreenHandlersInstalled = true;
-          document.addEventListener('fullscreenchange', fullscreenChange, false);
-          document.addEventListener('mozfullscreenchange', fullscreenChange, false);
-          document.addEventListener('webkitfullscreenchange', fullscreenChange, false);
-          document.addEventListener('MSFullscreenChange', fullscreenChange, false);
-        }
-  
-        // create a new parent to ensure the canvas has no siblings. this allows browsers to optimize full screen performance when its parent is the full screen root
-        var canvasContainer = document.createElement("div");
-        canvas.parentNode.insertBefore(canvasContainer, canvas);
-        canvasContainer.appendChild(canvas);
-  
-        // use parent of canvas as full screen root to allow aspect ratio correction (Firefox stretches the root to screen size)
-        canvasContainer.requestFullscreen = canvasContainer['requestFullscreen'] ||
-                                            canvasContainer['mozRequestFullScreen'] ||
-                                            canvasContainer['msRequestFullscreen'] ||
-                                           (canvasContainer['webkitRequestFullscreen'] ? function() { canvasContainer['webkitRequestFullscreen'](Element['ALLOW_KEYBOARD_INPUT']) } : null) ||
-                                           (canvasContainer['webkitRequestFullScreen'] ? function() { canvasContainer['webkitRequestFullScreen'](Element['ALLOW_KEYBOARD_INPUT']) } : null);
-  
-        canvasContainer.requestFullscreen();
-      },requestFullScreen:function() {
-        abort('Module.requestFullScreen has been replaced by Module.requestFullscreen (without a capital S)');
-      },exitFullscreen:function() {
-        // This is workaround for chrome. Trying to exit from fullscreen
-        // not in fullscreen state will cause "TypeError: Document not active"
-        // in chrome. See https://github.com/emscripten-core/emscripten/pull/8236
-        if (!Browser.isFullscreen) {
-          return false;
-        }
-  
-        var CFS = document['exitFullscreen'] ||
-                  document['cancelFullScreen'] ||
-                  document['mozCancelFullScreen'] ||
-                  document['msExitFullscreen'] ||
-                  document['webkitCancelFullScreen'] ||
-            (function() {});
-        CFS.apply(document, []);
-        return true;
-      },nextRAF:0,fakeRequestAnimationFrame:function(func) {
-        // try to keep 60fps between calls to here
-        var now = Date.now();
-        if (Browser.nextRAF === 0) {
-          Browser.nextRAF = now + 1000/60;
-        } else {
-          while (now + 2 >= Browser.nextRAF) { // fudge a little, to avoid timer jitter causing us to do lots of delay:0
-            Browser.nextRAF += 1000/60;
-          }
-        }
-        var delay = Math.max(Browser.nextRAF - now, 0);
-        setTimeout(func, delay);
-      },requestAnimationFrame:function(func) {
-        if (typeof requestAnimationFrame === 'function') {
-          requestAnimationFrame(func);
-          return;
-        }
-        var RAF = Browser.fakeRequestAnimationFrame;
-        RAF(func);
-      },safeCallback:function(func) {
-        return function() {
-          if (!ABORT) return func.apply(null, arguments);
-        };
-      },allowAsyncCallbacks:true,queuedAsyncCallbacks:[],pauseAsyncCallbacks:function() {
-        Browser.allowAsyncCallbacks = false;
-      },resumeAsyncCallbacks:function() { // marks future callbacks as ok to execute, and synchronously runs any remaining ones right now
-        Browser.allowAsyncCallbacks = true;
-        if (Browser.queuedAsyncCallbacks.length > 0) {
-          var callbacks = Browser.queuedAsyncCallbacks;
-          Browser.queuedAsyncCallbacks = [];
-          callbacks.forEach(function(func) {
-            func();
-          });
-        }
-      },safeRequestAnimationFrame:function(func) {
-        return Browser.requestAnimationFrame(function() {
-          if (ABORT) return;
-          if (Browser.allowAsyncCallbacks) {
-            func();
-          } else {
-            Browser.queuedAsyncCallbacks.push(func);
-          }
-        });
-      },safeSetTimeout:function(func, timeout) {
-        noExitRuntime = true;
-        return setTimeout(function() {
-          if (ABORT) return;
-          if (Browser.allowAsyncCallbacks) {
-            func();
-          } else {
-            Browser.queuedAsyncCallbacks.push(func);
-          }
-        }, timeout);
-      },safeSetInterval:function(func, timeout) {
-        noExitRuntime = true;
-        return setInterval(function() {
-          if (ABORT) return;
-          if (Browser.allowAsyncCallbacks) {
-            func();
-          } // drop it on the floor otherwise, next interval will kick in
-        }, timeout);
-      },getMimetype:function(name) {
-        return {
-          'jpg': 'image/jpeg',
-          'jpeg': 'image/jpeg',
-          'png': 'image/png',
-          'bmp': 'image/bmp',
-          'ogg': 'audio/ogg',
-          'wav': 'audio/wav',
-          'mp3': 'audio/mpeg'
-        }[name.substr(name.lastIndexOf('.')+1)];
-      },getUserMedia:function(func) {
-        if(!window.getUserMedia) {
-          window.getUserMedia = navigator['getUserMedia'] ||
-                                navigator['mozGetUserMedia'];
-        }
-        window.getUserMedia(func);
-      },getMovementX:function(event) {
-        return event['movementX'] ||
-               event['mozMovementX'] ||
-               event['webkitMovementX'] ||
-               0;
-      },getMovementY:function(event) {
-        return event['movementY'] ||
-               event['mozMovementY'] ||
-               event['webkitMovementY'] ||
-               0;
-      },getMouseWheelDelta:function(event) {
-        var delta = 0;
-        switch (event.type) {
-          case 'DOMMouseScroll':
-            // 3 lines make up a step
-            delta = event.detail / 3;
-            break;
-          case 'mousewheel':
-            // 120 units make up a step
-            delta = event.wheelDelta / 120;
-            break;
-          case 'wheel':
-            delta = event.deltaY
-            switch(event.deltaMode) {
-              case 0:
-                // DOM_DELTA_PIXEL: 100 pixels make up a step
-                delta /= 100;
-                break;
-              case 1:
-                // DOM_DELTA_LINE: 3 lines make up a step
-                delta /= 3;
-                break;
-              case 2:
-                // DOM_DELTA_PAGE: A page makes up 80 steps
-                delta *= 80;
-                break;
-              default:
-                throw 'unrecognized mouse wheel delta mode: ' + event.deltaMode;
-            }
-            break;
-          default:
-            throw 'unrecognized mouse wheel event: ' + event.type;
-        }
-        return delta;
-      },mouseX:0,mouseY:0,mouseMovementX:0,mouseMovementY:0,touches:{},lastTouches:{},calculateMouseEvent:function(event) { // event should be mousemove, mousedown or mouseup
-        if (Browser.pointerLock) {
-          // When the pointer is locked, calculate the coordinates
-          // based on the movement of the mouse.
-          // Workaround for Firefox bug 764498
-          if (event.type != 'mousemove' &&
-              ('mozMovementX' in event)) {
-            Browser.mouseMovementX = Browser.mouseMovementY = 0;
-          } else {
-            Browser.mouseMovementX = Browser.getMovementX(event);
-            Browser.mouseMovementY = Browser.getMovementY(event);
-          }
-  
-          // check if SDL is available
-          if (typeof SDL != "undefined") {
-            Browser.mouseX = SDL.mouseX + Browser.mouseMovementX;
-            Browser.mouseY = SDL.mouseY + Browser.mouseMovementY;
-          } else {
-            // just add the mouse delta to the current absolut mouse position
-            // FIXME: ideally this should be clamped against the canvas size and zero
-            Browser.mouseX += Browser.mouseMovementX;
-            Browser.mouseY += Browser.mouseMovementY;
-          }
-        } else {
-          // Otherwise, calculate the movement based on the changes
-          // in the coordinates.
-          var rect = Module["canvas"].getBoundingClientRect();
-          var cw = Module["canvas"].width;
-          var ch = Module["canvas"].height;
-  
-          // Neither .scrollX or .pageXOffset are defined in a spec, but
-          // we prefer .scrollX because it is currently in a spec draft.
-          // (see: http://www.w3.org/TR/2013/WD-cssom-view-20131217/)
-          var scrollX = ((typeof window.scrollX !== 'undefined') ? window.scrollX : window.pageXOffset);
-          var scrollY = ((typeof window.scrollY !== 'undefined') ? window.scrollY : window.pageYOffset);
-          // If this assert lands, it's likely because the browser doesn't support scrollX or pageXOffset
-          // and we have no viable fallback.
-          assert((typeof scrollX !== 'undefined') && (typeof scrollY !== 'undefined'), 'Unable to retrieve scroll position, mouse positions likely broken.');
-  
-          if (event.type === 'touchstart' || event.type === 'touchend' || event.type === 'touchmove') {
-            var touch = event.touch;
-            if (touch === undefined) {
-              return; // the "touch" property is only defined in SDL
-  
-            }
-            var adjustedX = touch.pageX - (scrollX + rect.left);
-            var adjustedY = touch.pageY - (scrollY + rect.top);
-  
-            adjustedX = adjustedX * (cw / rect.width);
-            adjustedY = adjustedY * (ch / rect.height);
-  
-            var coords = { x: adjustedX, y: adjustedY };
-  
-            if (event.type === 'touchstart') {
-              Browser.lastTouches[touch.identifier] = coords;
-              Browser.touches[touch.identifier] = coords;
-            } else if (event.type === 'touchend' || event.type === 'touchmove') {
-              var last = Browser.touches[touch.identifier];
-              if (!last) last = coords;
-              Browser.lastTouches[touch.identifier] = last;
-              Browser.touches[touch.identifier] = coords;
-            }
-            return;
-          }
-  
-          var x = event.pageX - (scrollX + rect.left);
-          var y = event.pageY - (scrollY + rect.top);
-  
-          // the canvas might be CSS-scaled compared to its backbuffer;
-          // SDL-using content will want mouse coordinates in terms
-          // of backbuffer units.
-          x = x * (cw / rect.width);
-          y = y * (ch / rect.height);
-  
-          Browser.mouseMovementX = x - Browser.mouseX;
-          Browser.mouseMovementY = y - Browser.mouseY;
-          Browser.mouseX = x;
-          Browser.mouseY = y;
-        }
-      },asyncLoad:function(url, onload, onerror, noRunDep) {
-        var dep = !noRunDep ? getUniqueRunDependency('al ' + url) : '';
-        readAsync(url, function(arrayBuffer) {
-          assert(arrayBuffer, 'Loading data file "' + url + '" failed (no arrayBuffer).');
-          onload(new Uint8Array(arrayBuffer));
-          if (dep) removeRunDependency(dep);
-        }, function(event) {
-          if (onerror) {
-            onerror();
-          } else {
-            throw 'Loading data file "' + url + '" failed.';
-          }
-        });
-        if (dep) addRunDependency(dep);
-      },resizeListeners:[],updateResizeListeners:function() {
-        var canvas = Module['canvas'];
-        Browser.resizeListeners.forEach(function(listener) {
-          listener(canvas.width, canvas.height);
-        });
-      },setCanvasSize:function(width, height, noUpdates) {
-        var canvas = Module['canvas'];
-        Browser.updateCanvasDimensions(canvas, width, height);
-        if (!noUpdates) Browser.updateResizeListeners();
-      },windowedWidth:0,windowedHeight:0,setFullscreenCanvasSize:function() {
-        // check if SDL is available
-        if (typeof SDL != "undefined") {
-          var flags = HEAPU32[((SDL.screen)>>2)];
-          flags = flags | 0x00800000; // set SDL_FULLSCREEN flag
-          HEAP32[((SDL.screen)>>2)]=flags
-        }
-        Browser.updateCanvasDimensions(Module['canvas']);
-        Browser.updateResizeListeners();
-      },setWindowedCanvasSize:function() {
-        // check if SDL is available
-        if (typeof SDL != "undefined") {
-          var flags = HEAPU32[((SDL.screen)>>2)];
-          flags = flags & ~0x00800000; // clear SDL_FULLSCREEN flag
-          HEAP32[((SDL.screen)>>2)]=flags
-        }
-        Browser.updateCanvasDimensions(Module['canvas']);
-        Browser.updateResizeListeners();
-      },updateCanvasDimensions:function(canvas, wNative, hNative) {
-        if (wNative && hNative) {
-          canvas.widthNative = wNative;
-          canvas.heightNative = hNative;
-        } else {
-          wNative = canvas.widthNative;
-          hNative = canvas.heightNative;
-        }
-        var w = wNative;
-        var h = hNative;
-        if (Module['forcedAspectRatio'] && Module['forcedAspectRatio'] > 0) {
-          if (w/h < Module['forcedAspectRatio']) {
-            w = Math.round(h * Module['forcedAspectRatio']);
-          } else {
-            h = Math.round(w / Module['forcedAspectRatio']);
-          }
-        }
-        if (((document['fullscreenElement'] || document['mozFullScreenElement'] ||
-             document['msFullscreenElement'] || document['webkitFullscreenElement'] ||
-             document['webkitCurrentFullScreenElement']) === canvas.parentNode) && (typeof screen != 'undefined')) {
-           var factor = Math.min(screen.width / w, screen.height / h);
-           w = Math.round(w * factor);
-           h = Math.round(h * factor);
-        }
-        if (Browser.resizeCanvas) {
-          if (canvas.width  != w) canvas.width  = w;
-          if (canvas.height != h) canvas.height = h;
-          if (typeof canvas.style != 'undefined') {
-            canvas.style.removeProperty( "width");
-            canvas.style.removeProperty("height");
-          }
-        } else {
-          if (canvas.width  != wNative) canvas.width  = wNative;
-          if (canvas.height != hNative) canvas.height = hNative;
-          if (typeof canvas.style != 'undefined') {
-            if (w != wNative || h != hNative) {
-              canvas.style.setProperty( "width", w + "px", "important");
-              canvas.style.setProperty("height", h + "px", "important");
-            } else {
-              canvas.style.removeProperty( "width");
-              canvas.style.removeProperty("height");
-            }
-          }
-        }
-      },wgetRequests:{},nextWgetRequestHandle:0,getNextWgetRequestHandle:function() {
-        var handle = Browser.nextWgetRequestHandle;
-        Browser.nextWgetRequestHandle++;
-        return handle;
-      }};
-  Module["Browser"] = Browser;var EGL={errorCode:12288,defaultDisplayInitialized:false,currentContext:0,currentReadSurface:0,currentDrawSurface:0,contextAttributes:{alpha:false,depth:false,stencil:false,antialias:false},stringCache:{},setErrorCode:function(code) {
+  var EGL={errorCode:12288,defaultDisplayInitialized:false,currentContext:0,currentReadSurface:0,currentDrawSurface:0,contextAttributes:{alpha:false,depth:false,stencil:false,antialias:false},stringCache:{},setErrorCode:function(code) {
         EGL.errorCode = code;
       },chooseConfig:function(display, attribList, config, config_size, numConfigs) {
         if (display != 62000 /* Magic ID for Emscripten 'default display' */) {
@@ -8536,18 +8544,19 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
 
   
   
-  function __webgl_acquireInstancedArraysExtension(ctx) {
+  function __webgl_enable_ANGLE_instanced_arrays(ctx) {
       // Extension available in WebGL 1 from Firefox 26 and Google Chrome 30 onwards. Core feature in WebGL 2.
       var ext = ctx.getExtension('ANGLE_instanced_arrays');
       if (ext) {
         ctx['vertexAttribDivisor'] = function(index, divisor) { ext['vertexAttribDivisorANGLE'](index, divisor); };
         ctx['drawArraysInstanced'] = function(mode, first, count, primcount) { ext['drawArraysInstancedANGLE'](mode, first, count, primcount); };
         ctx['drawElementsInstanced'] = function(mode, count, type, indices, primcount) { ext['drawElementsInstancedANGLE'](mode, count, type, indices, primcount); };
+        return 1;
       }
     }
-  Module["__webgl_acquireInstancedArraysExtension"] = __webgl_acquireInstancedArraysExtension;
+  Module["__webgl_enable_ANGLE_instanced_arrays"] = __webgl_enable_ANGLE_instanced_arrays;
   
-  function __webgl_acquireVertexArrayObjectExtension(ctx) {
+  function __webgl_enable_OES_vertex_array_object(ctx) {
       // Extension available in WebGL 1 from Firefox 25 and WebKit 536.28/desktop Safari 6.0.3 onwards. Core feature in WebGL 2.
       var ext = ctx.getExtension('OES_vertex_array_object');
       if (ext) {
@@ -8555,18 +8564,20 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
         ctx['deleteVertexArray'] = function(vao) { ext['deleteVertexArrayOES'](vao); };
         ctx['bindVertexArray'] = function(vao) { ext['bindVertexArrayOES'](vao); };
         ctx['isVertexArray'] = function(vao) { return ext['isVertexArrayOES'](vao); };
+        return 1;
       }
     }
-  Module["__webgl_acquireVertexArrayObjectExtension"] = __webgl_acquireVertexArrayObjectExtension;
+  Module["__webgl_enable_OES_vertex_array_object"] = __webgl_enable_OES_vertex_array_object;
   
-  function __webgl_acquireDrawBuffersExtension(ctx) {
+  function __webgl_enable_WEBGL_draw_buffers(ctx) {
       // Extension available in WebGL 1 from Firefox 28 onwards. Core feature in WebGL 2.
       var ext = ctx.getExtension('WEBGL_draw_buffers');
       if (ext) {
         ctx['drawBuffers'] = function(n, bufs) { ext['drawBuffersWEBGL'](n, bufs); };
+        return 1;
       }
     }
-  Module["__webgl_acquireDrawBuffersExtension"] = __webgl_acquireDrawBuffersExtension;var GL={counter:1,lastError:0,buffers:[],mappedBuffers:{},programs:[],framebuffers:[],renderbuffers:[],textures:[],uniforms:[],shaders:[],vaos:[],contexts:[],currentContext:null,offscreenCanvases:{},timerQueriesEXT:[],programInfos:{},stringCache:{},unpackAlignment:4,init:function() {
+  Module["__webgl_enable_WEBGL_draw_buffers"] = __webgl_enable_WEBGL_draw_buffers;var GL={counter:1,lastError:0,buffers:[],mappedBuffers:{},programs:[],framebuffers:[],renderbuffers:[],textures:[],uniforms:[],shaders:[],vaos:[],contexts:[],currentContext:null,offscreenCanvases:{},timerQueriesEXT:[],programInfos:{},stringCache:{},unpackAlignment:4,init:function() {
         var miniTempFloatBuffer = new Float32Array(GL.MINI_TEMP_BUFFER_SIZE);
         for (var i = 0; i < GL.MINI_TEMP_BUFFER_SIZE; i++) {
           GL.miniTempBufferFloatViews[i] = miniTempFloatBuffer.subarray(0, i+1);
@@ -8658,11 +8669,10 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   
         // Detect the presence of a few extensions manually, this GL interop layer itself will need to know if they exist.
   
-        if (context.version < 2) {
-          __webgl_acquireInstancedArraysExtension(GLctx);
-          __webgl_acquireVertexArrayObjectExtension(GLctx);
-          __webgl_acquireDrawBuffersExtension(GLctx);
-        }
+        // Extensions that are only available in WebGL 1 (the calls will be no-ops if called on a WebGL 2 context active)
+        __webgl_enable_ANGLE_instanced_arrays(GLctx);
+        __webgl_enable_OES_vertex_array_object(GLctx);
+        __webgl_enable_WEBGL_draw_buffers(GLctx);
   
         GLctx.disjointTimerQueryExt = GLctx.getExtension("EXT_disjoint_timer_query");
   
@@ -8992,12 +9002,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_eglGetError"] = _eglGetError;
 
-  
-  function _emscripten_GetProcAddress(
-  ) {
-  if (!Module['_emscripten_GetProcAddress']) abort("external function 'emscripten_GetProcAddress' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
-  return Module['_emscripten_GetProcAddress'].apply(null, arguments);
-  }function _eglGetProcAddress(name_) {
+  function _eglGetProcAddress(name_) {
       return _emscripten_GetProcAddress(name_);
     }
   Module["_eglGetProcAddress"] = _eglGetProcAddress;
@@ -9623,9 +9628,1561 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   Module["_emscripten_get_num_gamepads"] = _emscripten_get_num_gamepads;
 
   function _emscripten_get_sbrk_ptr() {
-      return 681776;
+      return 2121232;
     }
   Module["_emscripten_get_sbrk_ptr"] = _emscripten_get_sbrk_ptr;
+
+  function _emscripten_glActiveTexture(x0) { GLctx['activeTexture'](x0) }
+  Module["_emscripten_glActiveTexture"] = _emscripten_glActiveTexture;
+
+  function _emscripten_glAttachShader(program, shader) {
+      GLctx.attachShader(GL.programs[program],
+                              GL.shaders[shader]);
+    }
+  Module["_emscripten_glAttachShader"] = _emscripten_glAttachShader;
+
+  function _emscripten_glBeginQueryEXT(target, id) {
+      GLctx.disjointTimerQueryExt['beginQueryEXT'](target, GL.timerQueriesEXT[id]);
+    }
+  Module["_emscripten_glBeginQueryEXT"] = _emscripten_glBeginQueryEXT;
+
+  function _emscripten_glBindAttribLocation(program, index, name) {
+      GLctx.bindAttribLocation(GL.programs[program], index, UTF8ToString(name));
+    }
+  Module["_emscripten_glBindAttribLocation"] = _emscripten_glBindAttribLocation;
+
+  function _emscripten_glBindBuffer(target, buffer) {
+  
+      GLctx.bindBuffer(target, GL.buffers[buffer]);
+    }
+  Module["_emscripten_glBindBuffer"] = _emscripten_glBindBuffer;
+
+  function _emscripten_glBindFramebuffer(target, framebuffer) {
+  
+      GLctx.bindFramebuffer(target, GL.framebuffers[framebuffer]);
+  
+    }
+  Module["_emscripten_glBindFramebuffer"] = _emscripten_glBindFramebuffer;
+
+  function _emscripten_glBindRenderbuffer(target, renderbuffer) {
+      GLctx.bindRenderbuffer(target, GL.renderbuffers[renderbuffer]);
+    }
+  Module["_emscripten_glBindRenderbuffer"] = _emscripten_glBindRenderbuffer;
+
+  function _emscripten_glBindTexture(target, texture) {
+      GLctx.bindTexture(target, GL.textures[texture]);
+    }
+  Module["_emscripten_glBindTexture"] = _emscripten_glBindTexture;
+
+  function _emscripten_glBindVertexArrayOES(vao) {
+      GLctx['bindVertexArray'](GL.vaos[vao]);
+    }
+  Module["_emscripten_glBindVertexArrayOES"] = _emscripten_glBindVertexArrayOES;
+
+  function _emscripten_glBlendColor(x0, x1, x2, x3) { GLctx['blendColor'](x0, x1, x2, x3) }
+  Module["_emscripten_glBlendColor"] = _emscripten_glBlendColor;
+
+  function _emscripten_glBlendEquation(x0) { GLctx['blendEquation'](x0) }
+  Module["_emscripten_glBlendEquation"] = _emscripten_glBlendEquation;
+
+  function _emscripten_glBlendEquationSeparate(x0, x1) { GLctx['blendEquationSeparate'](x0, x1) }
+  Module["_emscripten_glBlendEquationSeparate"] = _emscripten_glBlendEquationSeparate;
+
+  function _emscripten_glBlendFunc(x0, x1) { GLctx['blendFunc'](x0, x1) }
+  Module["_emscripten_glBlendFunc"] = _emscripten_glBlendFunc;
+
+  function _emscripten_glBlendFuncSeparate(x0, x1, x2, x3) { GLctx['blendFuncSeparate'](x0, x1, x2, x3) }
+  Module["_emscripten_glBlendFuncSeparate"] = _emscripten_glBlendFuncSeparate;
+
+  function _emscripten_glBufferData(target, size, data, usage) {
+        // N.b. here first form specifies a heap subarray, second form an integer size, so the ?: code here is polymorphic. It is advised to avoid
+        // randomly mixing both uses in calling code, to avoid any potential JS engine JIT issues.
+        GLctx.bufferData(target, data ? HEAPU8.subarray(data, data+size) : size, usage);
+    }
+  Module["_emscripten_glBufferData"] = _emscripten_glBufferData;
+
+  function _emscripten_glBufferSubData(target, offset, size, data) {
+      GLctx.bufferSubData(target, offset, HEAPU8.subarray(data, data+size));
+    }
+  Module["_emscripten_glBufferSubData"] = _emscripten_glBufferSubData;
+
+  function _emscripten_glCheckFramebufferStatus(x0) { return GLctx['checkFramebufferStatus'](x0) }
+  Module["_emscripten_glCheckFramebufferStatus"] = _emscripten_glCheckFramebufferStatus;
+
+  function _emscripten_glClear(x0) { GLctx['clear'](x0) }
+  Module["_emscripten_glClear"] = _emscripten_glClear;
+
+  function _emscripten_glClearColor(x0, x1, x2, x3) { GLctx['clearColor'](x0, x1, x2, x3) }
+  Module["_emscripten_glClearColor"] = _emscripten_glClearColor;
+
+  function _emscripten_glClearDepthf(x0) { GLctx['clearDepth'](x0) }
+  Module["_emscripten_glClearDepthf"] = _emscripten_glClearDepthf;
+
+  function _emscripten_glClearStencil(x0) { GLctx['clearStencil'](x0) }
+  Module["_emscripten_glClearStencil"] = _emscripten_glClearStencil;
+
+  function _emscripten_glColorMask(red, green, blue, alpha) {
+      GLctx.colorMask(!!red, !!green, !!blue, !!alpha);
+    }
+  Module["_emscripten_glColorMask"] = _emscripten_glColorMask;
+
+  function _emscripten_glCompileShader(shader) {
+      GLctx.compileShader(GL.shaders[shader]);
+    }
+  Module["_emscripten_glCompileShader"] = _emscripten_glCompileShader;
+
+  function _emscripten_glCompressedTexImage2D(target, level, internalFormat, width, height, border, imageSize, data) {
+      GLctx['compressedTexImage2D'](target, level, internalFormat, width, height, border, data ? HEAPU8.subarray((data),(data+imageSize)) : null);
+    }
+  Module["_emscripten_glCompressedTexImage2D"] = _emscripten_glCompressedTexImage2D;
+
+  function _emscripten_glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, imageSize, data) {
+      GLctx['compressedTexSubImage2D'](target, level, xoffset, yoffset, width, height, format, data ? HEAPU8.subarray((data),(data+imageSize)) : null);
+    }
+  Module["_emscripten_glCompressedTexSubImage2D"] = _emscripten_glCompressedTexSubImage2D;
+
+  function _emscripten_glCopyTexImage2D(x0, x1, x2, x3, x4, x5, x6, x7) { GLctx['copyTexImage2D'](x0, x1, x2, x3, x4, x5, x6, x7) }
+  Module["_emscripten_glCopyTexImage2D"] = _emscripten_glCopyTexImage2D;
+
+  function _emscripten_glCopyTexSubImage2D(x0, x1, x2, x3, x4, x5, x6, x7) { GLctx['copyTexSubImage2D'](x0, x1, x2, x3, x4, x5, x6, x7) }
+  Module["_emscripten_glCopyTexSubImage2D"] = _emscripten_glCopyTexSubImage2D;
+
+  function _emscripten_glCreateProgram() {
+      var id = GL.getNewId(GL.programs);
+      var program = GLctx.createProgram();
+      program.name = id;
+      GL.programs[id] = program;
+      return id;
+    }
+  Module["_emscripten_glCreateProgram"] = _emscripten_glCreateProgram;
+
+  function _emscripten_glCreateShader(shaderType) {
+      var id = GL.getNewId(GL.shaders);
+      GL.shaders[id] = GLctx.createShader(shaderType);
+      return id;
+    }
+  Module["_emscripten_glCreateShader"] = _emscripten_glCreateShader;
+
+  function _emscripten_glCullFace(x0) { GLctx['cullFace'](x0) }
+  Module["_emscripten_glCullFace"] = _emscripten_glCullFace;
+
+  function _emscripten_glDeleteBuffers(n, buffers) {
+      for (var i = 0; i < n; i++) {
+        var id = HEAP32[(((buffers)+(i*4))>>2)];
+        var buffer = GL.buffers[id];
+  
+        // From spec: "glDeleteBuffers silently ignores 0's and names that do not
+        // correspond to existing buffer objects."
+        if (!buffer) continue;
+  
+        GLctx.deleteBuffer(buffer);
+        buffer.name = 0;
+        GL.buffers[id] = null;
+  
+        if (id == GL.currArrayBuffer) GL.currArrayBuffer = 0;
+        if (id == GL.currElementArrayBuffer) GL.currElementArrayBuffer = 0;
+      }
+    }
+  Module["_emscripten_glDeleteBuffers"] = _emscripten_glDeleteBuffers;
+
+  function _emscripten_glDeleteFramebuffers(n, framebuffers) {
+      for (var i = 0; i < n; ++i) {
+        var id = HEAP32[(((framebuffers)+(i*4))>>2)];
+        var framebuffer = GL.framebuffers[id];
+        if (!framebuffer) continue; // GL spec: "glDeleteFramebuffers silently ignores 0s and names that do not correspond to existing framebuffer objects".
+        GLctx.deleteFramebuffer(framebuffer);
+        framebuffer.name = 0;
+        GL.framebuffers[id] = null;
+      }
+    }
+  Module["_emscripten_glDeleteFramebuffers"] = _emscripten_glDeleteFramebuffers;
+
+  function _emscripten_glDeleteProgram(id) {
+      if (!id) return;
+      var program = GL.programs[id];
+      if (!program) { // glDeleteProgram actually signals an error when deleting a nonexisting object, unlike some other GL delete functions.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      GLctx.deleteProgram(program);
+      program.name = 0;
+      GL.programs[id] = null;
+      GL.programInfos[id] = null;
+    }
+  Module["_emscripten_glDeleteProgram"] = _emscripten_glDeleteProgram;
+
+  function _emscripten_glDeleteQueriesEXT(n, ids) {
+      for (var i = 0; i < n; i++) {
+        var id = HEAP32[(((ids)+(i*4))>>2)];
+        var query = GL.timerQueriesEXT[id];
+        if (!query) continue; // GL spec: "unused names in ids are ignored, as is the name zero."
+        GLctx.disjointTimerQueryExt['deleteQueryEXT'](query);
+        GL.timerQueriesEXT[id] = null;
+      }
+    }
+  Module["_emscripten_glDeleteQueriesEXT"] = _emscripten_glDeleteQueriesEXT;
+
+  function _emscripten_glDeleteRenderbuffers(n, renderbuffers) {
+      for (var i = 0; i < n; i++) {
+        var id = HEAP32[(((renderbuffers)+(i*4))>>2)];
+        var renderbuffer = GL.renderbuffers[id];
+        if (!renderbuffer) continue; // GL spec: "glDeleteRenderbuffers silently ignores 0s and names that do not correspond to existing renderbuffer objects".
+        GLctx.deleteRenderbuffer(renderbuffer);
+        renderbuffer.name = 0;
+        GL.renderbuffers[id] = null;
+      }
+    }
+  Module["_emscripten_glDeleteRenderbuffers"] = _emscripten_glDeleteRenderbuffers;
+
+  function _emscripten_glDeleteShader(id) {
+      if (!id) return;
+      var shader = GL.shaders[id];
+      if (!shader) { // glDeleteShader actually signals an error when deleting a nonexisting object, unlike some other GL delete functions.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      GLctx.deleteShader(shader);
+      GL.shaders[id] = null;
+    }
+  Module["_emscripten_glDeleteShader"] = _emscripten_glDeleteShader;
+
+  function _emscripten_glDeleteTextures(n, textures) {
+      for (var i = 0; i < n; i++) {
+        var id = HEAP32[(((textures)+(i*4))>>2)];
+        var texture = GL.textures[id];
+        if (!texture) continue; // GL spec: "glDeleteTextures silently ignores 0s and names that do not correspond to existing textures".
+        GLctx.deleteTexture(texture);
+        texture.name = 0;
+        GL.textures[id] = null;
+      }
+    }
+  Module["_emscripten_glDeleteTextures"] = _emscripten_glDeleteTextures;
+
+  function _emscripten_glDeleteVertexArraysOES(n, vaos) {
+      for (var i = 0; i < n; i++) {
+        var id = HEAP32[(((vaos)+(i*4))>>2)];
+        GLctx['deleteVertexArray'](GL.vaos[id]);
+        GL.vaos[id] = null;
+      }
+    }
+  Module["_emscripten_glDeleteVertexArraysOES"] = _emscripten_glDeleteVertexArraysOES;
+
+  function _emscripten_glDepthFunc(x0) { GLctx['depthFunc'](x0) }
+  Module["_emscripten_glDepthFunc"] = _emscripten_glDepthFunc;
+
+  function _emscripten_glDepthMask(flag) {
+      GLctx.depthMask(!!flag);
+    }
+  Module["_emscripten_glDepthMask"] = _emscripten_glDepthMask;
+
+  function _emscripten_glDepthRangef(x0, x1) { GLctx['depthRange'](x0, x1) }
+  Module["_emscripten_glDepthRangef"] = _emscripten_glDepthRangef;
+
+  function _emscripten_glDetachShader(program, shader) {
+      GLctx.detachShader(GL.programs[program],
+                              GL.shaders[shader]);
+    }
+  Module["_emscripten_glDetachShader"] = _emscripten_glDetachShader;
+
+  function _emscripten_glDisable(x0) { GLctx['disable'](x0) }
+  Module["_emscripten_glDisable"] = _emscripten_glDisable;
+
+  function _emscripten_glDisableVertexAttribArray(index) {
+      GLctx.disableVertexAttribArray(index);
+    }
+  Module["_emscripten_glDisableVertexAttribArray"] = _emscripten_glDisableVertexAttribArray;
+
+  function _emscripten_glDrawArrays(mode, first, count) {
+  
+      GLctx.drawArrays(mode, first, count);
+  
+    }
+  Module["_emscripten_glDrawArrays"] = _emscripten_glDrawArrays;
+
+  function _emscripten_glDrawArraysInstancedANGLE(mode, first, count, primcount) {
+      GLctx['drawArraysInstanced'](mode, first, count, primcount);
+    }
+  Module["_emscripten_glDrawArraysInstancedANGLE"] = _emscripten_glDrawArraysInstancedANGLE;
+
+  
+  var __tempFixedLengthArray=[];
+  Module["__tempFixedLengthArray"] = __tempFixedLengthArray;function _emscripten_glDrawBuffersWEBGL(n, bufs) {
+  
+      var bufArray = __tempFixedLengthArray[n];
+      for (var i = 0; i < n; i++) {
+        bufArray[i] = HEAP32[(((bufs)+(i*4))>>2)];
+      }
+  
+      GLctx['drawBuffers'](bufArray);
+    }
+  Module["_emscripten_glDrawBuffersWEBGL"] = _emscripten_glDrawBuffersWEBGL;
+
+  function _emscripten_glDrawElements(mode, count, type, indices) {
+  
+      GLctx.drawElements(mode, count, type, indices);
+  
+    }
+  Module["_emscripten_glDrawElements"] = _emscripten_glDrawElements;
+
+  function _emscripten_glDrawElementsInstancedANGLE(mode, count, type, indices, primcount) {
+      GLctx['drawElementsInstanced'](mode, count, type, indices, primcount);
+    }
+  Module["_emscripten_glDrawElementsInstancedANGLE"] = _emscripten_glDrawElementsInstancedANGLE;
+
+  function _emscripten_glEnable(x0) { GLctx['enable'](x0) }
+  Module["_emscripten_glEnable"] = _emscripten_glEnable;
+
+  function _emscripten_glEnableVertexAttribArray(index) {
+      GLctx.enableVertexAttribArray(index);
+    }
+  Module["_emscripten_glEnableVertexAttribArray"] = _emscripten_glEnableVertexAttribArray;
+
+  function _emscripten_glEndQueryEXT(target) {
+      GLctx.disjointTimerQueryExt['endQueryEXT'](target);
+    }
+  Module["_emscripten_glEndQueryEXT"] = _emscripten_glEndQueryEXT;
+
+  function _emscripten_glFinish() { GLctx['finish']() }
+  Module["_emscripten_glFinish"] = _emscripten_glFinish;
+
+  function _emscripten_glFlush() { GLctx['flush']() }
+  Module["_emscripten_glFlush"] = _emscripten_glFlush;
+
+  function _emscripten_glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer) {
+      GLctx.framebufferRenderbuffer(target, attachment, renderbuffertarget,
+                                         GL.renderbuffers[renderbuffer]);
+    }
+  Module["_emscripten_glFramebufferRenderbuffer"] = _emscripten_glFramebufferRenderbuffer;
+
+  function _emscripten_glFramebufferTexture2D(target, attachment, textarget, texture, level) {
+      GLctx.framebufferTexture2D(target, attachment, textarget,
+                                      GL.textures[texture], level);
+    }
+  Module["_emscripten_glFramebufferTexture2D"] = _emscripten_glFramebufferTexture2D;
+
+  function _emscripten_glFrontFace(x0) { GLctx['frontFace'](x0) }
+  Module["_emscripten_glFrontFace"] = _emscripten_glFrontFace;
+
+  
+  function __glGenObject(n, buffers, createFunction, objectTable
+      ) {
+      for (var i = 0; i < n; i++) {
+        var buffer = GLctx[createFunction]();
+        var id = buffer && GL.getNewId(objectTable);
+        if (buffer) {
+          buffer.name = id;
+          objectTable[id] = buffer;
+        } else {
+          GL.recordError(0x502 /* GL_INVALID_OPERATION */);
+        }
+        HEAP32[(((buffers)+(i*4))>>2)]=id;
+      }
+    }
+  Module["__glGenObject"] = __glGenObject;function _emscripten_glGenBuffers(n, buffers) {
+      __glGenObject(n, buffers, 'createBuffer', GL.buffers
+        );
+    }
+  Module["_emscripten_glGenBuffers"] = _emscripten_glGenBuffers;
+
+  function _emscripten_glGenFramebuffers(n, ids) {
+      __glGenObject(n, ids, 'createFramebuffer', GL.framebuffers
+        );
+    }
+  Module["_emscripten_glGenFramebuffers"] = _emscripten_glGenFramebuffers;
+
+  function _emscripten_glGenQueriesEXT(n, ids) {
+      for (var i = 0; i < n; i++) {
+        var query = GLctx.disjointTimerQueryExt['createQueryEXT']();
+        if (!query) {
+          GL.recordError(0x502 /* GL_INVALID_OPERATION */);
+          while(i < n) HEAP32[(((ids)+(i++*4))>>2)]=0;
+          return;
+        }
+        var id = GL.getNewId(GL.timerQueriesEXT);
+        query.name = id;
+        GL.timerQueriesEXT[id] = query;
+        HEAP32[(((ids)+(i*4))>>2)]=id;
+      }
+    }
+  Module["_emscripten_glGenQueriesEXT"] = _emscripten_glGenQueriesEXT;
+
+  function _emscripten_glGenRenderbuffers(n, renderbuffers) {
+      __glGenObject(n, renderbuffers, 'createRenderbuffer', GL.renderbuffers
+        );
+    }
+  Module["_emscripten_glGenRenderbuffers"] = _emscripten_glGenRenderbuffers;
+
+  function _emscripten_glGenTextures(n, textures) {
+      __glGenObject(n, textures, 'createTexture', GL.textures
+        );
+    }
+  Module["_emscripten_glGenTextures"] = _emscripten_glGenTextures;
+
+  function _emscripten_glGenVertexArraysOES(n, arrays) {
+      __glGenObject(n, arrays, 'createVertexArray', GL.vaos
+        );
+    }
+  Module["_emscripten_glGenVertexArraysOES"] = _emscripten_glGenVertexArraysOES;
+
+  function _emscripten_glGenerateMipmap(x0) { GLctx['generateMipmap'](x0) }
+  Module["_emscripten_glGenerateMipmap"] = _emscripten_glGenerateMipmap;
+
+  function _emscripten_glGetActiveAttrib(program, index, bufSize, length, size, type, name) {
+      program = GL.programs[program];
+      var info = GLctx.getActiveAttrib(program, index);
+      if (!info) return; // If an error occurs, nothing will be written to length, size and type and name.
+  
+      var numBytesWrittenExclNull = (bufSize > 0 && name) ? stringToUTF8(info.name, name, bufSize) : 0;
+      if (length) HEAP32[((length)>>2)]=numBytesWrittenExclNull;
+      if (size) HEAP32[((size)>>2)]=info.size;
+      if (type) HEAP32[((type)>>2)]=info.type;
+    }
+  Module["_emscripten_glGetActiveAttrib"] = _emscripten_glGetActiveAttrib;
+
+  function _emscripten_glGetActiveUniform(program, index, bufSize, length, size, type, name) {
+      program = GL.programs[program];
+      var info = GLctx.getActiveUniform(program, index);
+      if (!info) return; // If an error occurs, nothing will be written to length, size, type and name.
+  
+      var numBytesWrittenExclNull = (bufSize > 0 && name) ? stringToUTF8(info.name, name, bufSize) : 0;
+      if (length) HEAP32[((length)>>2)]=numBytesWrittenExclNull;
+      if (size) HEAP32[((size)>>2)]=info.size;
+      if (type) HEAP32[((type)>>2)]=info.type;
+    }
+  Module["_emscripten_glGetActiveUniform"] = _emscripten_glGetActiveUniform;
+
+  function _emscripten_glGetAttachedShaders(program, maxCount, count, shaders) {
+      var result = GLctx.getAttachedShaders(GL.programs[program]);
+      var len = result.length;
+      if (len > maxCount) {
+        len = maxCount;
+      }
+      HEAP32[((count)>>2)]=len;
+      for (var i = 0; i < len; ++i) {
+        var id = GL.shaders.indexOf(result[i]);
+        HEAP32[(((shaders)+(i*4))>>2)]=id;
+      }
+    }
+  Module["_emscripten_glGetAttachedShaders"] = _emscripten_glGetAttachedShaders;
+
+  function _emscripten_glGetAttribLocation(program, name) {
+      return GLctx.getAttribLocation(GL.programs[program], UTF8ToString(name));
+    }
+  Module["_emscripten_glGetAttribLocation"] = _emscripten_glGetAttribLocation;
+
+  
+  
+  
+  function readI53FromI64(ptr) {
+      return HEAPU32[ptr>>2] + HEAP32[ptr+4>>2] * 4294967296;
+    }
+  Module["readI53FromI64"] = readI53FromI64;
+  
+  function readI53FromU64(ptr) {
+      return HEAPU32[ptr>>2] + HEAPU32[ptr+4>>2] * 4294967296;
+    }
+  Module["readI53FromU64"] = readI53FromU64;function writeI53ToI64(ptr, num) {
+      HEAPU32[ptr>>2] = num;
+      HEAPU32[ptr+4>>2] = (num - HEAPU32[ptr>>2])/4294967296;
+      var deserialized = (num >= 0) ? readI53FromU64(ptr) : readI53FromI64(ptr);
+      if (deserialized != num) warnOnce('writeI53ToI64() out of range: serialized JS Number ' + num + ' to Wasm heap as bytes lo=0x' + HEAPU32[ptr>>2].toString(16) + ', hi=0x' + HEAPU32[ptr+4>>2].toString(16) + ', which deserializes back to ' + deserialized + ' instead!');
+    }
+  Module["writeI53ToI64"] = writeI53ToI64;function emscriptenWebGLGet(name_, p, type) {
+      // Guard against user passing a null pointer.
+      // Note that GLES2 spec does not say anything about how passing a null pointer should be treated.
+      // Testing on desktop core GL 3, the application crashes on glGetIntegerv to a null pointer, but
+      // better to report an error instead of doing anything random.
+      if (!p) {
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      var ret = undefined;
+      switch(name_) { // Handle a few trivial GLES values
+        case 0x8DFA: // GL_SHADER_COMPILER
+          ret = 1;
+          break;
+        case 0x8DF8: // GL_SHADER_BINARY_FORMATS
+          if (type != 0 && type != 1) {
+            GL.recordError(0x500); // GL_INVALID_ENUM
+          }
+          return; // Do not write anything to the out pointer, since no binary formats are supported.
+        case 0x8DF9: // GL_NUM_SHADER_BINARY_FORMATS
+          ret = 0;
+          break;
+        case 0x86A2: // GL_NUM_COMPRESSED_TEXTURE_FORMATS
+          // WebGL doesn't have GL_NUM_COMPRESSED_TEXTURE_FORMATS (it's obsolete since GL_COMPRESSED_TEXTURE_FORMATS returns a JS array that can be queried for length),
+          // so implement it ourselves to allow C++ GLES2 code get the length.
+          var formats = GLctx.getParameter(0x86A3 /*GL_COMPRESSED_TEXTURE_FORMATS*/);
+          ret = formats ? formats.length : 0;
+          break;
+      }
+  
+      if (ret === undefined) {
+        var result = GLctx.getParameter(name_);
+        switch (typeof(result)) {
+          case "number":
+            ret = result;
+            break;
+          case "boolean":
+            ret = result ? 1 : 0;
+            break;
+          case "string":
+            GL.recordError(0x500); // GL_INVALID_ENUM
+            return;
+          case "object":
+            if (result === null) {
+              // null is a valid result for some (e.g., which buffer is bound - perhaps nothing is bound), but otherwise
+              // can mean an invalid name_, which we need to report as an error
+              switch(name_) {
+                case 0x8894: // ARRAY_BUFFER_BINDING
+                case 0x8B8D: // CURRENT_PROGRAM
+                case 0x8895: // ELEMENT_ARRAY_BUFFER_BINDING
+                case 0x8CA6: // FRAMEBUFFER_BINDING or DRAW_FRAMEBUFFER_BINDING
+                case 0x8CA7: // RENDERBUFFER_BINDING
+                case 0x8069: // TEXTURE_BINDING_2D
+                case 0x85B5: // WebGL 2 GL_VERTEX_ARRAY_BINDING, or WebGL 1 extension OES_vertex_array_object GL_VERTEX_ARRAY_BINDING_OES
+                case 0x8514: { // TEXTURE_BINDING_CUBE_MAP
+                  ret = 0;
+                  break;
+                }
+                default: {
+                  GL.recordError(0x500); // GL_INVALID_ENUM
+                  return;
+                }
+              }
+            } else if (result instanceof Float32Array ||
+                       result instanceof Uint32Array ||
+                       result instanceof Int32Array ||
+                       result instanceof Array) {
+              for (var i = 0; i < result.length; ++i) {
+                switch (type) {
+                  case 0: HEAP32[(((p)+(i*4))>>2)]=result[i]; break;
+                  case 2: HEAPF32[(((p)+(i*4))>>2)]=result[i]; break;
+                  case 4: HEAP8[(((p)+(i))>>0)]=result[i] ? 1 : 0; break;
+                }
+              }
+              return;
+            } else {
+              try {
+                ret = result.name | 0;
+              } catch(e) {
+                GL.recordError(0x500); // GL_INVALID_ENUM
+                err('GL_INVALID_ENUM in glGet' + type + 'v: Unknown object returned from WebGL getParameter(' + name_ + ')! (error: ' + e + ')');
+                return;
+              }
+            }
+            break;
+          default:
+            GL.recordError(0x500); // GL_INVALID_ENUM
+            err('GL_INVALID_ENUM in glGet' + type + 'v: Native code calling glGet' + type + 'v(' + name_ + ') and it returns ' + result + ' of type ' + typeof(result) + '!');
+            return;
+        }
+      }
+  
+      switch (type) {
+        case 1: writeI53ToI64(p, ret); break;
+        case 0: HEAP32[((p)>>2)]=ret; break;
+        case 2:   HEAPF32[((p)>>2)]=ret; break;
+        case 4: HEAP8[((p)>>0)]=ret ? 1 : 0; break;
+      }
+    }
+  Module["emscriptenWebGLGet"] = emscriptenWebGLGet;function _emscripten_glGetBooleanv(name_, p) {
+      emscriptenWebGLGet(name_, p, 4);
+    }
+  Module["_emscripten_glGetBooleanv"] = _emscripten_glGetBooleanv;
+
+  function _emscripten_glGetBufferParameteriv(target, value, data) {
+      if (!data) {
+        // GLES2 specification does not specify how to behave if data is a null pointer. Since calling this function does not make sense
+        // if data == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      HEAP32[((data)>>2)]=GLctx.getBufferParameter(target, value);
+    }
+  Module["_emscripten_glGetBufferParameteriv"] = _emscripten_glGetBufferParameteriv;
+
+  function _emscripten_glGetError() {
+      var error = GLctx.getError() || GL.lastError;
+      GL.lastError = 0/*GL_NO_ERROR*/;
+      return error;
+    }
+  Module["_emscripten_glGetError"] = _emscripten_glGetError;
+
+  function _emscripten_glGetFloatv(name_, p) {
+      emscriptenWebGLGet(name_, p, 2);
+    }
+  Module["_emscripten_glGetFloatv"] = _emscripten_glGetFloatv;
+
+  function _emscripten_glGetFramebufferAttachmentParameteriv(target, attachment, pname, params) {
+      var result = GLctx.getFramebufferAttachmentParameter(target, attachment, pname);
+      if (result instanceof WebGLRenderbuffer ||
+          result instanceof WebGLTexture) {
+        result = result.name | 0;
+      }
+      HEAP32[((params)>>2)]=result;
+    }
+  Module["_emscripten_glGetFramebufferAttachmentParameteriv"] = _emscripten_glGetFramebufferAttachmentParameteriv;
+
+  function _emscripten_glGetIntegerv(name_, p) {
+      emscriptenWebGLGet(name_, p, 0);
+    }
+  Module["_emscripten_glGetIntegerv"] = _emscripten_glGetIntegerv;
+
+  function _emscripten_glGetProgramInfoLog(program, maxLength, length, infoLog) {
+      var log = GLctx.getProgramInfoLog(GL.programs[program]);
+      if (log === null) log = '(unknown error)';
+      var numBytesWrittenExclNull = (maxLength > 0 && infoLog) ? stringToUTF8(log, infoLog, maxLength) : 0;
+      if (length) HEAP32[((length)>>2)]=numBytesWrittenExclNull;
+    }
+  Module["_emscripten_glGetProgramInfoLog"] = _emscripten_glGetProgramInfoLog;
+
+  function _emscripten_glGetProgramiv(program, pname, p) {
+      if (!p) {
+        // GLES2 specification does not specify how to behave if p is a null pointer. Since calling this function does not make sense
+        // if p == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+  
+      if (program >= GL.counter) {
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+  
+      var ptable = GL.programInfos[program];
+      if (!ptable) {
+        GL.recordError(0x502 /* GL_INVALID_OPERATION */);
+        return;
+      }
+  
+      if (pname == 0x8B84) { // GL_INFO_LOG_LENGTH
+        var log = GLctx.getProgramInfoLog(GL.programs[program]);
+        if (log === null) log = '(unknown error)';
+        HEAP32[((p)>>2)]=log.length + 1;
+      } else if (pname == 0x8B87 /* GL_ACTIVE_UNIFORM_MAX_LENGTH */) {
+        HEAP32[((p)>>2)]=ptable.maxUniformLength;
+      } else if (pname == 0x8B8A /* GL_ACTIVE_ATTRIBUTE_MAX_LENGTH */) {
+        if (ptable.maxAttributeLength == -1) {
+          program = GL.programs[program];
+          var numAttribs = GLctx.getProgramParameter(program, 0x8B89/*GL_ACTIVE_ATTRIBUTES*/);
+          ptable.maxAttributeLength = 0; // Spec says if there are no active attribs, 0 must be returned.
+          for (var i = 0; i < numAttribs; ++i) {
+            var activeAttrib = GLctx.getActiveAttrib(program, i);
+            ptable.maxAttributeLength = Math.max(ptable.maxAttributeLength, activeAttrib.name.length+1);
+          }
+        }
+        HEAP32[((p)>>2)]=ptable.maxAttributeLength;
+      } else if (pname == 0x8A35 /* GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH */) {
+        if (ptable.maxUniformBlockNameLength == -1) {
+          program = GL.programs[program];
+          var numBlocks = GLctx.getProgramParameter(program, 0x8A36/*GL_ACTIVE_UNIFORM_BLOCKS*/);
+          ptable.maxUniformBlockNameLength = 0;
+          for (var i = 0; i < numBlocks; ++i) {
+            var activeBlockName = GLctx.getActiveUniformBlockName(program, i);
+            ptable.maxUniformBlockNameLength = Math.max(ptable.maxUniformBlockNameLength, activeBlockName.length+1);
+          }
+        }
+        HEAP32[((p)>>2)]=ptable.maxUniformBlockNameLength;
+      } else {
+        HEAP32[((p)>>2)]=GLctx.getProgramParameter(GL.programs[program], pname);
+      }
+    }
+  Module["_emscripten_glGetProgramiv"] = _emscripten_glGetProgramiv;
+
+  function _emscripten_glGetQueryObjecti64vEXT(id, pname, params) {
+      if (!params) {
+        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
+        // if p == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      var query = GL.timerQueriesEXT[id];
+      var param = GLctx.disjointTimerQueryExt['getQueryObjectEXT'](query, pname);
+      var ret;
+      if (typeof param == 'boolean') {
+        ret = param ? 1 : 0;
+      } else {
+        ret = param;
+      }
+      writeI53ToI64(params, ret);
+    }
+  Module["_emscripten_glGetQueryObjecti64vEXT"] = _emscripten_glGetQueryObjecti64vEXT;
+
+  function _emscripten_glGetQueryObjectivEXT(id, pname, params) {
+      if (!params) {
+        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
+        // if p == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      var query = GL.timerQueriesEXT[id];
+      var param = GLctx.disjointTimerQueryExt['getQueryObjectEXT'](query, pname);
+      var ret;
+      if (typeof param == 'boolean') {
+        ret = param ? 1 : 0;
+      } else {
+        ret = param;
+      }
+      HEAP32[((params)>>2)]=ret;
+    }
+  Module["_emscripten_glGetQueryObjectivEXT"] = _emscripten_glGetQueryObjectivEXT;
+
+  function _emscripten_glGetQueryObjectui64vEXT(id, pname, params) {
+      if (!params) {
+        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
+        // if p == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      var query = GL.timerQueriesEXT[id];
+      var param = GLctx.disjointTimerQueryExt['getQueryObjectEXT'](query, pname);
+      var ret;
+      if (typeof param == 'boolean') {
+        ret = param ? 1 : 0;
+      } else {
+        ret = param;
+      }
+      writeI53ToI64(params, ret);
+    }
+  Module["_emscripten_glGetQueryObjectui64vEXT"] = _emscripten_glGetQueryObjectui64vEXT;
+
+  function _emscripten_glGetQueryObjectuivEXT(id, pname, params) {
+      if (!params) {
+        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
+        // if p == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      var query = GL.timerQueriesEXT[id];
+      var param = GLctx.disjointTimerQueryExt['getQueryObjectEXT'](query, pname);
+      var ret;
+      if (typeof param == 'boolean') {
+        ret = param ? 1 : 0;
+      } else {
+        ret = param;
+      }
+      HEAP32[((params)>>2)]=ret;
+    }
+  Module["_emscripten_glGetQueryObjectuivEXT"] = _emscripten_glGetQueryObjectuivEXT;
+
+  function _emscripten_glGetQueryivEXT(target, pname, params) {
+      if (!params) {
+        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
+        // if p == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      HEAP32[((params)>>2)]=GLctx.disjointTimerQueryExt['getQueryEXT'](target, pname);
+    }
+  Module["_emscripten_glGetQueryivEXT"] = _emscripten_glGetQueryivEXT;
+
+  function _emscripten_glGetRenderbufferParameteriv(target, pname, params) {
+      if (!params) {
+        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
+        // if params == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      HEAP32[((params)>>2)]=GLctx.getRenderbufferParameter(target, pname);
+    }
+  Module["_emscripten_glGetRenderbufferParameteriv"] = _emscripten_glGetRenderbufferParameteriv;
+
+  function _emscripten_glGetShaderInfoLog(shader, maxLength, length, infoLog) {
+      var log = GLctx.getShaderInfoLog(GL.shaders[shader]);
+      if (log === null) log = '(unknown error)';
+      var numBytesWrittenExclNull = (maxLength > 0 && infoLog) ? stringToUTF8(log, infoLog, maxLength) : 0;
+      if (length) HEAP32[((length)>>2)]=numBytesWrittenExclNull;
+    }
+  Module["_emscripten_glGetShaderInfoLog"] = _emscripten_glGetShaderInfoLog;
+
+  function _emscripten_glGetShaderPrecisionFormat(shaderType, precisionType, range, precision) {
+      var result = GLctx.getShaderPrecisionFormat(shaderType, precisionType);
+      HEAP32[((range)>>2)]=result.rangeMin;
+      HEAP32[(((range)+(4))>>2)]=result.rangeMax;
+      HEAP32[((precision)>>2)]=result.precision;
+    }
+  Module["_emscripten_glGetShaderPrecisionFormat"] = _emscripten_glGetShaderPrecisionFormat;
+
+  function _emscripten_glGetShaderSource(shader, bufSize, length, source) {
+      var result = GLctx.getShaderSource(GL.shaders[shader]);
+      if (!result) return; // If an error occurs, nothing will be written to length or source.
+      var numBytesWrittenExclNull = (bufSize > 0 && source) ? stringToUTF8(result, source, bufSize) : 0;
+      if (length) HEAP32[((length)>>2)]=numBytesWrittenExclNull;
+    }
+  Module["_emscripten_glGetShaderSource"] = _emscripten_glGetShaderSource;
+
+  function _emscripten_glGetShaderiv(shader, pname, p) {
+      if (!p) {
+        // GLES2 specification does not specify how to behave if p is a null pointer. Since calling this function does not make sense
+        // if p == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      if (pname == 0x8B84) { // GL_INFO_LOG_LENGTH
+        var log = GLctx.getShaderInfoLog(GL.shaders[shader]);
+        if (log === null) log = '(unknown error)';
+        HEAP32[((p)>>2)]=log.length + 1;
+      } else if (pname == 0x8B88) { // GL_SHADER_SOURCE_LENGTH
+        var source = GLctx.getShaderSource(GL.shaders[shader]);
+        var sourceLength = (source === null || source.length == 0) ? 0 : source.length + 1;
+        HEAP32[((p)>>2)]=sourceLength;
+      } else {
+        HEAP32[((p)>>2)]=GLctx.getShaderParameter(GL.shaders[shader], pname);
+      }
+    }
+  Module["_emscripten_glGetShaderiv"] = _emscripten_glGetShaderiv;
+
+  function _emscripten_glGetString(name_) {
+      if (GL.stringCache[name_]) return GL.stringCache[name_];
+      var ret;
+      switch(name_) {
+        case 0x1F03 /* GL_EXTENSIONS */:
+          var exts = GLctx.getSupportedExtensions() || []; // .getSupportedExtensions() can return null if context is lost, so coerce to empty array.
+          exts = exts.concat(exts.map(function(e) { return "GL_" + e; }));
+          ret = stringToNewUTF8(exts.join(' '));
+          break;
+        case 0x1F00 /* GL_VENDOR */:
+        case 0x1F01 /* GL_RENDERER */:
+        case 0x9245 /* UNMASKED_VENDOR_WEBGL */:
+        case 0x9246 /* UNMASKED_RENDERER_WEBGL */:
+          var s = GLctx.getParameter(name_);
+          if (!s) {
+            GL.recordError(0x500/*GL_INVALID_ENUM*/);
+          }
+          ret = stringToNewUTF8(s);
+          break;
+  
+        case 0x1F02 /* GL_VERSION */:
+          var glVersion = GLctx.getParameter(0x1F02 /*GL_VERSION*/);
+          // return GLES version string corresponding to the version of the WebGL context
+          {
+            glVersion = 'OpenGL ES 2.0 (' + glVersion + ')';
+          }
+          ret = stringToNewUTF8(glVersion);
+          break;
+        case 0x8B8C /* GL_SHADING_LANGUAGE_VERSION */:
+          var glslVersion = GLctx.getParameter(0x8B8C /*GL_SHADING_LANGUAGE_VERSION*/);
+          // extract the version number 'N.M' from the string 'WebGL GLSL ES N.M ...'
+          var ver_re = /^WebGL GLSL ES ([0-9]\.[0-9][0-9]?)(?:$| .*)/;
+          var ver_num = glslVersion.match(ver_re);
+          if (ver_num !== null) {
+            if (ver_num[1].length == 3) ver_num[1] = ver_num[1] + '0'; // ensure minor version has 2 digits
+            glslVersion = 'OpenGL ES GLSL ES ' + ver_num[1] + ' (' + glslVersion + ')';
+          }
+          ret = stringToNewUTF8(glslVersion);
+          break;
+        default:
+          GL.recordError(0x500/*GL_INVALID_ENUM*/);
+          return 0;
+      }
+      GL.stringCache[name_] = ret;
+      return ret;
+    }
+  Module["_emscripten_glGetString"] = _emscripten_glGetString;
+
+  function _emscripten_glGetTexParameterfv(target, pname, params) {
+      if (!params) {
+        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
+        // if p == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      HEAPF32[((params)>>2)]=GLctx.getTexParameter(target, pname);
+    }
+  Module["_emscripten_glGetTexParameterfv"] = _emscripten_glGetTexParameterfv;
+
+  function _emscripten_glGetTexParameteriv(target, pname, params) {
+      if (!params) {
+        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
+        // if p == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      HEAP32[((params)>>2)]=GLctx.getTexParameter(target, pname);
+    }
+  Module["_emscripten_glGetTexParameteriv"] = _emscripten_glGetTexParameteriv;
+
+  function _emscripten_glGetUniformLocation(program, name) {
+      name = UTF8ToString(name);
+  
+      var arrayIndex = 0;
+      // If user passed an array accessor "[index]", parse the array index off the accessor.
+      if (name[name.length - 1] == ']') {
+        var leftBrace = name.lastIndexOf('[');
+        arrayIndex = name[leftBrace+1] != ']' ? jstoi_q(name.slice(leftBrace + 1)) : 0; // "index]", parseInt will ignore the ']' at the end; but treat "foo[]" as "foo[0]"
+        name = name.slice(0, leftBrace);
+      }
+  
+      var uniformInfo = GL.programInfos[program] && GL.programInfos[program].uniforms[name]; // returns pair [ dimension_of_uniform_array, uniform_location ]
+      if (uniformInfo && arrayIndex >= 0 && arrayIndex < uniformInfo[0]) { // Check if user asked for an out-of-bounds element, i.e. for 'vec4 colors[3];' user could ask for 'colors[10]' which should return -1.
+        return uniformInfo[1] + arrayIndex;
+      } else {
+        return -1;
+      }
+    }
+  Module["_emscripten_glGetUniformLocation"] = _emscripten_glGetUniformLocation;
+
+  
+  /** @suppress{checkTypes} */
+  function emscriptenWebGLGetUniform(program, location, params, type) {
+      if (!params) {
+        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
+        // if params == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      var data = GLctx.getUniform(GL.programs[program], GL.uniforms[location]);
+      if (typeof data == 'number' || typeof data == 'boolean') {
+        switch (type) {
+          case 0: HEAP32[((params)>>2)]=data; break;
+          case 2: HEAPF32[((params)>>2)]=data; break;
+          default: throw 'internal emscriptenWebGLGetUniform() error, bad type: ' + type;
+        }
+      } else {
+        for (var i = 0; i < data.length; i++) {
+          switch (type) {
+            case 0: HEAP32[(((params)+(i*4))>>2)]=data[i]; break;
+            case 2: HEAPF32[(((params)+(i*4))>>2)]=data[i]; break;
+            default: throw 'internal emscriptenWebGLGetUniform() error, bad type: ' + type;
+          }
+        }
+      }
+    }
+  Module["emscriptenWebGLGetUniform"] = emscriptenWebGLGetUniform;function _emscripten_glGetUniformfv(program, location, params) {
+      emscriptenWebGLGetUniform(program, location, params, 2);
+    }
+  Module["_emscripten_glGetUniformfv"] = _emscripten_glGetUniformfv;
+
+  function _emscripten_glGetUniformiv(program, location, params) {
+      emscriptenWebGLGetUniform(program, location, params, 0);
+    }
+  Module["_emscripten_glGetUniformiv"] = _emscripten_glGetUniformiv;
+
+  function _emscripten_glGetVertexAttribPointerv(index, pname, pointer) {
+      if (!pointer) {
+        // GLES2 specification does not specify how to behave if pointer is a null pointer. Since calling this function does not make sense
+        // if pointer == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      HEAP32[((pointer)>>2)]=GLctx.getVertexAttribOffset(index, pname);
+    }
+  Module["_emscripten_glGetVertexAttribPointerv"] = _emscripten_glGetVertexAttribPointerv;
+
+  
+  /** @suppress{checkTypes} */
+  function emscriptenWebGLGetVertexAttrib(index, pname, params, type) {
+      if (!params) {
+        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
+        // if params == null, issue a GL error to notify user about it.
+        GL.recordError(0x501 /* GL_INVALID_VALUE */);
+        return;
+      }
+      var data = GLctx.getVertexAttrib(index, pname);
+      if (pname == 0x889F/*VERTEX_ATTRIB_ARRAY_BUFFER_BINDING*/) {
+        HEAP32[((params)>>2)]=data && data["name"];
+      } else if (typeof data == 'number' || typeof data == 'boolean') {
+        switch (type) {
+          case 0: HEAP32[((params)>>2)]=data; break;
+          case 2: HEAPF32[((params)>>2)]=data; break;
+          case 5: HEAP32[((params)>>2)]=Math.fround(data); break;
+          default: throw 'internal emscriptenWebGLGetVertexAttrib() error, bad type: ' + type;
+        }
+      } else {
+        for (var i = 0; i < data.length; i++) {
+          switch (type) {
+            case 0: HEAP32[(((params)+(i*4))>>2)]=data[i]; break;
+            case 2: HEAPF32[(((params)+(i*4))>>2)]=data[i]; break;
+            case 5: HEAP32[(((params)+(i*4))>>2)]=Math.fround(data[i]); break;
+            default: throw 'internal emscriptenWebGLGetVertexAttrib() error, bad type: ' + type;
+          }
+        }
+      }
+    }
+  Module["emscriptenWebGLGetVertexAttrib"] = emscriptenWebGLGetVertexAttrib;function _emscripten_glGetVertexAttribfv(index, pname, params) {
+      // N.B. This function may only be called if the vertex attribute was specified using the function glVertexAttrib*f(),
+      // otherwise the results are undefined. (GLES3 spec 6.1.12)
+      emscriptenWebGLGetVertexAttrib(index, pname, params, 2);
+    }
+  Module["_emscripten_glGetVertexAttribfv"] = _emscripten_glGetVertexAttribfv;
+
+  function _emscripten_glGetVertexAttribiv(index, pname, params) {
+      // N.B. This function may only be called if the vertex attribute was specified using the function glVertexAttrib*f(),
+      // otherwise the results are undefined. (GLES3 spec 6.1.12)
+      emscriptenWebGLGetVertexAttrib(index, pname, params, 5);
+    }
+  Module["_emscripten_glGetVertexAttribiv"] = _emscripten_glGetVertexAttribiv;
+
+  function _emscripten_glHint(x0, x1) { GLctx['hint'](x0, x1) }
+  Module["_emscripten_glHint"] = _emscripten_glHint;
+
+  function _emscripten_glIsBuffer(buffer) {
+      var b = GL.buffers[buffer];
+      if (!b) return 0;
+      return GLctx.isBuffer(b);
+    }
+  Module["_emscripten_glIsBuffer"] = _emscripten_glIsBuffer;
+
+  function _emscripten_glIsEnabled(x0) { return GLctx['isEnabled'](x0) }
+  Module["_emscripten_glIsEnabled"] = _emscripten_glIsEnabled;
+
+  function _emscripten_glIsFramebuffer(framebuffer) {
+      var fb = GL.framebuffers[framebuffer];
+      if (!fb) return 0;
+      return GLctx.isFramebuffer(fb);
+    }
+  Module["_emscripten_glIsFramebuffer"] = _emscripten_glIsFramebuffer;
+
+  function _emscripten_glIsProgram(program) {
+      program = GL.programs[program];
+      if (!program) return 0;
+      return GLctx.isProgram(program);
+    }
+  Module["_emscripten_glIsProgram"] = _emscripten_glIsProgram;
+
+  function _emscripten_glIsQueryEXT(id) {
+      var query = GL.timerQueriesEXT[id];
+      if (!query) return 0;
+      return GLctx.disjointTimerQueryExt['isQueryEXT'](query);
+    }
+  Module["_emscripten_glIsQueryEXT"] = _emscripten_glIsQueryEXT;
+
+  function _emscripten_glIsRenderbuffer(renderbuffer) {
+      var rb = GL.renderbuffers[renderbuffer];
+      if (!rb) return 0;
+      return GLctx.isRenderbuffer(rb);
+    }
+  Module["_emscripten_glIsRenderbuffer"] = _emscripten_glIsRenderbuffer;
+
+  function _emscripten_glIsShader(shader) {
+      var s = GL.shaders[shader];
+      if (!s) return 0;
+      return GLctx.isShader(s);
+    }
+  Module["_emscripten_glIsShader"] = _emscripten_glIsShader;
+
+  function _emscripten_glIsTexture(id) {
+      var texture = GL.textures[id];
+      if (!texture) return 0;
+      return GLctx.isTexture(texture);
+    }
+  Module["_emscripten_glIsTexture"] = _emscripten_glIsTexture;
+
+  function _emscripten_glIsVertexArrayOES(array) {
+  
+      var vao = GL.vaos[array];
+      if (!vao) return 0;
+      return GLctx['isVertexArray'](vao);
+    }
+  Module["_emscripten_glIsVertexArrayOES"] = _emscripten_glIsVertexArrayOES;
+
+  function _emscripten_glLineWidth(x0) { GLctx['lineWidth'](x0) }
+  Module["_emscripten_glLineWidth"] = _emscripten_glLineWidth;
+
+  function _emscripten_glLinkProgram(program) {
+      GLctx.linkProgram(GL.programs[program]);
+      GL.populateUniformTable(program);
+    }
+  Module["_emscripten_glLinkProgram"] = _emscripten_glLinkProgram;
+
+  function _emscripten_glPixelStorei(pname, param) {
+      if (pname == 0xCF5 /* GL_UNPACK_ALIGNMENT */) {
+        GL.unpackAlignment = param;
+      }
+      GLctx.pixelStorei(pname, param);
+    }
+  Module["_emscripten_glPixelStorei"] = _emscripten_glPixelStorei;
+
+  function _emscripten_glPolygonOffset(x0, x1) { GLctx['polygonOffset'](x0, x1) }
+  Module["_emscripten_glPolygonOffset"] = _emscripten_glPolygonOffset;
+
+  function _emscripten_glQueryCounterEXT(id, target) {
+      GLctx.disjointTimerQueryExt['queryCounterEXT'](GL.timerQueriesEXT[id], target);
+    }
+  Module["_emscripten_glQueryCounterEXT"] = _emscripten_glQueryCounterEXT;
+
+  
+  
+  function __computeUnpackAlignedImageSize(width, height, sizePerPixel, alignment) {
+      function roundedToNextMultipleOf(x, y) {
+        return (x + y - 1) & -y;
+      }
+      var plainRowSize = width * sizePerPixel;
+      var alignedRowSize = roundedToNextMultipleOf(plainRowSize, alignment);
+      return height * alignedRowSize;
+    }
+  Module["__computeUnpackAlignedImageSize"] = __computeUnpackAlignedImageSize;
+  
+  function __colorChannelsInGlTextureFormat(format) {
+      // Micro-optimizations for size: map format to size by subtracting smallest enum value (0x1902) from all values first.
+      // Also omit the most common size value (1) from the list, which is assumed by formats not on the list.
+      var colorChannels = {
+        // 0x1902 /* GL_DEPTH_COMPONENT */ - 0x1902: 1,
+        // 0x1906 /* GL_ALPHA */ - 0x1902: 1,
+        5: 3,
+        6: 4,
+        // 0x1909 /* GL_LUMINANCE */ - 0x1902: 1,
+        8: 2,
+        29502: 3,
+        29504: 4,
+      };
+      return colorChannels[format - 0x1902]||1;
+    }
+  Module["__colorChannelsInGlTextureFormat"] = __colorChannelsInGlTextureFormat;
+  
+  function __heapObjectForWebGLType(type) {
+      // Micro-optimization for size: Subtract lowest GL enum number (0x1400/* GL_BYTE */) from type to compare
+      // smaller values for the heap, for shorter generated code size.
+      // Also the type HEAPU16 is not tested for explicitly, but any unrecognized type will return out HEAPU16.
+      // (since most types are HEAPU16)
+      type -= 0x1400;
+  
+      if (type == 1) return HEAPU8;
+  
+  
+      if (type == 4) return HEAP32;
+  
+      if (type == 6) return HEAPF32;
+  
+      if (type == 5
+        || type == 28922
+        )
+        return HEAPU32;
+  
+      return HEAPU16;
+    }
+  Module["__heapObjectForWebGLType"] = __heapObjectForWebGLType;
+  
+  function __heapAccessShiftForWebGLHeap(heap) {
+      return 31 - Math.clz32(heap.BYTES_PER_ELEMENT);
+    }
+  Module["__heapAccessShiftForWebGLHeap"] = __heapAccessShiftForWebGLHeap;function emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, internalFormat) {
+      var heap = __heapObjectForWebGLType(type);
+      var shift = __heapAccessShiftForWebGLHeap(heap);
+      var byteSize = 1<<shift;
+      var sizePerPixel = __colorChannelsInGlTextureFormat(format) * byteSize;
+      var bytes = __computeUnpackAlignedImageSize(width, height, sizePerPixel, GL.unpackAlignment);
+      return heap.subarray(pixels >> shift, pixels + bytes >> shift);
+    }
+  Module["emscriptenWebGLGetTexPixelData"] = emscriptenWebGLGetTexPixelData;function _emscripten_glReadPixels(x, y, width, height, format, type, pixels) {
+      var pixelData = emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, format);
+      if (!pixelData) {
+        GL.recordError(0x500/*GL_INVALID_ENUM*/);
+        return;
+      }
+      GLctx.readPixels(x, y, width, height, format, type, pixelData);
+    }
+  Module["_emscripten_glReadPixels"] = _emscripten_glReadPixels;
+
+  function _emscripten_glReleaseShaderCompiler() {
+      // NOP (as allowed by GLES 2.0 spec)
+    }
+  Module["_emscripten_glReleaseShaderCompiler"] = _emscripten_glReleaseShaderCompiler;
+
+  function _emscripten_glRenderbufferStorage(x0, x1, x2, x3) { GLctx['renderbufferStorage'](x0, x1, x2, x3) }
+  Module["_emscripten_glRenderbufferStorage"] = _emscripten_glRenderbufferStorage;
+
+  function _emscripten_glSampleCoverage(value, invert) {
+      GLctx.sampleCoverage(value, !!invert);
+    }
+  Module["_emscripten_glSampleCoverage"] = _emscripten_glSampleCoverage;
+
+  function _emscripten_glScissor(x0, x1, x2, x3) { GLctx['scissor'](x0, x1, x2, x3) }
+  Module["_emscripten_glScissor"] = _emscripten_glScissor;
+
+  function _emscripten_glShaderBinary() {
+      GL.recordError(0x500/*GL_INVALID_ENUM*/);
+    }
+  Module["_emscripten_glShaderBinary"] = _emscripten_glShaderBinary;
+
+  function _emscripten_glShaderSource(shader, count, string, length) {
+      var source = GL.getSource(shader, count, string, length);
+  
+  
+      GLctx.shaderSource(GL.shaders[shader], source);
+    }
+  Module["_emscripten_glShaderSource"] = _emscripten_glShaderSource;
+
+  function _emscripten_glStencilFunc(x0, x1, x2) { GLctx['stencilFunc'](x0, x1, x2) }
+  Module["_emscripten_glStencilFunc"] = _emscripten_glStencilFunc;
+
+  function _emscripten_glStencilFuncSeparate(x0, x1, x2, x3) { GLctx['stencilFuncSeparate'](x0, x1, x2, x3) }
+  Module["_emscripten_glStencilFuncSeparate"] = _emscripten_glStencilFuncSeparate;
+
+  function _emscripten_glStencilMask(x0) { GLctx['stencilMask'](x0) }
+  Module["_emscripten_glStencilMask"] = _emscripten_glStencilMask;
+
+  function _emscripten_glStencilMaskSeparate(x0, x1) { GLctx['stencilMaskSeparate'](x0, x1) }
+  Module["_emscripten_glStencilMaskSeparate"] = _emscripten_glStencilMaskSeparate;
+
+  function _emscripten_glStencilOp(x0, x1, x2) { GLctx['stencilOp'](x0, x1, x2) }
+  Module["_emscripten_glStencilOp"] = _emscripten_glStencilOp;
+
+  function _emscripten_glStencilOpSeparate(x0, x1, x2, x3) { GLctx['stencilOpSeparate'](x0, x1, x2, x3) }
+  Module["_emscripten_glStencilOpSeparate"] = _emscripten_glStencilOpSeparate;
+
+  function _emscripten_glTexImage2D(target, level, internalFormat, width, height, border, format, type, pixels) {
+      GLctx.texImage2D(target, level, internalFormat, width, height, border, format, type, pixels ? emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, internalFormat) : null);
+    }
+  Module["_emscripten_glTexImage2D"] = _emscripten_glTexImage2D;
+
+  function _emscripten_glTexParameterf(x0, x1, x2) { GLctx['texParameterf'](x0, x1, x2) }
+  Module["_emscripten_glTexParameterf"] = _emscripten_glTexParameterf;
+
+  function _emscripten_glTexParameterfv(target, pname, params) {
+      var param = HEAPF32[((params)>>2)];
+      GLctx.texParameterf(target, pname, param);
+    }
+  Module["_emscripten_glTexParameterfv"] = _emscripten_glTexParameterfv;
+
+  function _emscripten_glTexParameteri(x0, x1, x2) { GLctx['texParameteri'](x0, x1, x2) }
+  Module["_emscripten_glTexParameteri"] = _emscripten_glTexParameteri;
+
+  function _emscripten_glTexParameteriv(target, pname, params) {
+      var param = HEAP32[((params)>>2)];
+      GLctx.texParameteri(target, pname, param);
+    }
+  Module["_emscripten_glTexParameteriv"] = _emscripten_glTexParameteriv;
+
+  function _emscripten_glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels) {
+      var pixelData = null;
+      if (pixels) pixelData = emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, 0);
+      GLctx.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixelData);
+    }
+  Module["_emscripten_glTexSubImage2D"] = _emscripten_glTexSubImage2D;
+
+  function _emscripten_glUniform1f(location, v0) {
+      GLctx.uniform1f(GL.uniforms[location], v0);
+    }
+  Module["_emscripten_glUniform1f"] = _emscripten_glUniform1f;
+
+  function _emscripten_glUniform1fv(location, count, value) {
+  
+  
+      if (count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferFloatViews[count-1];
+        for (var i = 0; i < count; ++i) {
+          view[i] = HEAPF32[(((value)+(4*i))>>2)];
+        }
+      } else
+      {
+        var view = HEAPF32.subarray((value)>>2,(value+count*4)>>2);
+      }
+      GLctx.uniform1fv(GL.uniforms[location], view);
+    }
+  Module["_emscripten_glUniform1fv"] = _emscripten_glUniform1fv;
+
+  function _emscripten_glUniform1i(location, v0) {
+      GLctx.uniform1i(GL.uniforms[location], v0);
+    }
+  Module["_emscripten_glUniform1i"] = _emscripten_glUniform1i;
+
+  function _emscripten_glUniform1iv(location, count, value) {
+  
+  
+      if (count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferIntViews[count-1];
+        for (var i = 0; i < count; ++i) {
+          view[i] = HEAP32[(((value)+(4*i))>>2)];
+        }
+      } else
+      {
+        var view = HEAP32.subarray((value)>>2,(value+count*4)>>2);
+      }
+      GLctx.uniform1iv(GL.uniforms[location], view);
+    }
+  Module["_emscripten_glUniform1iv"] = _emscripten_glUniform1iv;
+
+  function _emscripten_glUniform2f(location, v0, v1) {
+      GLctx.uniform2f(GL.uniforms[location], v0, v1);
+    }
+  Module["_emscripten_glUniform2f"] = _emscripten_glUniform2f;
+
+  function _emscripten_glUniform2fv(location, count, value) {
+  
+  
+      if (2*count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferFloatViews[2*count-1];
+        for (var i = 0; i < 2*count; i += 2) {
+          view[i] = HEAPF32[(((value)+(4*i))>>2)];
+          view[i+1] = HEAPF32[(((value)+(4*i+4))>>2)];
+        }
+      } else
+      {
+        var view = HEAPF32.subarray((value)>>2,(value+count*8)>>2);
+      }
+      GLctx.uniform2fv(GL.uniforms[location], view);
+    }
+  Module["_emscripten_glUniform2fv"] = _emscripten_glUniform2fv;
+
+  function _emscripten_glUniform2i(location, v0, v1) {
+      GLctx.uniform2i(GL.uniforms[location], v0, v1);
+    }
+  Module["_emscripten_glUniform2i"] = _emscripten_glUniform2i;
+
+  function _emscripten_glUniform2iv(location, count, value) {
+  
+  
+      if (2*count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferIntViews[2*count-1];
+        for (var i = 0; i < 2*count; i += 2) {
+          view[i] = HEAP32[(((value)+(4*i))>>2)];
+          view[i+1] = HEAP32[(((value)+(4*i+4))>>2)];
+        }
+      } else
+      {
+        var view = HEAP32.subarray((value)>>2,(value+count*8)>>2);
+      }
+      GLctx.uniform2iv(GL.uniforms[location], view);
+    }
+  Module["_emscripten_glUniform2iv"] = _emscripten_glUniform2iv;
+
+  function _emscripten_glUniform3f(location, v0, v1, v2) {
+      GLctx.uniform3f(GL.uniforms[location], v0, v1, v2);
+    }
+  Module["_emscripten_glUniform3f"] = _emscripten_glUniform3f;
+
+  function _emscripten_glUniform3fv(location, count, value) {
+  
+  
+      if (3*count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferFloatViews[3*count-1];
+        for (var i = 0; i < 3*count; i += 3) {
+          view[i] = HEAPF32[(((value)+(4*i))>>2)];
+          view[i+1] = HEAPF32[(((value)+(4*i+4))>>2)];
+          view[i+2] = HEAPF32[(((value)+(4*i+8))>>2)];
+        }
+      } else
+      {
+        var view = HEAPF32.subarray((value)>>2,(value+count*12)>>2);
+      }
+      GLctx.uniform3fv(GL.uniforms[location], view);
+    }
+  Module["_emscripten_glUniform3fv"] = _emscripten_glUniform3fv;
+
+  function _emscripten_glUniform3i(location, v0, v1, v2) {
+      GLctx.uniform3i(GL.uniforms[location], v0, v1, v2);
+    }
+  Module["_emscripten_glUniform3i"] = _emscripten_glUniform3i;
+
+  function _emscripten_glUniform3iv(location, count, value) {
+  
+  
+      if (3*count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferIntViews[3*count-1];
+        for (var i = 0; i < 3*count; i += 3) {
+          view[i] = HEAP32[(((value)+(4*i))>>2)];
+          view[i+1] = HEAP32[(((value)+(4*i+4))>>2)];
+          view[i+2] = HEAP32[(((value)+(4*i+8))>>2)];
+        }
+      } else
+      {
+        var view = HEAP32.subarray((value)>>2,(value+count*12)>>2);
+      }
+      GLctx.uniform3iv(GL.uniforms[location], view);
+    }
+  Module["_emscripten_glUniform3iv"] = _emscripten_glUniform3iv;
+
+  function _emscripten_glUniform4f(location, v0, v1, v2, v3) {
+      GLctx.uniform4f(GL.uniforms[location], v0, v1, v2, v3);
+    }
+  Module["_emscripten_glUniform4f"] = _emscripten_glUniform4f;
+
+  function _emscripten_glUniform4fv(location, count, value) {
+  
+  
+      if (4*count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferFloatViews[4*count-1];
+        // hoist the heap out of the loop for size and for pthreads+growth.
+        var heap = HEAPF32;
+        value >>= 2;
+        for (var i = 0; i < 4 * count; i += 4) {
+          var dst = value + i;
+          view[i] = heap[dst];
+          view[i + 1] = heap[dst + 1];
+          view[i + 2] = heap[dst + 2];
+          view[i + 3] = heap[dst + 3];
+        }
+      } else
+      {
+        var view = HEAPF32.subarray((value)>>2,(value+count*16)>>2);
+      }
+      GLctx.uniform4fv(GL.uniforms[location], view);
+    }
+  Module["_emscripten_glUniform4fv"] = _emscripten_glUniform4fv;
+
+  function _emscripten_glUniform4i(location, v0, v1, v2, v3) {
+      GLctx.uniform4i(GL.uniforms[location], v0, v1, v2, v3);
+    }
+  Module["_emscripten_glUniform4i"] = _emscripten_glUniform4i;
+
+  function _emscripten_glUniform4iv(location, count, value) {
+  
+  
+      if (4*count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferIntViews[4*count-1];
+        for (var i = 0; i < 4*count; i += 4) {
+          view[i] = HEAP32[(((value)+(4*i))>>2)];
+          view[i+1] = HEAP32[(((value)+(4*i+4))>>2)];
+          view[i+2] = HEAP32[(((value)+(4*i+8))>>2)];
+          view[i+3] = HEAP32[(((value)+(4*i+12))>>2)];
+        }
+      } else
+      {
+        var view = HEAP32.subarray((value)>>2,(value+count*16)>>2);
+      }
+      GLctx.uniform4iv(GL.uniforms[location], view);
+    }
+  Module["_emscripten_glUniform4iv"] = _emscripten_glUniform4iv;
+
+  function _emscripten_glUniformMatrix2fv(location, count, transpose, value) {
+  
+  
+      if (4*count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferFloatViews[4*count-1];
+        for (var i = 0; i < 4*count; i += 4) {
+          view[i] = HEAPF32[(((value)+(4*i))>>2)];
+          view[i+1] = HEAPF32[(((value)+(4*i+4))>>2)];
+          view[i+2] = HEAPF32[(((value)+(4*i+8))>>2)];
+          view[i+3] = HEAPF32[(((value)+(4*i+12))>>2)];
+        }
+      } else
+      {
+        var view = HEAPF32.subarray((value)>>2,(value+count*16)>>2);
+      }
+      GLctx.uniformMatrix2fv(GL.uniforms[location], !!transpose, view);
+    }
+  Module["_emscripten_glUniformMatrix2fv"] = _emscripten_glUniformMatrix2fv;
+
+  function _emscripten_glUniformMatrix3fv(location, count, transpose, value) {
+  
+  
+      if (9*count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferFloatViews[9*count-1];
+        for (var i = 0; i < 9*count; i += 9) {
+          view[i] = HEAPF32[(((value)+(4*i))>>2)];
+          view[i+1] = HEAPF32[(((value)+(4*i+4))>>2)];
+          view[i+2] = HEAPF32[(((value)+(4*i+8))>>2)];
+          view[i+3] = HEAPF32[(((value)+(4*i+12))>>2)];
+          view[i+4] = HEAPF32[(((value)+(4*i+16))>>2)];
+          view[i+5] = HEAPF32[(((value)+(4*i+20))>>2)];
+          view[i+6] = HEAPF32[(((value)+(4*i+24))>>2)];
+          view[i+7] = HEAPF32[(((value)+(4*i+28))>>2)];
+          view[i+8] = HEAPF32[(((value)+(4*i+32))>>2)];
+        }
+      } else
+      {
+        var view = HEAPF32.subarray((value)>>2,(value+count*36)>>2);
+      }
+      GLctx.uniformMatrix3fv(GL.uniforms[location], !!transpose, view);
+    }
+  Module["_emscripten_glUniformMatrix3fv"] = _emscripten_glUniformMatrix3fv;
+
+  function _emscripten_glUniformMatrix4fv(location, count, transpose, value) {
+  
+  
+      if (16*count <= GL.MINI_TEMP_BUFFER_SIZE) {
+        // avoid allocation when uploading few enough uniforms
+        var view = GL.miniTempBufferFloatViews[16*count-1];
+        // hoist the heap out of the loop for size and for pthreads+growth.
+        var heap = HEAPF32;
+        value >>= 2;
+        for (var i = 0; i < 16 * count; i += 16) {
+          var dst = value + i;
+          view[i] = heap[dst];
+          view[i + 1] = heap[dst + 1];
+          view[i + 2] = heap[dst + 2];
+          view[i + 3] = heap[dst + 3];
+          view[i + 4] = heap[dst + 4];
+          view[i + 5] = heap[dst + 5];
+          view[i + 6] = heap[dst + 6];
+          view[i + 7] = heap[dst + 7];
+          view[i + 8] = heap[dst + 8];
+          view[i + 9] = heap[dst + 9];
+          view[i + 10] = heap[dst + 10];
+          view[i + 11] = heap[dst + 11];
+          view[i + 12] = heap[dst + 12];
+          view[i + 13] = heap[dst + 13];
+          view[i + 14] = heap[dst + 14];
+          view[i + 15] = heap[dst + 15];
+        }
+      } else
+      {
+        var view = HEAPF32.subarray((value)>>2,(value+count*64)>>2);
+      }
+      GLctx.uniformMatrix4fv(GL.uniforms[location], !!transpose, view);
+    }
+  Module["_emscripten_glUniformMatrix4fv"] = _emscripten_glUniformMatrix4fv;
+
+  function _emscripten_glUseProgram(program) {
+      GLctx.useProgram(GL.programs[program]);
+    }
+  Module["_emscripten_glUseProgram"] = _emscripten_glUseProgram;
+
+  function _emscripten_glValidateProgram(program) {
+      GLctx.validateProgram(GL.programs[program]);
+    }
+  Module["_emscripten_glValidateProgram"] = _emscripten_glValidateProgram;
+
+  function _emscripten_glVertexAttrib1f(x0, x1) { GLctx['vertexAttrib1f'](x0, x1) }
+  Module["_emscripten_glVertexAttrib1f"] = _emscripten_glVertexAttrib1f;
+
+  function _emscripten_glVertexAttrib1fv(index, v) {
+  
+      GLctx.vertexAttrib1f(index, HEAPF32[v>>2]);
+    }
+  Module["_emscripten_glVertexAttrib1fv"] = _emscripten_glVertexAttrib1fv;
+
+  function _emscripten_glVertexAttrib2f(x0, x1, x2) { GLctx['vertexAttrib2f'](x0, x1, x2) }
+  Module["_emscripten_glVertexAttrib2f"] = _emscripten_glVertexAttrib2f;
+
+  function _emscripten_glVertexAttrib2fv(index, v) {
+  
+      GLctx.vertexAttrib2f(index, HEAPF32[v>>2], HEAPF32[v+4>>2]);
+    }
+  Module["_emscripten_glVertexAttrib2fv"] = _emscripten_glVertexAttrib2fv;
+
+  function _emscripten_glVertexAttrib3f(x0, x1, x2, x3) { GLctx['vertexAttrib3f'](x0, x1, x2, x3) }
+  Module["_emscripten_glVertexAttrib3f"] = _emscripten_glVertexAttrib3f;
+
+  function _emscripten_glVertexAttrib3fv(index, v) {
+  
+      GLctx.vertexAttrib3f(index, HEAPF32[v>>2], HEAPF32[v+4>>2], HEAPF32[v+8>>2]);
+    }
+  Module["_emscripten_glVertexAttrib3fv"] = _emscripten_glVertexAttrib3fv;
+
+  function _emscripten_glVertexAttrib4f(x0, x1, x2, x3, x4) { GLctx['vertexAttrib4f'](x0, x1, x2, x3, x4) }
+  Module["_emscripten_glVertexAttrib4f"] = _emscripten_glVertexAttrib4f;
+
+  function _emscripten_glVertexAttrib4fv(index, v) {
+  
+      GLctx.vertexAttrib4f(index, HEAPF32[v>>2], HEAPF32[v+4>>2], HEAPF32[v+8>>2], HEAPF32[v+12>>2]);
+    }
+  Module["_emscripten_glVertexAttrib4fv"] = _emscripten_glVertexAttrib4fv;
+
+  function _emscripten_glVertexAttribDivisorANGLE(index, divisor) {
+      GLctx['vertexAttribDivisor'](index, divisor);
+    }
+  Module["_emscripten_glVertexAttribDivisorANGLE"] = _emscripten_glVertexAttribDivisorANGLE;
+
+  function _emscripten_glVertexAttribPointer(index, size, type, normalized, stride, ptr) {
+      GLctx.vertexAttribPointer(index, size, type, !!normalized, stride, ptr);
+    }
+  Module["_emscripten_glVertexAttribPointer"] = _emscripten_glVertexAttribPointer;
+
+  function _emscripten_glViewport(x0, x1, x2, x3) { GLctx['viewport'](x0, x1, x2, x3) }
+  Module["_emscripten_glViewport"] = _emscripten_glViewport;
 
   function _emscripten_has_asyncify() {
       return 0;
@@ -9776,6 +11333,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
       abort('Cannot enlarge memory arrays to size ' + requestedSize + ' bytes (OOM). Either (1) compile with  -s INITIAL_MEMORY=X  with X higher than the current value ' + HEAP8.length + ', (2) compile with  -s ALLOW_MEMORY_GROWTH=1  which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with  -s ABORTING_MALLOC=0 ');
     }
   Module["abortOnCannotGrowMemory"] = abortOnCannotGrowMemory;function _emscripten_resize_heap(requestedSize) {
+      requestedSize = requestedSize >>> 0;
       abortOnCannotGrowMemory(requestedSize);
     }
   Module["_emscripten_resize_heap"] = _emscripten_resize_heap;
@@ -11056,6 +12614,972 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   return Module['_fp$eglWaitNative$ii'].apply(null, arguments);
   }
 
+  function _fp$emscripten_glActiveTexture$vi(
+  ) {
+  if (!Module['_fp$emscripten_glActiveTexture$vi']) abort("external function 'fp$emscripten_glActiveTexture$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glActiveTexture$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glAttachShader$vii(
+  ) {
+  if (!Module['_fp$emscripten_glAttachShader$vii']) abort("external function 'fp$emscripten_glAttachShader$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glAttachShader$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBeginQueryEXT$vii(
+  ) {
+  if (!Module['_fp$emscripten_glBeginQueryEXT$vii']) abort("external function 'fp$emscripten_glBeginQueryEXT$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBeginQueryEXT$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBindAttribLocation$viii(
+  ) {
+  if (!Module['_fp$emscripten_glBindAttribLocation$viii']) abort("external function 'fp$emscripten_glBindAttribLocation$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBindAttribLocation$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBindBuffer$vii(
+  ) {
+  if (!Module['_fp$emscripten_glBindBuffer$vii']) abort("external function 'fp$emscripten_glBindBuffer$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBindBuffer$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBindFramebuffer$vii(
+  ) {
+  if (!Module['_fp$emscripten_glBindFramebuffer$vii']) abort("external function 'fp$emscripten_glBindFramebuffer$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBindFramebuffer$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBindRenderbuffer$vii(
+  ) {
+  if (!Module['_fp$emscripten_glBindRenderbuffer$vii']) abort("external function 'fp$emscripten_glBindRenderbuffer$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBindRenderbuffer$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBindTexture$vii(
+  ) {
+  if (!Module['_fp$emscripten_glBindTexture$vii']) abort("external function 'fp$emscripten_glBindTexture$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBindTexture$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBindVertexArrayOES$vi(
+  ) {
+  if (!Module['_fp$emscripten_glBindVertexArrayOES$vi']) abort("external function 'fp$emscripten_glBindVertexArrayOES$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBindVertexArrayOES$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBlendColor$vffff(
+  ) {
+  if (!Module['_fp$emscripten_glBlendColor$vffff']) abort("external function 'fp$emscripten_glBlendColor$vffff' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBlendColor$vffff'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBlendEquation$vi(
+  ) {
+  if (!Module['_fp$emscripten_glBlendEquation$vi']) abort("external function 'fp$emscripten_glBlendEquation$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBlendEquation$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBlendEquationSeparate$vii(
+  ) {
+  if (!Module['_fp$emscripten_glBlendEquationSeparate$vii']) abort("external function 'fp$emscripten_glBlendEquationSeparate$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBlendEquationSeparate$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBlendFunc$vii(
+  ) {
+  if (!Module['_fp$emscripten_glBlendFunc$vii']) abort("external function 'fp$emscripten_glBlendFunc$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBlendFunc$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBlendFuncSeparate$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glBlendFuncSeparate$viiii']) abort("external function 'fp$emscripten_glBlendFuncSeparate$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBlendFuncSeparate$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBufferData$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glBufferData$viiii']) abort("external function 'fp$emscripten_glBufferData$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBufferData$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glBufferSubData$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glBufferSubData$viiii']) abort("external function 'fp$emscripten_glBufferSubData$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glBufferSubData$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glCheckFramebufferStatus$ii(
+  ) {
+  if (!Module['_fp$emscripten_glCheckFramebufferStatus$ii']) abort("external function 'fp$emscripten_glCheckFramebufferStatus$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glCheckFramebufferStatus$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glClear$vi(
+  ) {
+  if (!Module['_fp$emscripten_glClear$vi']) abort("external function 'fp$emscripten_glClear$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glClear$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glClearColor$vffff(
+  ) {
+  if (!Module['_fp$emscripten_glClearColor$vffff']) abort("external function 'fp$emscripten_glClearColor$vffff' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glClearColor$vffff'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glClearDepthf$vf(
+  ) {
+  if (!Module['_fp$emscripten_glClearDepthf$vf']) abort("external function 'fp$emscripten_glClearDepthf$vf' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glClearDepthf$vf'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glClearStencil$vi(
+  ) {
+  if (!Module['_fp$emscripten_glClearStencil$vi']) abort("external function 'fp$emscripten_glClearStencil$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glClearStencil$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glColorMask$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glColorMask$viiii']) abort("external function 'fp$emscripten_glColorMask$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glColorMask$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glCompileShader$vi(
+  ) {
+  if (!Module['_fp$emscripten_glCompileShader$vi']) abort("external function 'fp$emscripten_glCompileShader$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glCompileShader$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glCompressedTexImage2D$viiiiiiii(
+  ) {
+  if (!Module['_fp$emscripten_glCompressedTexImage2D$viiiiiiii']) abort("external function 'fp$emscripten_glCompressedTexImage2D$viiiiiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glCompressedTexImage2D$viiiiiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glCompressedTexSubImage2D$viiiiiiiii(
+  ) {
+  if (!Module['_fp$emscripten_glCompressedTexSubImage2D$viiiiiiiii']) abort("external function 'fp$emscripten_glCompressedTexSubImage2D$viiiiiiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glCompressedTexSubImage2D$viiiiiiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glCopyTexImage2D$viiiiiiii(
+  ) {
+  if (!Module['_fp$emscripten_glCopyTexImage2D$viiiiiiii']) abort("external function 'fp$emscripten_glCopyTexImage2D$viiiiiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glCopyTexImage2D$viiiiiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glCopyTexSubImage2D$viiiiiiii(
+  ) {
+  if (!Module['_fp$emscripten_glCopyTexSubImage2D$viiiiiiii']) abort("external function 'fp$emscripten_glCopyTexSubImage2D$viiiiiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glCopyTexSubImage2D$viiiiiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glCreateProgram$i(
+  ) {
+  if (!Module['_fp$emscripten_glCreateProgram$i']) abort("external function 'fp$emscripten_glCreateProgram$i' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glCreateProgram$i'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glCreateShader$ii(
+  ) {
+  if (!Module['_fp$emscripten_glCreateShader$ii']) abort("external function 'fp$emscripten_glCreateShader$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glCreateShader$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glCullFace$vi(
+  ) {
+  if (!Module['_fp$emscripten_glCullFace$vi']) abort("external function 'fp$emscripten_glCullFace$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glCullFace$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDeleteBuffers$vii(
+  ) {
+  if (!Module['_fp$emscripten_glDeleteBuffers$vii']) abort("external function 'fp$emscripten_glDeleteBuffers$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDeleteBuffers$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDeleteFramebuffers$vii(
+  ) {
+  if (!Module['_fp$emscripten_glDeleteFramebuffers$vii']) abort("external function 'fp$emscripten_glDeleteFramebuffers$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDeleteFramebuffers$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDeleteProgram$vi(
+  ) {
+  if (!Module['_fp$emscripten_glDeleteProgram$vi']) abort("external function 'fp$emscripten_glDeleteProgram$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDeleteProgram$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDeleteQueriesEXT$vii(
+  ) {
+  if (!Module['_fp$emscripten_glDeleteQueriesEXT$vii']) abort("external function 'fp$emscripten_glDeleteQueriesEXT$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDeleteQueriesEXT$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDeleteRenderbuffers$vii(
+  ) {
+  if (!Module['_fp$emscripten_glDeleteRenderbuffers$vii']) abort("external function 'fp$emscripten_glDeleteRenderbuffers$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDeleteRenderbuffers$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDeleteShader$vi(
+  ) {
+  if (!Module['_fp$emscripten_glDeleteShader$vi']) abort("external function 'fp$emscripten_glDeleteShader$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDeleteShader$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDeleteTextures$vii(
+  ) {
+  if (!Module['_fp$emscripten_glDeleteTextures$vii']) abort("external function 'fp$emscripten_glDeleteTextures$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDeleteTextures$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDeleteVertexArraysOES$vii(
+  ) {
+  if (!Module['_fp$emscripten_glDeleteVertexArraysOES$vii']) abort("external function 'fp$emscripten_glDeleteVertexArraysOES$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDeleteVertexArraysOES$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDepthFunc$vi(
+  ) {
+  if (!Module['_fp$emscripten_glDepthFunc$vi']) abort("external function 'fp$emscripten_glDepthFunc$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDepthFunc$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDepthMask$vi(
+  ) {
+  if (!Module['_fp$emscripten_glDepthMask$vi']) abort("external function 'fp$emscripten_glDepthMask$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDepthMask$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDepthRangef$vff(
+  ) {
+  if (!Module['_fp$emscripten_glDepthRangef$vff']) abort("external function 'fp$emscripten_glDepthRangef$vff' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDepthRangef$vff'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDetachShader$vii(
+  ) {
+  if (!Module['_fp$emscripten_glDetachShader$vii']) abort("external function 'fp$emscripten_glDetachShader$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDetachShader$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDisable$vi(
+  ) {
+  if (!Module['_fp$emscripten_glDisable$vi']) abort("external function 'fp$emscripten_glDisable$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDisable$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDisableVertexAttribArray$vi(
+  ) {
+  if (!Module['_fp$emscripten_glDisableVertexAttribArray$vi']) abort("external function 'fp$emscripten_glDisableVertexAttribArray$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDisableVertexAttribArray$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDrawArrays$viii(
+  ) {
+  if (!Module['_fp$emscripten_glDrawArrays$viii']) abort("external function 'fp$emscripten_glDrawArrays$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDrawArrays$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDrawArraysInstancedANGLE$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glDrawArraysInstancedANGLE$viiii']) abort("external function 'fp$emscripten_glDrawArraysInstancedANGLE$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDrawArraysInstancedANGLE$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDrawBuffersWEBGL$vii(
+  ) {
+  if (!Module['_fp$emscripten_glDrawBuffersWEBGL$vii']) abort("external function 'fp$emscripten_glDrawBuffersWEBGL$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDrawBuffersWEBGL$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDrawElements$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glDrawElements$viiii']) abort("external function 'fp$emscripten_glDrawElements$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDrawElements$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glDrawElementsInstancedANGLE$viiiii(
+  ) {
+  if (!Module['_fp$emscripten_glDrawElementsInstancedANGLE$viiiii']) abort("external function 'fp$emscripten_glDrawElementsInstancedANGLE$viiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glDrawElementsInstancedANGLE$viiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glEnable$vi(
+  ) {
+  if (!Module['_fp$emscripten_glEnable$vi']) abort("external function 'fp$emscripten_glEnable$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glEnable$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glEnableVertexAttribArray$vi(
+  ) {
+  if (!Module['_fp$emscripten_glEnableVertexAttribArray$vi']) abort("external function 'fp$emscripten_glEnableVertexAttribArray$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glEnableVertexAttribArray$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glEndQueryEXT$vi(
+  ) {
+  if (!Module['_fp$emscripten_glEndQueryEXT$vi']) abort("external function 'fp$emscripten_glEndQueryEXT$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glEndQueryEXT$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glFinish$v(
+  ) {
+  if (!Module['_fp$emscripten_glFinish$v']) abort("external function 'fp$emscripten_glFinish$v' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glFinish$v'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glFlush$v(
+  ) {
+  if (!Module['_fp$emscripten_glFlush$v']) abort("external function 'fp$emscripten_glFlush$v' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glFlush$v'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glFramebufferRenderbuffer$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glFramebufferRenderbuffer$viiii']) abort("external function 'fp$emscripten_glFramebufferRenderbuffer$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glFramebufferRenderbuffer$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glFramebufferTexture2D$viiiii(
+  ) {
+  if (!Module['_fp$emscripten_glFramebufferTexture2D$viiiii']) abort("external function 'fp$emscripten_glFramebufferTexture2D$viiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glFramebufferTexture2D$viiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glFrontFace$vi(
+  ) {
+  if (!Module['_fp$emscripten_glFrontFace$vi']) abort("external function 'fp$emscripten_glFrontFace$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glFrontFace$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGenBuffers$vii(
+  ) {
+  if (!Module['_fp$emscripten_glGenBuffers$vii']) abort("external function 'fp$emscripten_glGenBuffers$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGenBuffers$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGenFramebuffers$vii(
+  ) {
+  if (!Module['_fp$emscripten_glGenFramebuffers$vii']) abort("external function 'fp$emscripten_glGenFramebuffers$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGenFramebuffers$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGenQueriesEXT$vii(
+  ) {
+  if (!Module['_fp$emscripten_glGenQueriesEXT$vii']) abort("external function 'fp$emscripten_glGenQueriesEXT$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGenQueriesEXT$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGenRenderbuffers$vii(
+  ) {
+  if (!Module['_fp$emscripten_glGenRenderbuffers$vii']) abort("external function 'fp$emscripten_glGenRenderbuffers$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGenRenderbuffers$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGenTextures$vii(
+  ) {
+  if (!Module['_fp$emscripten_glGenTextures$vii']) abort("external function 'fp$emscripten_glGenTextures$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGenTextures$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGenVertexArraysOES$vii(
+  ) {
+  if (!Module['_fp$emscripten_glGenVertexArraysOES$vii']) abort("external function 'fp$emscripten_glGenVertexArraysOES$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGenVertexArraysOES$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGenerateMipmap$vi(
+  ) {
+  if (!Module['_fp$emscripten_glGenerateMipmap$vi']) abort("external function 'fp$emscripten_glGenerateMipmap$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGenerateMipmap$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetActiveAttrib$viiiiiii(
+  ) {
+  if (!Module['_fp$emscripten_glGetActiveAttrib$viiiiiii']) abort("external function 'fp$emscripten_glGetActiveAttrib$viiiiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetActiveAttrib$viiiiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetActiveUniform$viiiiiii(
+  ) {
+  if (!Module['_fp$emscripten_glGetActiveUniform$viiiiiii']) abort("external function 'fp$emscripten_glGetActiveUniform$viiiiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetActiveUniform$viiiiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetAttachedShaders$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glGetAttachedShaders$viiii']) abort("external function 'fp$emscripten_glGetAttachedShaders$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetAttachedShaders$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetAttribLocation$iii(
+  ) {
+  if (!Module['_fp$emscripten_glGetAttribLocation$iii']) abort("external function 'fp$emscripten_glGetAttribLocation$iii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetAttribLocation$iii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetBooleanv$vii(
+  ) {
+  if (!Module['_fp$emscripten_glGetBooleanv$vii']) abort("external function 'fp$emscripten_glGetBooleanv$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetBooleanv$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetBufferParameteriv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetBufferParameteriv$viii']) abort("external function 'fp$emscripten_glGetBufferParameteriv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetBufferParameteriv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetError$i(
+  ) {
+  if (!Module['_fp$emscripten_glGetError$i']) abort("external function 'fp$emscripten_glGetError$i' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetError$i'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetFloatv$vii(
+  ) {
+  if (!Module['_fp$emscripten_glGetFloatv$vii']) abort("external function 'fp$emscripten_glGetFloatv$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetFloatv$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetFramebufferAttachmentParameteriv$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glGetFramebufferAttachmentParameteriv$viiii']) abort("external function 'fp$emscripten_glGetFramebufferAttachmentParameteriv$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetFramebufferAttachmentParameteriv$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetIntegerv$vii(
+  ) {
+  if (!Module['_fp$emscripten_glGetIntegerv$vii']) abort("external function 'fp$emscripten_glGetIntegerv$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetIntegerv$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetProgramInfoLog$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glGetProgramInfoLog$viiii']) abort("external function 'fp$emscripten_glGetProgramInfoLog$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetProgramInfoLog$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetProgramiv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetProgramiv$viii']) abort("external function 'fp$emscripten_glGetProgramiv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetProgramiv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetQueryObjecti64vEXT$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetQueryObjecti64vEXT$viii']) abort("external function 'fp$emscripten_glGetQueryObjecti64vEXT$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetQueryObjecti64vEXT$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetQueryObjectivEXT$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetQueryObjectivEXT$viii']) abort("external function 'fp$emscripten_glGetQueryObjectivEXT$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetQueryObjectivEXT$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetQueryObjectui64vEXT$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetQueryObjectui64vEXT$viii']) abort("external function 'fp$emscripten_glGetQueryObjectui64vEXT$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetQueryObjectui64vEXT$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetQueryObjectuivEXT$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetQueryObjectuivEXT$viii']) abort("external function 'fp$emscripten_glGetQueryObjectuivEXT$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetQueryObjectuivEXT$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetQueryivEXT$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetQueryivEXT$viii']) abort("external function 'fp$emscripten_glGetQueryivEXT$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetQueryivEXT$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetRenderbufferParameteriv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetRenderbufferParameteriv$viii']) abort("external function 'fp$emscripten_glGetRenderbufferParameteriv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetRenderbufferParameteriv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetShaderInfoLog$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glGetShaderInfoLog$viiii']) abort("external function 'fp$emscripten_glGetShaderInfoLog$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetShaderInfoLog$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetShaderPrecisionFormat$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glGetShaderPrecisionFormat$viiii']) abort("external function 'fp$emscripten_glGetShaderPrecisionFormat$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetShaderPrecisionFormat$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetShaderSource$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glGetShaderSource$viiii']) abort("external function 'fp$emscripten_glGetShaderSource$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetShaderSource$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetShaderiv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetShaderiv$viii']) abort("external function 'fp$emscripten_glGetShaderiv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetShaderiv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetString$ii(
+  ) {
+  if (!Module['_fp$emscripten_glGetString$ii']) abort("external function 'fp$emscripten_glGetString$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetString$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetTexParameterfv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetTexParameterfv$viii']) abort("external function 'fp$emscripten_glGetTexParameterfv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetTexParameterfv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetTexParameteriv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetTexParameteriv$viii']) abort("external function 'fp$emscripten_glGetTexParameteriv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetTexParameteriv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetUniformLocation$iii(
+  ) {
+  if (!Module['_fp$emscripten_glGetUniformLocation$iii']) abort("external function 'fp$emscripten_glGetUniformLocation$iii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetUniformLocation$iii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetUniformfv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetUniformfv$viii']) abort("external function 'fp$emscripten_glGetUniformfv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetUniformfv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetUniformiv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetUniformiv$viii']) abort("external function 'fp$emscripten_glGetUniformiv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetUniformiv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetVertexAttribPointerv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetVertexAttribPointerv$viii']) abort("external function 'fp$emscripten_glGetVertexAttribPointerv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetVertexAttribPointerv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetVertexAttribfv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetVertexAttribfv$viii']) abort("external function 'fp$emscripten_glGetVertexAttribfv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetVertexAttribfv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glGetVertexAttribiv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glGetVertexAttribiv$viii']) abort("external function 'fp$emscripten_glGetVertexAttribiv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glGetVertexAttribiv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glHint$vii(
+  ) {
+  if (!Module['_fp$emscripten_glHint$vii']) abort("external function 'fp$emscripten_glHint$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glHint$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glIsBuffer$ii(
+  ) {
+  if (!Module['_fp$emscripten_glIsBuffer$ii']) abort("external function 'fp$emscripten_glIsBuffer$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glIsBuffer$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glIsEnabled$ii(
+  ) {
+  if (!Module['_fp$emscripten_glIsEnabled$ii']) abort("external function 'fp$emscripten_glIsEnabled$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glIsEnabled$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glIsFramebuffer$ii(
+  ) {
+  if (!Module['_fp$emscripten_glIsFramebuffer$ii']) abort("external function 'fp$emscripten_glIsFramebuffer$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glIsFramebuffer$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glIsProgram$ii(
+  ) {
+  if (!Module['_fp$emscripten_glIsProgram$ii']) abort("external function 'fp$emscripten_glIsProgram$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glIsProgram$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glIsQueryEXT$ii(
+  ) {
+  if (!Module['_fp$emscripten_glIsQueryEXT$ii']) abort("external function 'fp$emscripten_glIsQueryEXT$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glIsQueryEXT$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glIsRenderbuffer$ii(
+  ) {
+  if (!Module['_fp$emscripten_glIsRenderbuffer$ii']) abort("external function 'fp$emscripten_glIsRenderbuffer$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glIsRenderbuffer$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glIsShader$ii(
+  ) {
+  if (!Module['_fp$emscripten_glIsShader$ii']) abort("external function 'fp$emscripten_glIsShader$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glIsShader$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glIsTexture$ii(
+  ) {
+  if (!Module['_fp$emscripten_glIsTexture$ii']) abort("external function 'fp$emscripten_glIsTexture$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glIsTexture$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glIsVertexArrayOES$ii(
+  ) {
+  if (!Module['_fp$emscripten_glIsVertexArrayOES$ii']) abort("external function 'fp$emscripten_glIsVertexArrayOES$ii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glIsVertexArrayOES$ii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glLineWidth$vf(
+  ) {
+  if (!Module['_fp$emscripten_glLineWidth$vf']) abort("external function 'fp$emscripten_glLineWidth$vf' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glLineWidth$vf'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glLinkProgram$vi(
+  ) {
+  if (!Module['_fp$emscripten_glLinkProgram$vi']) abort("external function 'fp$emscripten_glLinkProgram$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glLinkProgram$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glPixelStorei$vii(
+  ) {
+  if (!Module['_fp$emscripten_glPixelStorei$vii']) abort("external function 'fp$emscripten_glPixelStorei$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glPixelStorei$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glPolygonOffset$vff(
+  ) {
+  if (!Module['_fp$emscripten_glPolygonOffset$vff']) abort("external function 'fp$emscripten_glPolygonOffset$vff' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glPolygonOffset$vff'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glQueryCounterEXT$vii(
+  ) {
+  if (!Module['_fp$emscripten_glQueryCounterEXT$vii']) abort("external function 'fp$emscripten_glQueryCounterEXT$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glQueryCounterEXT$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glReadPixels$viiiiiii(
+  ) {
+  if (!Module['_fp$emscripten_glReadPixels$viiiiiii']) abort("external function 'fp$emscripten_glReadPixels$viiiiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glReadPixels$viiiiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glReleaseShaderCompiler$v(
+  ) {
+  if (!Module['_fp$emscripten_glReleaseShaderCompiler$v']) abort("external function 'fp$emscripten_glReleaseShaderCompiler$v' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glReleaseShaderCompiler$v'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glRenderbufferStorage$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glRenderbufferStorage$viiii']) abort("external function 'fp$emscripten_glRenderbufferStorage$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glRenderbufferStorage$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glSampleCoverage$vfi(
+  ) {
+  if (!Module['_fp$emscripten_glSampleCoverage$vfi']) abort("external function 'fp$emscripten_glSampleCoverage$vfi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glSampleCoverage$vfi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glScissor$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glScissor$viiii']) abort("external function 'fp$emscripten_glScissor$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glScissor$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glShaderBinary$viiiii(
+  ) {
+  if (!Module['_fp$emscripten_glShaderBinary$viiiii']) abort("external function 'fp$emscripten_glShaderBinary$viiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glShaderBinary$viiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glShaderSource$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glShaderSource$viiii']) abort("external function 'fp$emscripten_glShaderSource$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glShaderSource$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glStencilFunc$viii(
+  ) {
+  if (!Module['_fp$emscripten_glStencilFunc$viii']) abort("external function 'fp$emscripten_glStencilFunc$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glStencilFunc$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glStencilFuncSeparate$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glStencilFuncSeparate$viiii']) abort("external function 'fp$emscripten_glStencilFuncSeparate$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glStencilFuncSeparate$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glStencilMask$vi(
+  ) {
+  if (!Module['_fp$emscripten_glStencilMask$vi']) abort("external function 'fp$emscripten_glStencilMask$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glStencilMask$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glStencilMaskSeparate$vii(
+  ) {
+  if (!Module['_fp$emscripten_glStencilMaskSeparate$vii']) abort("external function 'fp$emscripten_glStencilMaskSeparate$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glStencilMaskSeparate$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glStencilOp$viii(
+  ) {
+  if (!Module['_fp$emscripten_glStencilOp$viii']) abort("external function 'fp$emscripten_glStencilOp$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glStencilOp$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glStencilOpSeparate$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glStencilOpSeparate$viiii']) abort("external function 'fp$emscripten_glStencilOpSeparate$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glStencilOpSeparate$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glTexImage2D$viiiiiiiii(
+  ) {
+  if (!Module['_fp$emscripten_glTexImage2D$viiiiiiiii']) abort("external function 'fp$emscripten_glTexImage2D$viiiiiiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glTexImage2D$viiiiiiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glTexParameterf$viif(
+  ) {
+  if (!Module['_fp$emscripten_glTexParameterf$viif']) abort("external function 'fp$emscripten_glTexParameterf$viif' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glTexParameterf$viif'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glTexParameterfv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glTexParameterfv$viii']) abort("external function 'fp$emscripten_glTexParameterfv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glTexParameterfv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glTexParameteri$viii(
+  ) {
+  if (!Module['_fp$emscripten_glTexParameteri$viii']) abort("external function 'fp$emscripten_glTexParameteri$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glTexParameteri$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glTexParameteriv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glTexParameteriv$viii']) abort("external function 'fp$emscripten_glTexParameteriv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glTexParameteriv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glTexSubImage2D$viiiiiiiii(
+  ) {
+  if (!Module['_fp$emscripten_glTexSubImage2D$viiiiiiiii']) abort("external function 'fp$emscripten_glTexSubImage2D$viiiiiiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glTexSubImage2D$viiiiiiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform1f$vif(
+  ) {
+  if (!Module['_fp$emscripten_glUniform1f$vif']) abort("external function 'fp$emscripten_glUniform1f$vif' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform1f$vif'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform1fv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform1fv$viii']) abort("external function 'fp$emscripten_glUniform1fv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform1fv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform1i$vii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform1i$vii']) abort("external function 'fp$emscripten_glUniform1i$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform1i$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform1iv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform1iv$viii']) abort("external function 'fp$emscripten_glUniform1iv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform1iv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform2f$viff(
+  ) {
+  if (!Module['_fp$emscripten_glUniform2f$viff']) abort("external function 'fp$emscripten_glUniform2f$viff' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform2f$viff'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform2fv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform2fv$viii']) abort("external function 'fp$emscripten_glUniform2fv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform2fv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform2i$viii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform2i$viii']) abort("external function 'fp$emscripten_glUniform2i$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform2i$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform2iv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform2iv$viii']) abort("external function 'fp$emscripten_glUniform2iv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform2iv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform3f$vifff(
+  ) {
+  if (!Module['_fp$emscripten_glUniform3f$vifff']) abort("external function 'fp$emscripten_glUniform3f$vifff' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform3f$vifff'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform3fv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform3fv$viii']) abort("external function 'fp$emscripten_glUniform3fv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform3fv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform3i$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform3i$viiii']) abort("external function 'fp$emscripten_glUniform3i$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform3i$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform3iv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform3iv$viii']) abort("external function 'fp$emscripten_glUniform3iv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform3iv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform4f$viffff(
+  ) {
+  if (!Module['_fp$emscripten_glUniform4f$viffff']) abort("external function 'fp$emscripten_glUniform4f$viffff' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform4f$viffff'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform4fv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform4fv$viii']) abort("external function 'fp$emscripten_glUniform4fv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform4fv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform4i$viiiii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform4i$viiiii']) abort("external function 'fp$emscripten_glUniform4i$viiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform4i$viiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniform4iv$viii(
+  ) {
+  if (!Module['_fp$emscripten_glUniform4iv$viii']) abort("external function 'fp$emscripten_glUniform4iv$viii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniform4iv$viii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniformMatrix2fv$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glUniformMatrix2fv$viiii']) abort("external function 'fp$emscripten_glUniformMatrix2fv$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniformMatrix2fv$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniformMatrix3fv$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glUniformMatrix3fv$viiii']) abort("external function 'fp$emscripten_glUniformMatrix3fv$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniformMatrix3fv$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUniformMatrix4fv$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glUniformMatrix4fv$viiii']) abort("external function 'fp$emscripten_glUniformMatrix4fv$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUniformMatrix4fv$viiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glUseProgram$vi(
+  ) {
+  if (!Module['_fp$emscripten_glUseProgram$vi']) abort("external function 'fp$emscripten_glUseProgram$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glUseProgram$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glValidateProgram$vi(
+  ) {
+  if (!Module['_fp$emscripten_glValidateProgram$vi']) abort("external function 'fp$emscripten_glValidateProgram$vi' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glValidateProgram$vi'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glVertexAttrib1f$vif(
+  ) {
+  if (!Module['_fp$emscripten_glVertexAttrib1f$vif']) abort("external function 'fp$emscripten_glVertexAttrib1f$vif' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glVertexAttrib1f$vif'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glVertexAttrib1fv$vii(
+  ) {
+  if (!Module['_fp$emscripten_glVertexAttrib1fv$vii']) abort("external function 'fp$emscripten_glVertexAttrib1fv$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glVertexAttrib1fv$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glVertexAttrib2f$viff(
+  ) {
+  if (!Module['_fp$emscripten_glVertexAttrib2f$viff']) abort("external function 'fp$emscripten_glVertexAttrib2f$viff' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glVertexAttrib2f$viff'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glVertexAttrib2fv$vii(
+  ) {
+  if (!Module['_fp$emscripten_glVertexAttrib2fv$vii']) abort("external function 'fp$emscripten_glVertexAttrib2fv$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glVertexAttrib2fv$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glVertexAttrib3f$vifff(
+  ) {
+  if (!Module['_fp$emscripten_glVertexAttrib3f$vifff']) abort("external function 'fp$emscripten_glVertexAttrib3f$vifff' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glVertexAttrib3f$vifff'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glVertexAttrib3fv$vii(
+  ) {
+  if (!Module['_fp$emscripten_glVertexAttrib3fv$vii']) abort("external function 'fp$emscripten_glVertexAttrib3fv$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glVertexAttrib3fv$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glVertexAttrib4f$viffff(
+  ) {
+  if (!Module['_fp$emscripten_glVertexAttrib4f$viffff']) abort("external function 'fp$emscripten_glVertexAttrib4f$viffff' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glVertexAttrib4f$viffff'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glVertexAttrib4fv$vii(
+  ) {
+  if (!Module['_fp$emscripten_glVertexAttrib4fv$vii']) abort("external function 'fp$emscripten_glVertexAttrib4fv$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glVertexAttrib4fv$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glVertexAttribDivisorANGLE$vii(
+  ) {
+  if (!Module['_fp$emscripten_glVertexAttribDivisorANGLE$vii']) abort("external function 'fp$emscripten_glVertexAttribDivisorANGLE$vii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glVertexAttribDivisorANGLE$vii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glVertexAttribPointer$viiiiii(
+  ) {
+  if (!Module['_fp$emscripten_glVertexAttribPointer$viiiiii']) abort("external function 'fp$emscripten_glVertexAttribPointer$viiiiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glVertexAttribPointer$viiiiii'].apply(null, arguments);
+  }
+
+  function _fp$emscripten_glViewport$viiii(
+  ) {
+  if (!Module['_fp$emscripten_glViewport$viiii']) abort("external function 'fp$emscripten_glViewport$viiii' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_fp$emscripten_glViewport$viiii'].apply(null, arguments);
+  }
+
   function _getTempRet0() {
       return (getTempRet0() | 0);
     }
@@ -11114,7 +13638,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   Module["_gettimeofday"] = _gettimeofday;
 
   
-  var ___tm_timezone=(stringToUTF8("GMT", 681840, 4), 681840);
+  var ___tm_timezone=(stringToUTF8("GMT", 2121296, 4), 2121296);
   Module["___tm_timezone"] = ___tm_timezone;function _gmtime_r(time, tmPtr) {
       var date = new Date(HEAP32[((time)>>2)]*1000);
       HEAP32[((tmPtr)>>2)]=date.getUTCSeconds();
@@ -11145,7 +13669,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   Module["_inet_addr"] = _inet_addr;
 
   
-  var ___tm_current=681792;
+  var ___tm_current=2121248;
   Module["___tm_current"] = ___tm_current;
   
   
@@ -11244,6 +13768,180 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
       return _usleep((seconds * 1e6) + (nanoseconds / 1000));
     }
   Module["_nanosleep"] = _nanosleep;
+
+  function _ogg_page_bos(
+  ) {
+  if (!Module['_ogg_page_bos']) abort("external function 'ogg_page_bos' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_page_bos'].apply(null, arguments);
+  }
+
+  function _ogg_page_continued(
+  ) {
+  if (!Module['_ogg_page_continued']) abort("external function 'ogg_page_continued' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_page_continued'].apply(null, arguments);
+  }
+
+  function _ogg_page_eos(
+  ) {
+  if (!Module['_ogg_page_eos']) abort("external function 'ogg_page_eos' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_page_eos'].apply(null, arguments);
+  }
+
+  function _ogg_page_granulepos(
+  ) {
+  if (!Module['_ogg_page_granulepos']) abort("external function 'ogg_page_granulepos' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_page_granulepos'].apply(null, arguments);
+  }
+
+  function _ogg_page_serialno(
+  ) {
+  if (!Module['_ogg_page_serialno']) abort("external function 'ogg_page_serialno' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_page_serialno'].apply(null, arguments);
+  }
+
+  function _ogg_stream_clear(
+  ) {
+  if (!Module['_ogg_stream_clear']) abort("external function 'ogg_stream_clear' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_stream_clear'].apply(null, arguments);
+  }
+
+  function _ogg_stream_init(
+  ) {
+  if (!Module['_ogg_stream_init']) abort("external function 'ogg_stream_init' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_stream_init'].apply(null, arguments);
+  }
+
+  function _ogg_stream_packetout(
+  ) {
+  if (!Module['_ogg_stream_packetout']) abort("external function 'ogg_stream_packetout' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_stream_packetout'].apply(null, arguments);
+  }
+
+  function _ogg_stream_packetpeek(
+  ) {
+  if (!Module['_ogg_stream_packetpeek']) abort("external function 'ogg_stream_packetpeek' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_stream_packetpeek'].apply(null, arguments);
+  }
+
+  function _ogg_stream_pagein(
+  ) {
+  if (!Module['_ogg_stream_pagein']) abort("external function 'ogg_stream_pagein' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_stream_pagein'].apply(null, arguments);
+  }
+
+  function _ogg_stream_reset(
+  ) {
+  if (!Module['_ogg_stream_reset']) abort("external function 'ogg_stream_reset' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_stream_reset'].apply(null, arguments);
+  }
+
+  function _ogg_stream_reset_serialno(
+  ) {
+  if (!Module['_ogg_stream_reset_serialno']) abort("external function 'ogg_stream_reset_serialno' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_stream_reset_serialno'].apply(null, arguments);
+  }
+
+  function _ogg_sync_buffer(
+  ) {
+  if (!Module['_ogg_sync_buffer']) abort("external function 'ogg_sync_buffer' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_sync_buffer'].apply(null, arguments);
+  }
+
+  function _ogg_sync_clear(
+  ) {
+  if (!Module['_ogg_sync_clear']) abort("external function 'ogg_sync_clear' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_sync_clear'].apply(null, arguments);
+  }
+
+  function _ogg_sync_init(
+  ) {
+  if (!Module['_ogg_sync_init']) abort("external function 'ogg_sync_init' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_sync_init'].apply(null, arguments);
+  }
+
+  function _ogg_sync_pageseek(
+  ) {
+  if (!Module['_ogg_sync_pageseek']) abort("external function 'ogg_sync_pageseek' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_sync_pageseek'].apply(null, arguments);
+  }
+
+  function _ogg_sync_reset(
+  ) {
+  if (!Module['_ogg_sync_reset']) abort("external function 'ogg_sync_reset' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_sync_reset'].apply(null, arguments);
+  }
+
+  function _ogg_sync_wrote(
+  ) {
+  if (!Module['_ogg_sync_wrote']) abort("external function 'ogg_sync_wrote' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_ogg_sync_wrote'].apply(null, arguments);
+  }
+
+  function _oggpack_adv(
+  ) {
+  if (!Module['_oggpack_adv']) abort("external function 'oggpack_adv' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_adv'].apply(null, arguments);
+  }
+
+  function _oggpack_bytes(
+  ) {
+  if (!Module['_oggpack_bytes']) abort("external function 'oggpack_bytes' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_bytes'].apply(null, arguments);
+  }
+
+  function _oggpack_get_buffer(
+  ) {
+  if (!Module['_oggpack_get_buffer']) abort("external function 'oggpack_get_buffer' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_get_buffer'].apply(null, arguments);
+  }
+
+  function _oggpack_look(
+  ) {
+  if (!Module['_oggpack_look']) abort("external function 'oggpack_look' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_look'].apply(null, arguments);
+  }
+
+  function _oggpack_read(
+  ) {
+  if (!Module['_oggpack_read']) abort("external function 'oggpack_read' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_read'].apply(null, arguments);
+  }
+
+  function _oggpack_readinit(
+  ) {
+  if (!Module['_oggpack_readinit']) abort("external function 'oggpack_readinit' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_readinit'].apply(null, arguments);
+  }
+
+  function _oggpack_reset(
+  ) {
+  if (!Module['_oggpack_reset']) abort("external function 'oggpack_reset' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_reset'].apply(null, arguments);
+  }
+
+  function _oggpack_write(
+  ) {
+  if (!Module['_oggpack_write']) abort("external function 'oggpack_write' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_write'].apply(null, arguments);
+  }
+
+  function _oggpack_writeclear(
+  ) {
+  if (!Module['_oggpack_writeclear']) abort("external function 'oggpack_writeclear' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_writeclear'].apply(null, arguments);
+  }
+
+  function _oggpack_writeinit(
+  ) {
+  if (!Module['_oggpack_writeinit']) abort("external function 'oggpack_writeinit' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_writeinit'].apply(null, arguments);
+  }
+
+  function _oggpack_writetrunc(
+  ) {
+  if (!Module['_oggpack_writetrunc']) abort("external function 'oggpack_writetrunc' is missing. perhaps a side module was not linked in? if this function was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=1 in the environment");
+  return Module['_oggpack_writetrunc'].apply(null, arguments);
+  }
 
   function _pthread_cleanup_pop() {
       assert(_pthread_cleanup_push.level == __ATEXIT__.length, 'cannot pop if something else added meanwhile!');
@@ -12714,11 +15412,6 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_llvm_maxnum_f64"] = _llvm_maxnum_f64;
 
-  function __reallyNegative(x) {
-      return x < 0 || (x === 0 && (1/x) === -Infinity);
-    }
-  Module["__reallyNegative"] = __reallyNegative;
-
 
 
 
@@ -12747,7 +15440,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
 
 
 
-  var ___tm_formatted=681856;
+  var ___tm_formatted=2121312;
   Module["___tm_formatted"] = ___tm_formatted;
 
   function _mktime(tmPtr) {
@@ -13276,10 +15969,10 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
 
 
 
-  var _in6addr_any=681904;
+  var _in6addr_any=2121360;
   Module["_in6addr_any"] = _in6addr_any;
 
-  var _in6addr_loopback=681920;
+  var _in6addr_loopback=2121376;
   Module["_in6addr_loopback"] = _in6addr_loopback;
 
 
@@ -13891,6 +16584,11 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
 
   
   
+  function reallyNegative(x) {
+      return x < 0 || (x === 0 && (1/x) === -Infinity);
+    }
+  Module["reallyNegative"] = reallyNegative;
+  
   function convertI32PairToI53(lo, hi) {
       // This function should not be getting called with too large unsigned numbers
       // in high part (if hi >= 0x7FFFFFFFF, one should have been calling
@@ -13903,7 +16601,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   function convertU32PairToI53(lo, hi) {
       return (lo >>> 0) + (hi >>> 0) * 4294967296;
     }
-  Module["convertU32PairToI53"] = convertU32PairToI53;function __formatString(format, varargs) {
+  Module["convertU32PairToI53"] = convertU32PairToI53;function formatString(format, varargs) {
       assert((varargs & 3) === 0);
       var textIndex = format;
       var argIndex = varargs;
@@ -14194,7 +16892,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
                   }
                 } else if (next == 102 || next == 70) {
                   argText = currArg.toFixed(effectivePrecision);
-                  if (currArg === 0 && __reallyNegative(currArg)) {
+                  if (currArg === 0 && reallyNegative(currArg)) {
                     argText = '-' + argText;
                   }
                 }
@@ -14310,9 +17008,9 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
       }
       return ret;
     }
-  Module["__formatString"] = __formatString;function _emscripten_log(flags, format, varargs) {
+  Module["formatString"] = formatString;function _emscripten_log(flags, format, varargs) {
       var str = '';
-      var result = __formatString(format, varargs);
+      var result = formatString(format, varargs);
       for (var i = 0 ; i < result.length; ++i) {
         str += String.fromCharCode(result[i]);
       }
@@ -14813,6 +17511,7 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
 
   function _emscripten_asm_const_async_on_main_thread() {}
   Module["_emscripten_asm_const_async_on_main_thread"] = _emscripten_asm_const_async_on_main_thread;
+
 
 
 
@@ -15793,11 +18492,11 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   
   
       if (!canvas) {
-        return 0;
+        return -4;
       }
   
       if (contextAttributes.explicitSwapControl) {
-        return 0;
+        return -1;
       }
   
   
@@ -15908,10 +18607,15 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
       var extString = UTF8ToString(extension);
       if (extString.indexOf('GL_') == 0) extString = extString.substr(3); // Allow enabling extensions both with "GL_" prefix and without.
   
+      // Switch-board that pulls in code for all GL extensions, even if those are not used :/
+      // Build with -s GL_SUPPORT_SIMPLE_ENABLE_EXTENSIONS = 0 to avoid this.
+  
       // Obtain function entry points to WebGL 1 extension related functions.
-      if (extString == 'ANGLE_instanced_arrays') __webgl_acquireInstancedArraysExtension(GLctx);
-      else if (extString == 'OES_vertex_array_object') __webgl_acquireVertexArrayObjectExtension(GLctx);
-      else if (extString == 'WEBGL_draw_buffers') __webgl_acquireDrawBuffersExtension(GLctx);
+      if (extString == 'ANGLE_instanced_arrays') __webgl_enable_ANGLE_instanced_arrays(GLctx);
+      if (extString == 'OES_vertex_array_object') __webgl_enable_OES_vertex_array_object(GLctx);
+      if (extString == 'WEBGL_draw_buffers') __webgl_enable_WEBGL_draw_buffers(GLctx);
+  
+  
   
       var ext = context.GLctx.getExtension(extString);
       return !!ext;
@@ -16180,22 +18884,6 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_clock_res_get"] = _clock_res_get;
 
-  
-  function readI53FromI64(ptr) {
-      return HEAPU32[ptr>>2] + HEAP32[ptr+4>>2] * 4294967296;
-    }
-  Module["readI53FromI64"] = readI53FromI64;
-  
-  function readI53FromU64(ptr) {
-      return HEAPU32[ptr>>2] + HEAPU32[ptr+4>>2] * 4294967296;
-    }
-  Module["readI53FromU64"] = readI53FromU64;function writeI53ToI64(ptr, num) {
-      HEAPU32[ptr>>2] = num;
-      HEAPU32[ptr+4>>2] = (num - HEAPU32[ptr>>2])/4294967296;
-      var deserialized = (num >= 0) ? readI53FromU64(ptr) : readI53FromI64(ptr);
-      if (deserialized != num) warnOnce('writeI53ToI64() out of range: serialized JS Number ' + num + ' to Wasm heap as bytes lo=0x' + HEAPU32[ptr>>2].toString(16) + ', hi=0x' + HEAPU32[ptr+4>>2].toString(16) + ', which deserializes back to ' + deserialized + ' instead!');
-    }
-  Module["writeI53ToI64"] = writeI53ToI64;
 
   function writeI53ToI64Clamped(ptr, num) {
       if (num > 0x7FFFFFFFFFFFFFFF) {
@@ -17028,39 +19716,26 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_emscripten_set_socket_close_callback"] = _emscripten_set_socket_close_callback;
 
-  var __tempFixedLengthArray=[];
-  Module["__tempFixedLengthArray"] = __tempFixedLengthArray;
 
-  function __heapObjectForWebGLType(type) {
-      // Micro-optimization for size: Subtract lowest GL enum number (0x1400/* GL_BYTE */) from type to compare
-      // smaller values for the heap, for shorter generated code size.
-      // Also the type HEAPU16 is not tested for explicitly, but any unrecognized type will return out HEAPU16.
-      // (since most types are HEAPU16)
-      type -= 0x1400;
-  
-      if (type == 1) return HEAPU8;
-  
-  
-      if (type == 4) return HEAP32;
-  
-      if (type == 6) return HEAPF32;
-  
-      if (type == 5
-        || type == 28922
-        )
-        return HEAPU32;
-  
-      return HEAPU16;
+
+
+
+  function _emscripten_webgl_enable_ANGLE_instanced_arrays(ctx) {
+      return __webgl_enable_ANGLE_instanced_arrays(GL.contexts[ctx].GLctx);
     }
-  Module["__heapObjectForWebGLType"] = __heapObjectForWebGLType;
+  Module["_emscripten_webgl_enable_ANGLE_instanced_arrays"] = _emscripten_webgl_enable_ANGLE_instanced_arrays;
 
-  function __heapAccessShiftForWebGLHeap(heap) {
-      return 31 - Math.clz32(heap.BYTES_PER_ELEMENT);
+
+  function _emscripten_webgl_enable_OES_vertex_array_object(ctx) {
+      return __webgl_enable_OES_vertex_array_object(GL.contexts[ctx].GLctx);
     }
-  Module["__heapAccessShiftForWebGLHeap"] = __heapAccessShiftForWebGLHeap;
+  Module["_emscripten_webgl_enable_OES_vertex_array_object"] = _emscripten_webgl_enable_OES_vertex_array_object;
 
 
-
+  function _emscripten_webgl_enable_WEBGL_draw_buffers(ctx) {
+      return __webgl_enable_WEBGL_draw_buffers(GL.contexts[ctx].GLctx);
+    }
+  Module["_emscripten_webgl_enable_WEBGL_draw_buffers"] = _emscripten_webgl_enable_WEBGL_draw_buffers;
 
 
   function _glPixelStorei(pname, param) {
@@ -17119,106 +19794,6 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_glGetString"] = _glGetString;
 
-  function emscriptenWebGLGet(name_, p, type) {
-      // Guard against user passing a null pointer.
-      // Note that GLES2 spec does not say anything about how passing a null pointer should be treated.
-      // Testing on desktop core GL 3, the application crashes on glGetIntegerv to a null pointer, but
-      // better to report an error instead of doing anything random.
-      if (!p) {
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      var ret = undefined;
-      switch(name_) { // Handle a few trivial GLES values
-        case 0x8DFA: // GL_SHADER_COMPILER
-          ret = 1;
-          break;
-        case 0x8DF8: // GL_SHADER_BINARY_FORMATS
-          if (type != 0 && type != 1) {
-            GL.recordError(0x500); // GL_INVALID_ENUM
-          }
-          return; // Do not write anything to the out pointer, since no binary formats are supported.
-        case 0x8DF9: // GL_NUM_SHADER_BINARY_FORMATS
-          ret = 0;
-          break;
-        case 0x86A2: // GL_NUM_COMPRESSED_TEXTURE_FORMATS
-          // WebGL doesn't have GL_NUM_COMPRESSED_TEXTURE_FORMATS (it's obsolete since GL_COMPRESSED_TEXTURE_FORMATS returns a JS array that can be queried for length),
-          // so implement it ourselves to allow C++ GLES2 code get the length.
-          var formats = GLctx.getParameter(0x86A3 /*GL_COMPRESSED_TEXTURE_FORMATS*/);
-          ret = formats ? formats.length : 0;
-          break;
-      }
-  
-      if (ret === undefined) {
-        var result = GLctx.getParameter(name_);
-        switch (typeof(result)) {
-          case "number":
-            ret = result;
-            break;
-          case "boolean":
-            ret = result ? 1 : 0;
-            break;
-          case "string":
-            GL.recordError(0x500); // GL_INVALID_ENUM
-            return;
-          case "object":
-            if (result === null) {
-              // null is a valid result for some (e.g., which buffer is bound - perhaps nothing is bound), but otherwise
-              // can mean an invalid name_, which we need to report as an error
-              switch(name_) {
-                case 0x8894: // ARRAY_BUFFER_BINDING
-                case 0x8B8D: // CURRENT_PROGRAM
-                case 0x8895: // ELEMENT_ARRAY_BUFFER_BINDING
-                case 0x8CA6: // FRAMEBUFFER_BINDING or DRAW_FRAMEBUFFER_BINDING
-                case 0x8CA7: // RENDERBUFFER_BINDING
-                case 0x8069: // TEXTURE_BINDING_2D
-                case 0x85B5: // WebGL 2 GL_VERTEX_ARRAY_BINDING, or WebGL 1 extension OES_vertex_array_object GL_VERTEX_ARRAY_BINDING_OES
-                case 0x8514: { // TEXTURE_BINDING_CUBE_MAP
-                  ret = 0;
-                  break;
-                }
-                default: {
-                  GL.recordError(0x500); // GL_INVALID_ENUM
-                  return;
-                }
-              }
-            } else if (result instanceof Float32Array ||
-                       result instanceof Uint32Array ||
-                       result instanceof Int32Array ||
-                       result instanceof Array) {
-              for (var i = 0; i < result.length; ++i) {
-                switch (type) {
-                  case 0: HEAP32[(((p)+(i*4))>>2)]=result[i]; break;
-                  case 2: HEAPF32[(((p)+(i*4))>>2)]=result[i]; break;
-                  case 4: HEAP8[(((p)+(i))>>0)]=result[i] ? 1 : 0; break;
-                }
-              }
-              return;
-            } else {
-              try {
-                ret = result.name | 0;
-              } catch(e) {
-                GL.recordError(0x500); // GL_INVALID_ENUM
-                err('GL_INVALID_ENUM in glGet' + type + 'v: Unknown object returned from WebGL getParameter(' + name_ + ')! (error: ' + e + ')');
-                return;
-              }
-            }
-            break;
-          default:
-            GL.recordError(0x500); // GL_INVALID_ENUM
-            err('GL_INVALID_ENUM in glGet' + type + 'v: Native code calling glGet' + type + 'v(' + name_ + ') and it returns ' + result + ' of type ' + typeof(result) + '!');
-            return;
-        }
-      }
-  
-      switch (type) {
-        case 1: writeI53ToI64(p, ret); break;
-        case 0: HEAP32[((p)>>2)]=ret; break;
-        case 2:   HEAPF32[((p)>>2)]=ret; break;
-        case 4: HEAP8[((p)>>0)]=ret ? 1 : 0; break;
-      }
-    }
-  Module["emscriptenWebGLGet"] = emscriptenWebGLGet;
 
   function _glGetIntegerv(name_, p) {
       emscriptenWebGLGet(name_, p, 0);
@@ -17257,42 +19832,8 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_glCompressedTexSubImage2D"] = _glCompressedTexSubImage2D;
 
-  function __computeUnpackAlignedImageSize(width, height, sizePerPixel, alignment) {
-      function roundedToNextMultipleOf(x, y) {
-        return (x + y - 1) & -y;
-      }
-      var plainRowSize = width * sizePerPixel;
-      var alignedRowSize = roundedToNextMultipleOf(plainRowSize, alignment);
-      return height * alignedRowSize;
-    }
-  Module["__computeUnpackAlignedImageSize"] = __computeUnpackAlignedImageSize;
 
-  function __colorChannelsInGlTextureFormat(format) {
-      // Micro-optimizations for size: map format to size by subtracting smallest enum value (0x1902) from all values first.
-      // Also omit the most common size value (1) from the list, which is assumed by formats not on the list.
-      var colorChannels = {
-        // 0x1902 /* GL_DEPTH_COMPONENT */ - 0x1902: 1,
-        // 0x1906 /* GL_ALPHA */ - 0x1902: 1,
-        5: 3,
-        6: 4,
-        // 0x1909 /* GL_LUMINANCE */ - 0x1902: 1,
-        8: 2,
-        29502: 3,
-        29504: 4,
-      };
-      return colorChannels[format - 0x1902]||1;
-    }
-  Module["__colorChannelsInGlTextureFormat"] = __colorChannelsInGlTextureFormat;
 
-  function emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, internalFormat) {
-      var heap = __heapObjectForWebGLType(type);
-      var shift = __heapAccessShiftForWebGLHeap(heap);
-      var byteSize = 1<<shift;
-      var sizePerPixel = __colorChannelsInGlTextureFormat(format) * byteSize;
-      var bytes = __computeUnpackAlignedImageSize(width, height, sizePerPixel, GL.unpackAlignment);
-      return heap.subarray(pixels >> shift, pixels + bytes >> shift);
-    }
-  Module["emscriptenWebGLGetTexPixelData"] = emscriptenWebGLGetTexPixelData;
 
   function _glTexImage2D(target, level, internalFormat, width, height, border, format, type, pixels) {
       GLctx.texImage2D(target, level, internalFormat, width, height, border, format, type, pixels ? emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, internalFormat) : null);
@@ -17362,21 +19903,6 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_glIsTexture"] = _glIsTexture;
 
-  function __glGenObject(n, buffers, createFunction, objectTable
-      ) {
-      for (var i = 0; i < n; i++) {
-        var buffer = GLctx[createFunction]();
-        var id = buffer && GL.getNewId(objectTable);
-        if (buffer) {
-          buffer.name = id;
-          objectTable[id] = buffer;
-        } else {
-          GL.recordError(0x502 /* GL_INVALID_OPERATION */);
-        }
-        HEAP32[(((buffers)+(i*4))>>2)]=id;
-      }
-    }
-  Module["__glGenObject"] = __glGenObject;
 
   function _glGenBuffers(n, buffers) {
       __glGenObject(n, buffers, 'createBuffer', GL.buffers
@@ -17616,32 +20142,6 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_glIsRenderbuffer"] = _glIsRenderbuffer;
 
-  /** @suppress{checkTypes} */
-  function emscriptenWebGLGetUniform(program, location, params, type) {
-      if (!params) {
-        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
-        // if params == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      var data = GLctx.getUniform(GL.programs[program], GL.uniforms[location]);
-      if (typeof data == 'number' || typeof data == 'boolean') {
-        switch (type) {
-          case 0: HEAP32[((params)>>2)]=data; break;
-          case 2: HEAPF32[((params)>>2)]=data; break;
-          default: throw 'internal emscriptenWebGLGetUniform() error, bad type: ' + type;
-        }
-      } else {
-        for (var i = 0; i < data.length; i++) {
-          switch (type) {
-            case 0: HEAP32[(((params)+(i*4))>>2)]=data[i]; break;
-            case 2: HEAPF32[(((params)+(i*4))>>2)]=data[i]; break;
-            default: throw 'internal emscriptenWebGLGetUniform() error, bad type: ' + type;
-          }
-        }
-      }
-    }
-  Module["emscriptenWebGLGetUniform"] = emscriptenWebGLGetUniform;
 
   function _glGetUniformfv(program, location, params) {
       emscriptenWebGLGetUniform(program, location, params, 2);
@@ -17673,36 +20173,6 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_glGetUniformLocation"] = _glGetUniformLocation;
 
-  /** @suppress{checkTypes} */
-  function emscriptenWebGLGetVertexAttrib(index, pname, params, type) {
-      if (!params) {
-        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
-        // if params == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      var data = GLctx.getVertexAttrib(index, pname);
-      if (pname == 0x889F/*VERTEX_ATTRIB_ARRAY_BUFFER_BINDING*/) {
-        HEAP32[((params)>>2)]=data && data["name"];
-      } else if (typeof data == 'number' || typeof data == 'boolean') {
-        switch (type) {
-          case 0: HEAP32[((params)>>2)]=data; break;
-          case 2: HEAPF32[((params)>>2)]=data; break;
-          case 5: HEAP32[((params)>>2)]=Math.fround(data); break;
-          default: throw 'internal emscriptenWebGLGetVertexAttrib() error, bad type: ' + type;
-        }
-      } else {
-        for (var i = 0; i < data.length; i++) {
-          switch (type) {
-            case 0: HEAP32[(((params)+(i*4))>>2)]=data[i]; break;
-            case 2: HEAPF32[(((params)+(i*4))>>2)]=data[i]; break;
-            case 5: HEAP32[(((params)+(i*4))>>2)]=Math.fround(data[i]); break;
-            default: throw 'internal emscriptenWebGLGetVertexAttrib() error, bad type: ' + type;
-          }
-        }
-      }
-    }
-  Module["emscriptenWebGLGetVertexAttrib"] = emscriptenWebGLGetVertexAttrib;
 
   function _glGetVertexAttribfv(index, pname, params) {
       // N.B. This function may only be called if the vertex attribute was specified using the function glVertexAttrib*f(),
@@ -18779,1067 +21249,106 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   function _glCopyTexSubImage2D(x0, x1, x2, x3, x4, x5, x6, x7) { GLctx['copyTexSubImage2D'](x0, x1, x2, x3, x4, x5, x6, x7) }
   Module["_glCopyTexSubImage2D"] = _glCopyTexSubImage2D;
 
-  function _emscripten_glPixelStorei(pname, param) {
-      if (pname == 0xCF5 /* GL_UNPACK_ALIGNMENT */) {
-        GL.unpackAlignment = param;
-      }
-      GLctx.pixelStorei(pname, param);
-    }
-  Module["_emscripten_glPixelStorei"] = _emscripten_glPixelStorei;
-
-  function _emscripten_glGetString(name_) {
-      if (GL.stringCache[name_]) return GL.stringCache[name_];
-      var ret;
-      switch(name_) {
-        case 0x1F03 /* GL_EXTENSIONS */:
-          var exts = GLctx.getSupportedExtensions() || []; // .getSupportedExtensions() can return null if context is lost, so coerce to empty array.
-          exts = exts.concat(exts.map(function(e) { return "GL_" + e; }));
-          ret = stringToNewUTF8(exts.join(' '));
-          break;
-        case 0x1F00 /* GL_VENDOR */:
-        case 0x1F01 /* GL_RENDERER */:
-        case 0x9245 /* UNMASKED_VENDOR_WEBGL */:
-        case 0x9246 /* UNMASKED_RENDERER_WEBGL */:
-          var s = GLctx.getParameter(name_);
-          if (!s) {
-            GL.recordError(0x500/*GL_INVALID_ENUM*/);
-          }
-          ret = stringToNewUTF8(s);
-          break;
-  
-        case 0x1F02 /* GL_VERSION */:
-          var glVersion = GLctx.getParameter(0x1F02 /*GL_VERSION*/);
-          // return GLES version string corresponding to the version of the WebGL context
-          {
-            glVersion = 'OpenGL ES 2.0 (' + glVersion + ')';
-          }
-          ret = stringToNewUTF8(glVersion);
-          break;
-        case 0x8B8C /* GL_SHADING_LANGUAGE_VERSION */:
-          var glslVersion = GLctx.getParameter(0x8B8C /*GL_SHADING_LANGUAGE_VERSION*/);
-          // extract the version number 'N.M' from the string 'WebGL GLSL ES N.M ...'
-          var ver_re = /^WebGL GLSL ES ([0-9]\.[0-9][0-9]?)(?:$| .*)/;
-          var ver_num = glslVersion.match(ver_re);
-          if (ver_num !== null) {
-            if (ver_num[1].length == 3) ver_num[1] = ver_num[1] + '0'; // ensure minor version has 2 digits
-            glslVersion = 'OpenGL ES GLSL ES ' + ver_num[1] + ' (' + glslVersion + ')';
-          }
-          ret = stringToNewUTF8(glslVersion);
-          break;
-        default:
-          GL.recordError(0x500/*GL_INVALID_ENUM*/);
-          return 0;
-      }
-      GL.stringCache[name_] = ret;
-      return ret;
-    }
-  Module["_emscripten_glGetString"] = _emscripten_glGetString;
-
-  function _emscripten_glGetIntegerv(name_, p) {
-      emscriptenWebGLGet(name_, p, 0);
-    }
-  Module["_emscripten_glGetIntegerv"] = _emscripten_glGetIntegerv;
-
-  function _emscripten_glGetFloatv(name_, p) {
-      emscriptenWebGLGet(name_, p, 2);
-    }
-  Module["_emscripten_glGetFloatv"] = _emscripten_glGetFloatv;
-
-  function _emscripten_glGetBooleanv(name_, p) {
-      emscriptenWebGLGet(name_, p, 4);
-    }
-  Module["_emscripten_glGetBooleanv"] = _emscripten_glGetBooleanv;
-
-  function _emscripten_glDeleteTextures(n, textures) {
-      for (var i = 0; i < n; i++) {
-        var id = HEAP32[(((textures)+(i*4))>>2)];
-        var texture = GL.textures[id];
-        if (!texture) continue; // GL spec: "glDeleteTextures silently ignores 0s and names that do not correspond to existing textures".
-        GLctx.deleteTexture(texture);
-        texture.name = 0;
-        GL.textures[id] = null;
-      }
-    }
-  Module["_emscripten_glDeleteTextures"] = _emscripten_glDeleteTextures;
-
-  function _emscripten_glCompressedTexImage2D(target, level, internalFormat, width, height, border, imageSize, data) {
-      GLctx['compressedTexImage2D'](target, level, internalFormat, width, height, border, data ? HEAPU8.subarray((data),(data+imageSize)) : null);
-    }
-  Module["_emscripten_glCompressedTexImage2D"] = _emscripten_glCompressedTexImage2D;
-
-  function _emscripten_glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, imageSize, data) {
-      GLctx['compressedTexSubImage2D'](target, level, xoffset, yoffset, width, height, format, data ? HEAPU8.subarray((data),(data+imageSize)) : null);
-    }
-  Module["_emscripten_glCompressedTexSubImage2D"] = _emscripten_glCompressedTexSubImage2D;
-
-  function _emscripten_glTexImage2D(target, level, internalFormat, width, height, border, format, type, pixels) {
-      GLctx.texImage2D(target, level, internalFormat, width, height, border, format, type, pixels ? emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, internalFormat) : null);
-    }
-  Module["_emscripten_glTexImage2D"] = _emscripten_glTexImage2D;
-
-  function _emscripten_glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels) {
-      var pixelData = null;
-      if (pixels) pixelData = emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, 0);
-      GLctx.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixelData);
-    }
-  Module["_emscripten_glTexSubImage2D"] = _emscripten_glTexSubImage2D;
-
-  function _emscripten_glReadPixels(x, y, width, height, format, type, pixels) {
-      var pixelData = emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, format);
-      if (!pixelData) {
-        GL.recordError(0x500/*GL_INVALID_ENUM*/);
-        return;
-      }
-      GLctx.readPixels(x, y, width, height, format, type, pixelData);
-    }
-  Module["_emscripten_glReadPixels"] = _emscripten_glReadPixels;
-
-  function _emscripten_glBindTexture(target, texture) {
-      GLctx.bindTexture(target, GL.textures[texture]);
-    }
-  Module["_emscripten_glBindTexture"] = _emscripten_glBindTexture;
-
-  function _emscripten_glGetTexParameterfv(target, pname, params) {
-      if (!params) {
-        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
-        // if p == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      HEAPF32[((params)>>2)]=GLctx.getTexParameter(target, pname);
-    }
-  Module["_emscripten_glGetTexParameterfv"] = _emscripten_glGetTexParameterfv;
-
-  function _emscripten_glGetTexParameteriv(target, pname, params) {
-      if (!params) {
-        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
-        // if p == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      HEAP32[((params)>>2)]=GLctx.getTexParameter(target, pname);
-    }
-  Module["_emscripten_glGetTexParameteriv"] = _emscripten_glGetTexParameteriv;
-
-  function _emscripten_glTexParameterfv(target, pname, params) {
-      var param = HEAPF32[((params)>>2)];
-      GLctx.texParameterf(target, pname, param);
-    }
-  Module["_emscripten_glTexParameterfv"] = _emscripten_glTexParameterfv;
-
-  function _emscripten_glTexParameteriv(target, pname, params) {
-      var param = HEAP32[((params)>>2)];
-      GLctx.texParameteri(target, pname, param);
-    }
-  Module["_emscripten_glTexParameteriv"] = _emscripten_glTexParameteriv;
-
-  function _emscripten_glIsTexture(id) {
-      var texture = GL.textures[id];
-      if (!texture) return 0;
-      return GLctx.isTexture(texture);
-    }
-  Module["_emscripten_glIsTexture"] = _emscripten_glIsTexture;
-
-  function _emscripten_glGenBuffers(n, buffers) {
-      __glGenObject(n, buffers, 'createBuffer', GL.buffers
-        );
-    }
-  Module["_emscripten_glGenBuffers"] = _emscripten_glGenBuffers;
-
-  function _emscripten_glGenTextures(n, textures) {
-      __glGenObject(n, textures, 'createTexture', GL.textures
-        );
-    }
-  Module["_emscripten_glGenTextures"] = _emscripten_glGenTextures;
-
-  function _emscripten_glDeleteBuffers(n, buffers) {
-      for (var i = 0; i < n; i++) {
-        var id = HEAP32[(((buffers)+(i*4))>>2)];
-        var buffer = GL.buffers[id];
-  
-        // From spec: "glDeleteBuffers silently ignores 0's and names that do not
-        // correspond to existing buffer objects."
-        if (!buffer) continue;
-  
-        GLctx.deleteBuffer(buffer);
-        buffer.name = 0;
-        GL.buffers[id] = null;
-  
-        if (id == GL.currArrayBuffer) GL.currArrayBuffer = 0;
-        if (id == GL.currElementArrayBuffer) GL.currElementArrayBuffer = 0;
-      }
-    }
-  Module["_emscripten_glDeleteBuffers"] = _emscripten_glDeleteBuffers;
-
-  function _emscripten_glGetBufferParameteriv(target, value, data) {
-      if (!data) {
-        // GLES2 specification does not specify how to behave if data is a null pointer. Since calling this function does not make sense
-        // if data == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      HEAP32[((data)>>2)]=GLctx.getBufferParameter(target, value);
-    }
-  Module["_emscripten_glGetBufferParameteriv"] = _emscripten_glGetBufferParameteriv;
-
-  function _emscripten_glBufferData(target, size, data, usage) {
-        // N.b. here first form specifies a heap subarray, second form an integer size, so the ?: code here is polymorphic. It is advised to avoid
-        // randomly mixing both uses in calling code, to avoid any potential JS engine JIT issues.
-        GLctx.bufferData(target, data ? HEAPU8.subarray(data, data+size) : size, usage);
-    }
-  Module["_emscripten_glBufferData"] = _emscripten_glBufferData;
-
-  function _emscripten_glBufferSubData(target, offset, size, data) {
-      GLctx.bufferSubData(target, offset, HEAPU8.subarray(data, data+size));
-    }
-  Module["_emscripten_glBufferSubData"] = _emscripten_glBufferSubData;
-
-  function _emscripten_glGenQueriesEXT(n, ids) {
-      for (var i = 0; i < n; i++) {
-        var query = GLctx.disjointTimerQueryExt['createQueryEXT']();
-        if (!query) {
-          GL.recordError(0x502 /* GL_INVALID_OPERATION */);
-          while(i < n) HEAP32[(((ids)+(i++*4))>>2)]=0;
-          return;
-        }
-        var id = GL.getNewId(GL.timerQueriesEXT);
-        query.name = id;
-        GL.timerQueriesEXT[id] = query;
-        HEAP32[(((ids)+(i*4))>>2)]=id;
-      }
-    }
-  Module["_emscripten_glGenQueriesEXT"] = _emscripten_glGenQueriesEXT;
-
-  function _emscripten_glDeleteQueriesEXT(n, ids) {
-      for (var i = 0; i < n; i++) {
-        var id = HEAP32[(((ids)+(i*4))>>2)];
-        var query = GL.timerQueriesEXT[id];
-        if (!query) continue; // GL spec: "unused names in ids are ignored, as is the name zero."
-        GLctx.disjointTimerQueryExt['deleteQueryEXT'](query);
-        GL.timerQueriesEXT[id] = null;
-      }
-    }
-  Module["_emscripten_glDeleteQueriesEXT"] = _emscripten_glDeleteQueriesEXT;
-
-  function _emscripten_glIsQueryEXT(id) {
-      var query = GL.timerQueriesEXT[id];
-      if (!query) return 0;
-      return GLctx.disjointTimerQueryExt['isQueryEXT'](query);
-    }
-  Module["_emscripten_glIsQueryEXT"] = _emscripten_glIsQueryEXT;
-
-  function _emscripten_glBeginQueryEXT(target, id) {
-      GLctx.disjointTimerQueryExt['beginQueryEXT'](target, GL.timerQueriesEXT[id]);
-    }
-  Module["_emscripten_glBeginQueryEXT"] = _emscripten_glBeginQueryEXT;
-
-  function _emscripten_glEndQueryEXT(target) {
-      GLctx.disjointTimerQueryExt['endQueryEXT'](target);
-    }
-  Module["_emscripten_glEndQueryEXT"] = _emscripten_glEndQueryEXT;
-
-  function _emscripten_glQueryCounterEXT(id, target) {
-      GLctx.disjointTimerQueryExt['queryCounterEXT'](GL.timerQueriesEXT[id], target);
-    }
-  Module["_emscripten_glQueryCounterEXT"] = _emscripten_glQueryCounterEXT;
-
-  function _emscripten_glGetQueryivEXT(target, pname, params) {
-      if (!params) {
-        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
-        // if p == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      HEAP32[((params)>>2)]=GLctx.disjointTimerQueryExt['getQueryEXT'](target, pname);
-    }
-  Module["_emscripten_glGetQueryivEXT"] = _emscripten_glGetQueryivEXT;
-
-  function _emscripten_glGetQueryObjectivEXT(id, pname, params) {
-      if (!params) {
-        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
-        // if p == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      var query = GL.timerQueriesEXT[id];
-      var param = GLctx.disjointTimerQueryExt['getQueryObjectEXT'](query, pname);
-      var ret;
-      if (typeof param == 'boolean') {
-        ret = param ? 1 : 0;
-      } else {
-        ret = param;
-      }
-      HEAP32[((params)>>2)]=ret;
-    }
-  Module["_emscripten_glGetQueryObjectivEXT"] = _emscripten_glGetQueryObjectivEXT;
-
-  function _emscripten_glGetQueryObjectuivEXT(id, pname, params) {
-      if (!params) {
-        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
-        // if p == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      var query = GL.timerQueriesEXT[id];
-      var param = GLctx.disjointTimerQueryExt['getQueryObjectEXT'](query, pname);
-      var ret;
-      if (typeof param == 'boolean') {
-        ret = param ? 1 : 0;
-      } else {
-        ret = param;
-      }
-      HEAP32[((params)>>2)]=ret;
-    }
-  Module["_emscripten_glGetQueryObjectuivEXT"] = _emscripten_glGetQueryObjectuivEXT;
-
-  function _emscripten_glGetQueryObjecti64vEXT(id, pname, params) {
-      if (!params) {
-        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
-        // if p == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      var query = GL.timerQueriesEXT[id];
-      var param = GLctx.disjointTimerQueryExt['getQueryObjectEXT'](query, pname);
-      var ret;
-      if (typeof param == 'boolean') {
-        ret = param ? 1 : 0;
-      } else {
-        ret = param;
-      }
-      writeI53ToI64(params, ret);
-    }
-  Module["_emscripten_glGetQueryObjecti64vEXT"] = _emscripten_glGetQueryObjecti64vEXT;
-
-  function _emscripten_glGetQueryObjectui64vEXT(id, pname, params) {
-      if (!params) {
-        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
-        // if p == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      var query = GL.timerQueriesEXT[id];
-      var param = GLctx.disjointTimerQueryExt['getQueryObjectEXT'](query, pname);
-      var ret;
-      if (typeof param == 'boolean') {
-        ret = param ? 1 : 0;
-      } else {
-        ret = param;
-      }
-      writeI53ToI64(params, ret);
-    }
-  Module["_emscripten_glGetQueryObjectui64vEXT"] = _emscripten_glGetQueryObjectui64vEXT;
-
-  function _emscripten_glIsBuffer(buffer) {
-      var b = GL.buffers[buffer];
-      if (!b) return 0;
-      return GLctx.isBuffer(b);
-    }
-  Module["_emscripten_glIsBuffer"] = _emscripten_glIsBuffer;
-
-  function _emscripten_glGenRenderbuffers(n, renderbuffers) {
-      __glGenObject(n, renderbuffers, 'createRenderbuffer', GL.renderbuffers
-        );
-    }
-  Module["_emscripten_glGenRenderbuffers"] = _emscripten_glGenRenderbuffers;
-
-  function _emscripten_glDeleteRenderbuffers(n, renderbuffers) {
-      for (var i = 0; i < n; i++) {
-        var id = HEAP32[(((renderbuffers)+(i*4))>>2)];
-        var renderbuffer = GL.renderbuffers[id];
-        if (!renderbuffer) continue; // GL spec: "glDeleteRenderbuffers silently ignores 0s and names that do not correspond to existing renderbuffer objects".
-        GLctx.deleteRenderbuffer(renderbuffer);
-        renderbuffer.name = 0;
-        GL.renderbuffers[id] = null;
-      }
-    }
-  Module["_emscripten_glDeleteRenderbuffers"] = _emscripten_glDeleteRenderbuffers;
-
-  function _emscripten_glBindRenderbuffer(target, renderbuffer) {
-      GLctx.bindRenderbuffer(target, GL.renderbuffers[renderbuffer]);
-    }
-  Module["_emscripten_glBindRenderbuffer"] = _emscripten_glBindRenderbuffer;
-
-  function _emscripten_glGetRenderbufferParameteriv(target, pname, params) {
-      if (!params) {
-        // GLES2 specification does not specify how to behave if params is a null pointer. Since calling this function does not make sense
-        // if params == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      HEAP32[((params)>>2)]=GLctx.getRenderbufferParameter(target, pname);
-    }
-  Module["_emscripten_glGetRenderbufferParameteriv"] = _emscripten_glGetRenderbufferParameteriv;
-
-  function _emscripten_glIsRenderbuffer(renderbuffer) {
-      var rb = GL.renderbuffers[renderbuffer];
-      if (!rb) return 0;
-      return GLctx.isRenderbuffer(rb);
-    }
-  Module["_emscripten_glIsRenderbuffer"] = _emscripten_glIsRenderbuffer;
-
-  function _emscripten_glGetUniformfv(program, location, params) {
-      emscriptenWebGLGetUniform(program, location, params, 2);
-    }
-  Module["_emscripten_glGetUniformfv"] = _emscripten_glGetUniformfv;
-
-  function _emscripten_glGetUniformiv(program, location, params) {
-      emscriptenWebGLGetUniform(program, location, params, 0);
-    }
-  Module["_emscripten_glGetUniformiv"] = _emscripten_glGetUniformiv;
-
-  function _emscripten_glGetUniformLocation(program, name) {
-      name = UTF8ToString(name);
-  
-      var arrayIndex = 0;
-      // If user passed an array accessor "[index]", parse the array index off the accessor.
-      if (name[name.length - 1] == ']') {
-        var leftBrace = name.lastIndexOf('[');
-        arrayIndex = name[leftBrace+1] != ']' ? jstoi_q(name.slice(leftBrace + 1)) : 0; // "index]", parseInt will ignore the ']' at the end; but treat "foo[]" as "foo[0]"
-        name = name.slice(0, leftBrace);
-      }
-  
-      var uniformInfo = GL.programInfos[program] && GL.programInfos[program].uniforms[name]; // returns pair [ dimension_of_uniform_array, uniform_location ]
-      if (uniformInfo && arrayIndex >= 0 && arrayIndex < uniformInfo[0]) { // Check if user asked for an out-of-bounds element, i.e. for 'vec4 colors[3];' user could ask for 'colors[10]' which should return -1.
-        return uniformInfo[1] + arrayIndex;
-      } else {
-        return -1;
-      }
-    }
-  Module["_emscripten_glGetUniformLocation"] = _emscripten_glGetUniformLocation;
-
-  function _emscripten_glGetVertexAttribfv(index, pname, params) {
-      // N.B. This function may only be called if the vertex attribute was specified using the function glVertexAttrib*f(),
-      // otherwise the results are undefined. (GLES3 spec 6.1.12)
-      emscriptenWebGLGetVertexAttrib(index, pname, params, 2);
-    }
-  Module["_emscripten_glGetVertexAttribfv"] = _emscripten_glGetVertexAttribfv;
-
-  function _emscripten_glGetVertexAttribiv(index, pname, params) {
-      // N.B. This function may only be called if the vertex attribute was specified using the function glVertexAttrib*f(),
-      // otherwise the results are undefined. (GLES3 spec 6.1.12)
-      emscriptenWebGLGetVertexAttrib(index, pname, params, 5);
-    }
-  Module["_emscripten_glGetVertexAttribiv"] = _emscripten_glGetVertexAttribiv;
-
-  function _emscripten_glGetVertexAttribPointerv(index, pname, pointer) {
-      if (!pointer) {
-        // GLES2 specification does not specify how to behave if pointer is a null pointer. Since calling this function does not make sense
-        // if pointer == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      HEAP32[((pointer)>>2)]=GLctx.getVertexAttribOffset(index, pname);
-    }
-  Module["_emscripten_glGetVertexAttribPointerv"] = _emscripten_glGetVertexAttribPointerv;
-
-  function _emscripten_glGetActiveUniform(program, index, bufSize, length, size, type, name) {
-      program = GL.programs[program];
-      var info = GLctx.getActiveUniform(program, index);
-      if (!info) return; // If an error occurs, nothing will be written to length, size, type and name.
-  
-      var numBytesWrittenExclNull = (bufSize > 0 && name) ? stringToUTF8(info.name, name, bufSize) : 0;
-      if (length) HEAP32[((length)>>2)]=numBytesWrittenExclNull;
-      if (size) HEAP32[((size)>>2)]=info.size;
-      if (type) HEAP32[((type)>>2)]=info.type;
-    }
-  Module["_emscripten_glGetActiveUniform"] = _emscripten_glGetActiveUniform;
-
-  function _emscripten_glUniform1f(location, v0) {
-      GLctx.uniform1f(GL.uniforms[location], v0);
-    }
-  Module["_emscripten_glUniform1f"] = _emscripten_glUniform1f;
-
-  function _emscripten_glUniform2f(location, v0, v1) {
-      GLctx.uniform2f(GL.uniforms[location], v0, v1);
-    }
-  Module["_emscripten_glUniform2f"] = _emscripten_glUniform2f;
-
-  function _emscripten_glUniform3f(location, v0, v1, v2) {
-      GLctx.uniform3f(GL.uniforms[location], v0, v1, v2);
-    }
-  Module["_emscripten_glUniform3f"] = _emscripten_glUniform3f;
-
-  function _emscripten_glUniform4f(location, v0, v1, v2, v3) {
-      GLctx.uniform4f(GL.uniforms[location], v0, v1, v2, v3);
-    }
-  Module["_emscripten_glUniform4f"] = _emscripten_glUniform4f;
-
-  function _emscripten_glUniform1i(location, v0) {
-      GLctx.uniform1i(GL.uniforms[location], v0);
-    }
-  Module["_emscripten_glUniform1i"] = _emscripten_glUniform1i;
-
-  function _emscripten_glUniform2i(location, v0, v1) {
-      GLctx.uniform2i(GL.uniforms[location], v0, v1);
-    }
-  Module["_emscripten_glUniform2i"] = _emscripten_glUniform2i;
-
-  function _emscripten_glUniform3i(location, v0, v1, v2) {
-      GLctx.uniform3i(GL.uniforms[location], v0, v1, v2);
-    }
-  Module["_emscripten_glUniform3i"] = _emscripten_glUniform3i;
-
-  function _emscripten_glUniform4i(location, v0, v1, v2, v3) {
-      GLctx.uniform4i(GL.uniforms[location], v0, v1, v2, v3);
-    }
-  Module["_emscripten_glUniform4i"] = _emscripten_glUniform4i;
-
-  function _emscripten_glUniform1iv(location, count, value) {
-  
-  
-      if (count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferIntViews[count-1];
-        for (var i = 0; i < count; ++i) {
-          view[i] = HEAP32[(((value)+(4*i))>>2)];
-        }
-      } else
-      {
-        var view = HEAP32.subarray((value)>>2,(value+count*4)>>2);
-      }
-      GLctx.uniform1iv(GL.uniforms[location], view);
-    }
-  Module["_emscripten_glUniform1iv"] = _emscripten_glUniform1iv;
-
-  function _emscripten_glUniform2iv(location, count, value) {
-  
-  
-      if (2*count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferIntViews[2*count-1];
-        for (var i = 0; i < 2*count; i += 2) {
-          view[i] = HEAP32[(((value)+(4*i))>>2)];
-          view[i+1] = HEAP32[(((value)+(4*i+4))>>2)];
-        }
-      } else
-      {
-        var view = HEAP32.subarray((value)>>2,(value+count*8)>>2);
-      }
-      GLctx.uniform2iv(GL.uniforms[location], view);
-    }
-  Module["_emscripten_glUniform2iv"] = _emscripten_glUniform2iv;
-
-  function _emscripten_glUniform3iv(location, count, value) {
-  
-  
-      if (3*count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferIntViews[3*count-1];
-        for (var i = 0; i < 3*count; i += 3) {
-          view[i] = HEAP32[(((value)+(4*i))>>2)];
-          view[i+1] = HEAP32[(((value)+(4*i+4))>>2)];
-          view[i+2] = HEAP32[(((value)+(4*i+8))>>2)];
-        }
-      } else
-      {
-        var view = HEAP32.subarray((value)>>2,(value+count*12)>>2);
-      }
-      GLctx.uniform3iv(GL.uniforms[location], view);
-    }
-  Module["_emscripten_glUniform3iv"] = _emscripten_glUniform3iv;
-
-  function _emscripten_glUniform4iv(location, count, value) {
-  
-  
-      if (4*count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferIntViews[4*count-1];
-        for (var i = 0; i < 4*count; i += 4) {
-          view[i] = HEAP32[(((value)+(4*i))>>2)];
-          view[i+1] = HEAP32[(((value)+(4*i+4))>>2)];
-          view[i+2] = HEAP32[(((value)+(4*i+8))>>2)];
-          view[i+3] = HEAP32[(((value)+(4*i+12))>>2)];
-        }
-      } else
-      {
-        var view = HEAP32.subarray((value)>>2,(value+count*16)>>2);
-      }
-      GLctx.uniform4iv(GL.uniforms[location], view);
-    }
-  Module["_emscripten_glUniform4iv"] = _emscripten_glUniform4iv;
-
-  function _emscripten_glUniform1fv(location, count, value) {
-  
-  
-      if (count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferFloatViews[count-1];
-        for (var i = 0; i < count; ++i) {
-          view[i] = HEAPF32[(((value)+(4*i))>>2)];
-        }
-      } else
-      {
-        var view = HEAPF32.subarray((value)>>2,(value+count*4)>>2);
-      }
-      GLctx.uniform1fv(GL.uniforms[location], view);
-    }
-  Module["_emscripten_glUniform1fv"] = _emscripten_glUniform1fv;
-
-  function _emscripten_glUniform2fv(location, count, value) {
-  
-  
-      if (2*count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferFloatViews[2*count-1];
-        for (var i = 0; i < 2*count; i += 2) {
-          view[i] = HEAPF32[(((value)+(4*i))>>2)];
-          view[i+1] = HEAPF32[(((value)+(4*i+4))>>2)];
-        }
-      } else
-      {
-        var view = HEAPF32.subarray((value)>>2,(value+count*8)>>2);
-      }
-      GLctx.uniform2fv(GL.uniforms[location], view);
-    }
-  Module["_emscripten_glUniform2fv"] = _emscripten_glUniform2fv;
-
-  function _emscripten_glUniform3fv(location, count, value) {
-  
-  
-      if (3*count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferFloatViews[3*count-1];
-        for (var i = 0; i < 3*count; i += 3) {
-          view[i] = HEAPF32[(((value)+(4*i))>>2)];
-          view[i+1] = HEAPF32[(((value)+(4*i+4))>>2)];
-          view[i+2] = HEAPF32[(((value)+(4*i+8))>>2)];
-        }
-      } else
-      {
-        var view = HEAPF32.subarray((value)>>2,(value+count*12)>>2);
-      }
-      GLctx.uniform3fv(GL.uniforms[location], view);
-    }
-  Module["_emscripten_glUniform3fv"] = _emscripten_glUniform3fv;
-
-  function _emscripten_glUniform4fv(location, count, value) {
-  
-  
-      if (4*count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferFloatViews[4*count-1];
-        // hoist the heap out of the loop for size and for pthreads+growth.
-        var heap = HEAPF32;
-        value >>= 2;
-        for (var i = 0; i < 4 * count; i += 4) {
-          var dst = value + i;
-          view[i] = heap[dst];
-          view[i + 1] = heap[dst + 1];
-          view[i + 2] = heap[dst + 2];
-          view[i + 3] = heap[dst + 3];
-        }
-      } else
-      {
-        var view = HEAPF32.subarray((value)>>2,(value+count*16)>>2);
-      }
-      GLctx.uniform4fv(GL.uniforms[location], view);
-    }
-  Module["_emscripten_glUniform4fv"] = _emscripten_glUniform4fv;
-
-  function _emscripten_glUniformMatrix2fv(location, count, transpose, value) {
-  
-  
-      if (4*count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferFloatViews[4*count-1];
-        for (var i = 0; i < 4*count; i += 4) {
-          view[i] = HEAPF32[(((value)+(4*i))>>2)];
-          view[i+1] = HEAPF32[(((value)+(4*i+4))>>2)];
-          view[i+2] = HEAPF32[(((value)+(4*i+8))>>2)];
-          view[i+3] = HEAPF32[(((value)+(4*i+12))>>2)];
-        }
-      } else
-      {
-        var view = HEAPF32.subarray((value)>>2,(value+count*16)>>2);
-      }
-      GLctx.uniformMatrix2fv(GL.uniforms[location], !!transpose, view);
-    }
-  Module["_emscripten_glUniformMatrix2fv"] = _emscripten_glUniformMatrix2fv;
-
-  function _emscripten_glUniformMatrix3fv(location, count, transpose, value) {
-  
-  
-      if (9*count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferFloatViews[9*count-1];
-        for (var i = 0; i < 9*count; i += 9) {
-          view[i] = HEAPF32[(((value)+(4*i))>>2)];
-          view[i+1] = HEAPF32[(((value)+(4*i+4))>>2)];
-          view[i+2] = HEAPF32[(((value)+(4*i+8))>>2)];
-          view[i+3] = HEAPF32[(((value)+(4*i+12))>>2)];
-          view[i+4] = HEAPF32[(((value)+(4*i+16))>>2)];
-          view[i+5] = HEAPF32[(((value)+(4*i+20))>>2)];
-          view[i+6] = HEAPF32[(((value)+(4*i+24))>>2)];
-          view[i+7] = HEAPF32[(((value)+(4*i+28))>>2)];
-          view[i+8] = HEAPF32[(((value)+(4*i+32))>>2)];
-        }
-      } else
-      {
-        var view = HEAPF32.subarray((value)>>2,(value+count*36)>>2);
-      }
-      GLctx.uniformMatrix3fv(GL.uniforms[location], !!transpose, view);
-    }
-  Module["_emscripten_glUniformMatrix3fv"] = _emscripten_glUniformMatrix3fv;
-
-  function _emscripten_glUniformMatrix4fv(location, count, transpose, value) {
-  
-  
-      if (16*count <= GL.MINI_TEMP_BUFFER_SIZE) {
-        // avoid allocation when uploading few enough uniforms
-        var view = GL.miniTempBufferFloatViews[16*count-1];
-        // hoist the heap out of the loop for size and for pthreads+growth.
-        var heap = HEAPF32;
-        value >>= 2;
-        for (var i = 0; i < 16 * count; i += 16) {
-          var dst = value + i;
-          view[i] = heap[dst];
-          view[i + 1] = heap[dst + 1];
-          view[i + 2] = heap[dst + 2];
-          view[i + 3] = heap[dst + 3];
-          view[i + 4] = heap[dst + 4];
-          view[i + 5] = heap[dst + 5];
-          view[i + 6] = heap[dst + 6];
-          view[i + 7] = heap[dst + 7];
-          view[i + 8] = heap[dst + 8];
-          view[i + 9] = heap[dst + 9];
-          view[i + 10] = heap[dst + 10];
-          view[i + 11] = heap[dst + 11];
-          view[i + 12] = heap[dst + 12];
-          view[i + 13] = heap[dst + 13];
-          view[i + 14] = heap[dst + 14];
-          view[i + 15] = heap[dst + 15];
-        }
-      } else
-      {
-        var view = HEAPF32.subarray((value)>>2,(value+count*64)>>2);
-      }
-      GLctx.uniformMatrix4fv(GL.uniforms[location], !!transpose, view);
-    }
-  Module["_emscripten_glUniformMatrix4fv"] = _emscripten_glUniformMatrix4fv;
-
-  function _emscripten_glBindBuffer(target, buffer) {
-  
-      GLctx.bindBuffer(target, GL.buffers[buffer]);
-    }
-  Module["_emscripten_glBindBuffer"] = _emscripten_glBindBuffer;
-
-  function _emscripten_glVertexAttrib1fv(index, v) {
-  
-      GLctx.vertexAttrib1f(index, HEAPF32[v>>2]);
-    }
-  Module["_emscripten_glVertexAttrib1fv"] = _emscripten_glVertexAttrib1fv;
-
-  function _emscripten_glVertexAttrib2fv(index, v) {
-  
-      GLctx.vertexAttrib2f(index, HEAPF32[v>>2], HEAPF32[v+4>>2]);
-    }
-  Module["_emscripten_glVertexAttrib2fv"] = _emscripten_glVertexAttrib2fv;
-
-  function _emscripten_glVertexAttrib3fv(index, v) {
-  
-      GLctx.vertexAttrib3f(index, HEAPF32[v>>2], HEAPF32[v+4>>2], HEAPF32[v+8>>2]);
-    }
-  Module["_emscripten_glVertexAttrib3fv"] = _emscripten_glVertexAttrib3fv;
-
-  function _emscripten_glVertexAttrib4fv(index, v) {
-  
-      GLctx.vertexAttrib4f(index, HEAPF32[v>>2], HEAPF32[v+4>>2], HEAPF32[v+8>>2], HEAPF32[v+12>>2]);
-    }
-  Module["_emscripten_glVertexAttrib4fv"] = _emscripten_glVertexAttrib4fv;
-
-  function _emscripten_glGetAttribLocation(program, name) {
-      return GLctx.getAttribLocation(GL.programs[program], UTF8ToString(name));
-    }
-  Module["_emscripten_glGetAttribLocation"] = _emscripten_glGetAttribLocation;
-
-  function _emscripten_glGetActiveAttrib(program, index, bufSize, length, size, type, name) {
-      program = GL.programs[program];
-      var info = GLctx.getActiveAttrib(program, index);
-      if (!info) return; // If an error occurs, nothing will be written to length, size and type and name.
-  
-      var numBytesWrittenExclNull = (bufSize > 0 && name) ? stringToUTF8(info.name, name, bufSize) : 0;
-      if (length) HEAP32[((length)>>2)]=numBytesWrittenExclNull;
-      if (size) HEAP32[((size)>>2)]=info.size;
-      if (type) HEAP32[((type)>>2)]=info.type;
-    }
-  Module["_emscripten_glGetActiveAttrib"] = _emscripten_glGetActiveAttrib;
-
-  function _emscripten_glCreateShader(shaderType) {
-      var id = GL.getNewId(GL.shaders);
-      GL.shaders[id] = GLctx.createShader(shaderType);
-      return id;
-    }
-  Module["_emscripten_glCreateShader"] = _emscripten_glCreateShader;
-
-  function _emscripten_glDeleteShader(id) {
-      if (!id) return;
-      var shader = GL.shaders[id];
-      if (!shader) { // glDeleteShader actually signals an error when deleting a nonexisting object, unlike some other GL delete functions.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      GLctx.deleteShader(shader);
-      GL.shaders[id] = null;
-    }
-  Module["_emscripten_glDeleteShader"] = _emscripten_glDeleteShader;
-
-  function _emscripten_glGetAttachedShaders(program, maxCount, count, shaders) {
-      var result = GLctx.getAttachedShaders(GL.programs[program]);
-      var len = result.length;
-      if (len > maxCount) {
-        len = maxCount;
-      }
-      HEAP32[((count)>>2)]=len;
-      for (var i = 0; i < len; ++i) {
-        var id = GL.shaders.indexOf(result[i]);
-        HEAP32[(((shaders)+(i*4))>>2)]=id;
-      }
-    }
-  Module["_emscripten_glGetAttachedShaders"] = _emscripten_glGetAttachedShaders;
-
-  function _emscripten_glShaderSource(shader, count, string, length) {
-      var source = GL.getSource(shader, count, string, length);
-  
-  
-      GLctx.shaderSource(GL.shaders[shader], source);
-    }
-  Module["_emscripten_glShaderSource"] = _emscripten_glShaderSource;
-
-  function _emscripten_glGetShaderSource(shader, bufSize, length, source) {
-      var result = GLctx.getShaderSource(GL.shaders[shader]);
-      if (!result) return; // If an error occurs, nothing will be written to length or source.
-      var numBytesWrittenExclNull = (bufSize > 0 && source) ? stringToUTF8(result, source, bufSize) : 0;
-      if (length) HEAP32[((length)>>2)]=numBytesWrittenExclNull;
-    }
-  Module["_emscripten_glGetShaderSource"] = _emscripten_glGetShaderSource;
-
-  function _emscripten_glCompileShader(shader) {
-      GLctx.compileShader(GL.shaders[shader]);
-    }
-  Module["_emscripten_glCompileShader"] = _emscripten_glCompileShader;
-
-  function _emscripten_glGetShaderInfoLog(shader, maxLength, length, infoLog) {
-      var log = GLctx.getShaderInfoLog(GL.shaders[shader]);
-      if (log === null) log = '(unknown error)';
-      var numBytesWrittenExclNull = (maxLength > 0 && infoLog) ? stringToUTF8(log, infoLog, maxLength) : 0;
-      if (length) HEAP32[((length)>>2)]=numBytesWrittenExclNull;
-    }
-  Module["_emscripten_glGetShaderInfoLog"] = _emscripten_glGetShaderInfoLog;
-
-  function _emscripten_glGetShaderiv(shader, pname, p) {
-      if (!p) {
-        // GLES2 specification does not specify how to behave if p is a null pointer. Since calling this function does not make sense
-        // if p == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      if (pname == 0x8B84) { // GL_INFO_LOG_LENGTH
-        var log = GLctx.getShaderInfoLog(GL.shaders[shader]);
-        if (log === null) log = '(unknown error)';
-        HEAP32[((p)>>2)]=log.length + 1;
-      } else if (pname == 0x8B88) { // GL_SHADER_SOURCE_LENGTH
-        var source = GLctx.getShaderSource(GL.shaders[shader]);
-        var sourceLength = (source === null || source.length == 0) ? 0 : source.length + 1;
-        HEAP32[((p)>>2)]=sourceLength;
-      } else {
-        HEAP32[((p)>>2)]=GLctx.getShaderParameter(GL.shaders[shader], pname);
-      }
-    }
-  Module["_emscripten_glGetShaderiv"] = _emscripten_glGetShaderiv;
-
-  function _emscripten_glGetProgramiv(program, pname, p) {
-      if (!p) {
-        // GLES2 specification does not specify how to behave if p is a null pointer. Since calling this function does not make sense
-        // if p == null, issue a GL error to notify user about it.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-  
-      if (program >= GL.counter) {
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-  
-      var ptable = GL.programInfos[program];
-      if (!ptable) {
-        GL.recordError(0x502 /* GL_INVALID_OPERATION */);
-        return;
-      }
-  
-      if (pname == 0x8B84) { // GL_INFO_LOG_LENGTH
-        var log = GLctx.getProgramInfoLog(GL.programs[program]);
-        if (log === null) log = '(unknown error)';
-        HEAP32[((p)>>2)]=log.length + 1;
-      } else if (pname == 0x8B87 /* GL_ACTIVE_UNIFORM_MAX_LENGTH */) {
-        HEAP32[((p)>>2)]=ptable.maxUniformLength;
-      } else if (pname == 0x8B8A /* GL_ACTIVE_ATTRIBUTE_MAX_LENGTH */) {
-        if (ptable.maxAttributeLength == -1) {
-          program = GL.programs[program];
-          var numAttribs = GLctx.getProgramParameter(program, 0x8B89/*GL_ACTIVE_ATTRIBUTES*/);
-          ptable.maxAttributeLength = 0; // Spec says if there are no active attribs, 0 must be returned.
-          for (var i = 0; i < numAttribs; ++i) {
-            var activeAttrib = GLctx.getActiveAttrib(program, i);
-            ptable.maxAttributeLength = Math.max(ptable.maxAttributeLength, activeAttrib.name.length+1);
-          }
-        }
-        HEAP32[((p)>>2)]=ptable.maxAttributeLength;
-      } else if (pname == 0x8A35 /* GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH */) {
-        if (ptable.maxUniformBlockNameLength == -1) {
-          program = GL.programs[program];
-          var numBlocks = GLctx.getProgramParameter(program, 0x8A36/*GL_ACTIVE_UNIFORM_BLOCKS*/);
-          ptable.maxUniformBlockNameLength = 0;
-          for (var i = 0; i < numBlocks; ++i) {
-            var activeBlockName = GLctx.getActiveUniformBlockName(program, i);
-            ptable.maxUniformBlockNameLength = Math.max(ptable.maxUniformBlockNameLength, activeBlockName.length+1);
-          }
-        }
-        HEAP32[((p)>>2)]=ptable.maxUniformBlockNameLength;
-      } else {
-        HEAP32[((p)>>2)]=GLctx.getProgramParameter(GL.programs[program], pname);
-      }
-    }
-  Module["_emscripten_glGetProgramiv"] = _emscripten_glGetProgramiv;
-
-  function _emscripten_glIsShader(shader) {
-      var s = GL.shaders[shader];
-      if (!s) return 0;
-      return GLctx.isShader(s);
-    }
-  Module["_emscripten_glIsShader"] = _emscripten_glIsShader;
-
-  function _emscripten_glCreateProgram() {
-      var id = GL.getNewId(GL.programs);
-      var program = GLctx.createProgram();
-      program.name = id;
-      GL.programs[id] = program;
-      return id;
-    }
-  Module["_emscripten_glCreateProgram"] = _emscripten_glCreateProgram;
-
-  function _emscripten_glDeleteProgram(id) {
-      if (!id) return;
-      var program = GL.programs[id];
-      if (!program) { // glDeleteProgram actually signals an error when deleting a nonexisting object, unlike some other GL delete functions.
-        GL.recordError(0x501 /* GL_INVALID_VALUE */);
-        return;
-      }
-      GLctx.deleteProgram(program);
-      program.name = 0;
-      GL.programs[id] = null;
-      GL.programInfos[id] = null;
-    }
-  Module["_emscripten_glDeleteProgram"] = _emscripten_glDeleteProgram;
-
-  function _emscripten_glAttachShader(program, shader) {
-      GLctx.attachShader(GL.programs[program],
-                              GL.shaders[shader]);
-    }
-  Module["_emscripten_glAttachShader"] = _emscripten_glAttachShader;
-
-  function _emscripten_glDetachShader(program, shader) {
-      GLctx.detachShader(GL.programs[program],
-                              GL.shaders[shader]);
-    }
-  Module["_emscripten_glDetachShader"] = _emscripten_glDetachShader;
-
-  function _emscripten_glGetShaderPrecisionFormat(shaderType, precisionType, range, precision) {
-      var result = GLctx.getShaderPrecisionFormat(shaderType, precisionType);
-      HEAP32[((range)>>2)]=result.rangeMin;
-      HEAP32[(((range)+(4))>>2)]=result.rangeMax;
-      HEAP32[((precision)>>2)]=result.precision;
-    }
-  Module["_emscripten_glGetShaderPrecisionFormat"] = _emscripten_glGetShaderPrecisionFormat;
-
-  function _emscripten_glLinkProgram(program) {
-      GLctx.linkProgram(GL.programs[program]);
-      GL.populateUniformTable(program);
-    }
-  Module["_emscripten_glLinkProgram"] = _emscripten_glLinkProgram;
-
-  function _emscripten_glGetProgramInfoLog(program, maxLength, length, infoLog) {
-      var log = GLctx.getProgramInfoLog(GL.programs[program]);
-      if (log === null) log = '(unknown error)';
-      var numBytesWrittenExclNull = (maxLength > 0 && infoLog) ? stringToUTF8(log, infoLog, maxLength) : 0;
-      if (length) HEAP32[((length)>>2)]=numBytesWrittenExclNull;
-    }
-  Module["_emscripten_glGetProgramInfoLog"] = _emscripten_glGetProgramInfoLog;
-
-  function _emscripten_glUseProgram(program) {
-      GLctx.useProgram(GL.programs[program]);
-    }
-  Module["_emscripten_glUseProgram"] = _emscripten_glUseProgram;
-
-  function _emscripten_glValidateProgram(program) {
-      GLctx.validateProgram(GL.programs[program]);
-    }
-  Module["_emscripten_glValidateProgram"] = _emscripten_glValidateProgram;
-
-  function _emscripten_glIsProgram(program) {
-      program = GL.programs[program];
-      if (!program) return 0;
-      return GLctx.isProgram(program);
-    }
-  Module["_emscripten_glIsProgram"] = _emscripten_glIsProgram;
-
-  function _emscripten_glBindAttribLocation(program, index, name) {
-      GLctx.bindAttribLocation(GL.programs[program], index, UTF8ToString(name));
-    }
-  Module["_emscripten_glBindAttribLocation"] = _emscripten_glBindAttribLocation;
-
-  function _emscripten_glBindFramebuffer(target, framebuffer) {
-  
-      GLctx.bindFramebuffer(target, GL.framebuffers[framebuffer]);
-  
-    }
-  Module["_emscripten_glBindFramebuffer"] = _emscripten_glBindFramebuffer;
-
-  function _emscripten_glGenFramebuffers(n, ids) {
-      __glGenObject(n, ids, 'createFramebuffer', GL.framebuffers
-        );
-    }
-  Module["_emscripten_glGenFramebuffers"] = _emscripten_glGenFramebuffers;
-
-  function _emscripten_glDeleteFramebuffers(n, framebuffers) {
-      for (var i = 0; i < n; ++i) {
-        var id = HEAP32[(((framebuffers)+(i*4))>>2)];
-        var framebuffer = GL.framebuffers[id];
-        if (!framebuffer) continue; // GL spec: "glDeleteFramebuffers silently ignores 0s and names that do not correspond to existing framebuffer objects".
-        GLctx.deleteFramebuffer(framebuffer);
-        framebuffer.name = 0;
-        GL.framebuffers[id] = null;
-      }
-    }
-  Module["_emscripten_glDeleteFramebuffers"] = _emscripten_glDeleteFramebuffers;
-
-  function _emscripten_glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer) {
-      GLctx.framebufferRenderbuffer(target, attachment, renderbuffertarget,
-                                         GL.renderbuffers[renderbuffer]);
-    }
-  Module["_emscripten_glFramebufferRenderbuffer"] = _emscripten_glFramebufferRenderbuffer;
-
-  function _emscripten_glFramebufferTexture2D(target, attachment, textarget, texture, level) {
-      GLctx.framebufferTexture2D(target, attachment, textarget,
-                                      GL.textures[texture], level);
-    }
-  Module["_emscripten_glFramebufferTexture2D"] = _emscripten_glFramebufferTexture2D;
-
-  function _emscripten_glGetFramebufferAttachmentParameteriv(target, attachment, pname, params) {
-      var result = GLctx.getFramebufferAttachmentParameter(target, attachment, pname);
-      if (result instanceof WebGLRenderbuffer ||
-          result instanceof WebGLTexture) {
-        result = result.name | 0;
-      }
-      HEAP32[((params)>>2)]=result;
-    }
-  Module["_emscripten_glGetFramebufferAttachmentParameteriv"] = _emscripten_glGetFramebufferAttachmentParameteriv;
-
-  function _emscripten_glIsFramebuffer(framebuffer) {
-      var fb = GL.framebuffers[framebuffer];
-      if (!fb) return 0;
-      return GLctx.isFramebuffer(fb);
-    }
-  Module["_emscripten_glIsFramebuffer"] = _emscripten_glIsFramebuffer;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   function _emscripten_glGenVertexArrays(n, arrays) {
       __glGenObject(n, arrays, 'createVertexArray', GL.vaos
@@ -19881,33 +21390,9 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   function _emscripten_glLoadIdentity(){ throw 'Legacy GL function (glLoadIdentity) called. If you want legacy GL emulation, you need to compile with -s LEGACY_GL_EMULATION=1 to enable legacy GL emulation.'; }
   Module["_emscripten_glLoadIdentity"] = _emscripten_glLoadIdentity;
 
-  function _emscripten_glGenVertexArraysOES(n, arrays) {
-      __glGenObject(n, arrays, 'createVertexArray', GL.vaos
-        );
-    }
-  Module["_emscripten_glGenVertexArraysOES"] = _emscripten_glGenVertexArraysOES;
 
-  function _emscripten_glDeleteVertexArraysOES(n, vaos) {
-      for (var i = 0; i < n; i++) {
-        var id = HEAP32[(((vaos)+(i*4))>>2)];
-        GLctx['deleteVertexArray'](GL.vaos[id]);
-        GL.vaos[id] = null;
-      }
-    }
-  Module["_emscripten_glDeleteVertexArraysOES"] = _emscripten_glDeleteVertexArraysOES;
 
-  function _emscripten_glBindVertexArrayOES(vao) {
-      GLctx['bindVertexArray'](GL.vaos[vao]);
-    }
-  Module["_emscripten_glBindVertexArrayOES"] = _emscripten_glBindVertexArrayOES;
 
-  function _emscripten_glIsVertexArrayOES(array) {
-  
-      var vao = GL.vaos[array];
-      if (!vao) return 0;
-      return GLctx['isVertexArray'](vao);
-    }
-  Module["_emscripten_glIsVertexArrayOES"] = _emscripten_glIsVertexArrayOES;
 
   function _emscripten_gluPerspective(fov, aspect, near, far) {
       GLImmediate.matricesModified = true;
@@ -19980,51 +21465,13 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_emscripten_gluOrtho2D"] = _emscripten_gluOrtho2D;
 
-  function _emscripten_glVertexAttribPointer(index, size, type, normalized, stride, ptr) {
-      GLctx.vertexAttribPointer(index, size, type, !!normalized, stride, ptr);
-    }
-  Module["_emscripten_glVertexAttribPointer"] = _emscripten_glVertexAttribPointer;
 
-  function _emscripten_glEnableVertexAttribArray(index) {
-      GLctx.enableVertexAttribArray(index);
-    }
-  Module["_emscripten_glEnableVertexAttribArray"] = _emscripten_glEnableVertexAttribArray;
 
-  function _emscripten_glDisableVertexAttribArray(index) {
-      GLctx.disableVertexAttribArray(index);
-    }
-  Module["_emscripten_glDisableVertexAttribArray"] = _emscripten_glDisableVertexAttribArray;
 
-  function _emscripten_glDrawArrays(mode, first, count) {
-  
-      GLctx.drawArrays(mode, first, count);
-  
-    }
-  Module["_emscripten_glDrawArrays"] = _emscripten_glDrawArrays;
 
-  function _emscripten_glDrawElements(mode, count, type, indices) {
-  
-      GLctx.drawElements(mode, count, type, indices);
-  
-    }
-  Module["_emscripten_glDrawElements"] = _emscripten_glDrawElements;
 
-  function _emscripten_glShaderBinary() {
-      GL.recordError(0x500/*GL_INVALID_ENUM*/);
-    }
-  Module["_emscripten_glShaderBinary"] = _emscripten_glShaderBinary;
 
-  function _emscripten_glReleaseShaderCompiler() {
-      // NOP (as allowed by GLES 2.0 spec)
-    }
-  Module["_emscripten_glReleaseShaderCompiler"] = _emscripten_glReleaseShaderCompiler;
 
-  function _emscripten_glGetError() {
-      var error = GLctx.getError() || GL.lastError;
-      GL.lastError = 0/*GL_NO_ERROR*/;
-      return error;
-    }
-  Module["_emscripten_glGetError"] = _emscripten_glGetError;
 
   function _emscripten_glVertexAttribDivisor(index, divisor) {
       GLctx['vertexAttribDivisor'](index, divisor);
@@ -20086,20 +21533,8 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_emscripten_glDrawElementsInstancedARB"] = _emscripten_glDrawElementsInstancedARB;
 
-  function _emscripten_glVertexAttribDivisorANGLE(index, divisor) {
-      GLctx['vertexAttribDivisor'](index, divisor);
-    }
-  Module["_emscripten_glVertexAttribDivisorANGLE"] = _emscripten_glVertexAttribDivisorANGLE;
 
-  function _emscripten_glDrawArraysInstancedANGLE(mode, first, count, primcount) {
-      GLctx['drawArraysInstanced'](mode, first, count, primcount);
-    }
-  Module["_emscripten_glDrawArraysInstancedANGLE"] = _emscripten_glDrawArraysInstancedANGLE;
 
-  function _emscripten_glDrawElementsInstancedANGLE(mode, count, type, indices, primcount) {
-      GLctx['drawElementsInstanced'](mode, count, type, indices, primcount);
-    }
-  Module["_emscripten_glDrawElementsInstancedANGLE"] = _emscripten_glDrawElementsInstancedANGLE;
 
   function _emscripten_glDrawBuffers(n, bufs) {
   
@@ -20123,160 +21558,56 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
     }
   Module["_emscripten_glDrawBuffersEXT"] = _emscripten_glDrawBuffersEXT;
 
-  function _emscripten_glDrawBuffersWEBGL(n, bufs) {
-  
-      var bufArray = __tempFixedLengthArray[n];
-      for (var i = 0; i < n; i++) {
-        bufArray[i] = HEAP32[(((bufs)+(i*4))>>2)];
-      }
-  
-      GLctx['drawBuffers'](bufArray);
-    }
-  Module["_emscripten_glDrawBuffersWEBGL"] = _emscripten_glDrawBuffersWEBGL;
 
-  function _emscripten_glColorMask(red, green, blue, alpha) {
-      GLctx.colorMask(!!red, !!green, !!blue, !!alpha);
-    }
-  Module["_emscripten_glColorMask"] = _emscripten_glColorMask;
 
-  function _emscripten_glDepthMask(flag) {
-      GLctx.depthMask(!!flag);
-    }
-  Module["_emscripten_glDepthMask"] = _emscripten_glDepthMask;
 
-  function _emscripten_glSampleCoverage(value, invert) {
-      GLctx.sampleCoverage(value, !!invert);
-    }
-  Module["_emscripten_glSampleCoverage"] = _emscripten_glSampleCoverage;
 
-  function _emscripten_glFinish() { GLctx['finish']() }
-  Module["_emscripten_glFinish"] = _emscripten_glFinish;
 
-  function _emscripten_glFlush() { GLctx['flush']() }
-  Module["_emscripten_glFlush"] = _emscripten_glFlush;
 
   function _emscripten_glClearDepth(x0) { GLctx['clearDepth'](x0) }
   Module["_emscripten_glClearDepth"] = _emscripten_glClearDepth;
 
-  function _emscripten_glClearDepthf(x0) { GLctx['clearDepth'](x0) }
-  Module["_emscripten_glClearDepthf"] = _emscripten_glClearDepthf;
 
-  function _emscripten_glDepthFunc(x0) { GLctx['depthFunc'](x0) }
-  Module["_emscripten_glDepthFunc"] = _emscripten_glDepthFunc;
 
-  function _emscripten_glEnable(x0) { GLctx['enable'](x0) }
-  Module["_emscripten_glEnable"] = _emscripten_glEnable;
 
-  function _emscripten_glDisable(x0) { GLctx['disable'](x0) }
-  Module["_emscripten_glDisable"] = _emscripten_glDisable;
 
-  function _emscripten_glFrontFace(x0) { GLctx['frontFace'](x0) }
-  Module["_emscripten_glFrontFace"] = _emscripten_glFrontFace;
 
-  function _emscripten_glCullFace(x0) { GLctx['cullFace'](x0) }
-  Module["_emscripten_glCullFace"] = _emscripten_glCullFace;
 
-  function _emscripten_glClear(x0) { GLctx['clear'](x0) }
-  Module["_emscripten_glClear"] = _emscripten_glClear;
 
-  function _emscripten_glLineWidth(x0) { GLctx['lineWidth'](x0) }
-  Module["_emscripten_glLineWidth"] = _emscripten_glLineWidth;
 
-  function _emscripten_glClearStencil(x0) { GLctx['clearStencil'](x0) }
-  Module["_emscripten_glClearStencil"] = _emscripten_glClearStencil;
 
-  function _emscripten_glStencilMask(x0) { GLctx['stencilMask'](x0) }
-  Module["_emscripten_glStencilMask"] = _emscripten_glStencilMask;
 
-  function _emscripten_glCheckFramebufferStatus(x0) { return GLctx['checkFramebufferStatus'](x0) }
-  Module["_emscripten_glCheckFramebufferStatus"] = _emscripten_glCheckFramebufferStatus;
 
-  function _emscripten_glGenerateMipmap(x0) { GLctx['generateMipmap'](x0) }
-  Module["_emscripten_glGenerateMipmap"] = _emscripten_glGenerateMipmap;
 
-  function _emscripten_glActiveTexture(x0) { GLctx['activeTexture'](x0) }
-  Module["_emscripten_glActiveTexture"] = _emscripten_glActiveTexture;
 
-  function _emscripten_glBlendEquation(x0) { GLctx['blendEquation'](x0) }
-  Module["_emscripten_glBlendEquation"] = _emscripten_glBlendEquation;
 
-  function _emscripten_glIsEnabled(x0) { return GLctx['isEnabled'](x0) }
-  Module["_emscripten_glIsEnabled"] = _emscripten_glIsEnabled;
 
-  function _emscripten_glBlendFunc(x0, x1) { GLctx['blendFunc'](x0, x1) }
-  Module["_emscripten_glBlendFunc"] = _emscripten_glBlendFunc;
 
-  function _emscripten_glBlendEquationSeparate(x0, x1) { GLctx['blendEquationSeparate'](x0, x1) }
-  Module["_emscripten_glBlendEquationSeparate"] = _emscripten_glBlendEquationSeparate;
 
   function _emscripten_glDepthRange(x0, x1) { GLctx['depthRange'](x0, x1) }
   Module["_emscripten_glDepthRange"] = _emscripten_glDepthRange;
 
-  function _emscripten_glDepthRangef(x0, x1) { GLctx['depthRange'](x0, x1) }
-  Module["_emscripten_glDepthRangef"] = _emscripten_glDepthRangef;
 
-  function _emscripten_glStencilMaskSeparate(x0, x1) { GLctx['stencilMaskSeparate'](x0, x1) }
-  Module["_emscripten_glStencilMaskSeparate"] = _emscripten_glStencilMaskSeparate;
 
-  function _emscripten_glHint(x0, x1) { GLctx['hint'](x0, x1) }
-  Module["_emscripten_glHint"] = _emscripten_glHint;
 
-  function _emscripten_glPolygonOffset(x0, x1) { GLctx['polygonOffset'](x0, x1) }
-  Module["_emscripten_glPolygonOffset"] = _emscripten_glPolygonOffset;
 
-  function _emscripten_glVertexAttrib1f(x0, x1) { GLctx['vertexAttrib1f'](x0, x1) }
-  Module["_emscripten_glVertexAttrib1f"] = _emscripten_glVertexAttrib1f;
 
-  function _emscripten_glTexParameteri(x0, x1, x2) { GLctx['texParameteri'](x0, x1, x2) }
-  Module["_emscripten_glTexParameteri"] = _emscripten_glTexParameteri;
 
-  function _emscripten_glTexParameterf(x0, x1, x2) { GLctx['texParameterf'](x0, x1, x2) }
-  Module["_emscripten_glTexParameterf"] = _emscripten_glTexParameterf;
 
-  function _emscripten_glVertexAttrib2f(x0, x1, x2) { GLctx['vertexAttrib2f'](x0, x1, x2) }
-  Module["_emscripten_glVertexAttrib2f"] = _emscripten_glVertexAttrib2f;
 
-  function _emscripten_glStencilFunc(x0, x1, x2) { GLctx['stencilFunc'](x0, x1, x2) }
-  Module["_emscripten_glStencilFunc"] = _emscripten_glStencilFunc;
 
-  function _emscripten_glStencilOp(x0, x1, x2) { GLctx['stencilOp'](x0, x1, x2) }
-  Module["_emscripten_glStencilOp"] = _emscripten_glStencilOp;
 
-  function _emscripten_glViewport(x0, x1, x2, x3) { GLctx['viewport'](x0, x1, x2, x3) }
-  Module["_emscripten_glViewport"] = _emscripten_glViewport;
 
-  function _emscripten_glClearColor(x0, x1, x2, x3) { GLctx['clearColor'](x0, x1, x2, x3) }
-  Module["_emscripten_glClearColor"] = _emscripten_glClearColor;
 
-  function _emscripten_glScissor(x0, x1, x2, x3) { GLctx['scissor'](x0, x1, x2, x3) }
-  Module["_emscripten_glScissor"] = _emscripten_glScissor;
 
-  function _emscripten_glVertexAttrib3f(x0, x1, x2, x3) { GLctx['vertexAttrib3f'](x0, x1, x2, x3) }
-  Module["_emscripten_glVertexAttrib3f"] = _emscripten_glVertexAttrib3f;
 
-  function _emscripten_glRenderbufferStorage(x0, x1, x2, x3) { GLctx['renderbufferStorage'](x0, x1, x2, x3) }
-  Module["_emscripten_glRenderbufferStorage"] = _emscripten_glRenderbufferStorage;
 
-  function _emscripten_glBlendFuncSeparate(x0, x1, x2, x3) { GLctx['blendFuncSeparate'](x0, x1, x2, x3) }
-  Module["_emscripten_glBlendFuncSeparate"] = _emscripten_glBlendFuncSeparate;
 
-  function _emscripten_glBlendColor(x0, x1, x2, x3) { GLctx['blendColor'](x0, x1, x2, x3) }
-  Module["_emscripten_glBlendColor"] = _emscripten_glBlendColor;
 
-  function _emscripten_glStencilFuncSeparate(x0, x1, x2, x3) { GLctx['stencilFuncSeparate'](x0, x1, x2, x3) }
-  Module["_emscripten_glStencilFuncSeparate"] = _emscripten_glStencilFuncSeparate;
 
-  function _emscripten_glStencilOpSeparate(x0, x1, x2, x3) { GLctx['stencilOpSeparate'](x0, x1, x2, x3) }
-  Module["_emscripten_glStencilOpSeparate"] = _emscripten_glStencilOpSeparate;
 
-  function _emscripten_glVertexAttrib4f(x0, x1, x2, x3, x4) { GLctx['vertexAttrib4f'](x0, x1, x2, x3, x4) }
-  Module["_emscripten_glVertexAttrib4f"] = _emscripten_glVertexAttrib4f;
 
-  function _emscripten_glCopyTexImage2D(x0, x1, x2, x3, x4, x5, x6, x7) { GLctx['copyTexImage2D'](x0, x1, x2, x3, x4, x5, x6, x7) }
-  Module["_emscripten_glCopyTexImage2D"] = _emscripten_glCopyTexImage2D;
 
-  function _emscripten_glCopyTexSubImage2D(x0, x1, x2, x3, x4, x5, x6, x7) { GLctx['copyTexSubImage2D'](x0, x1, x2, x3, x4, x5, x6, x7) }
-  Module["_emscripten_glCopyTexSubImage2D"] = _emscripten_glCopyTexSubImage2D;
 
   var AL={QUEUE_INTERVAL:25,QUEUE_LOOKAHEAD:0.1,DEVICE_NAME:"Emscripten OpenAL",CAPTURE_DEVICE_NAME:"Emscripten OpenAL capture",ALC_EXTENSIONS:{ALC_SOFT_pause_device:true,ALC_SOFT_HRTF:true},AL_EXTENSIONS:{AL_EXT_float32:true,AL_SOFT_loop_points:true,AL_SOFT_source_length:true,AL_EXT_source_distance_model:true,AL_SOFT_source_spatialize:true},_alcErr:0,alcErr:0,deviceRefCounts:{},alcStringCache:{},paused:false,stringCache:{},contexts:{},currentCtx:null,buffers:{0:{id:0,refCount:0,audioBuf:null,frequency:0,bytesPerSample:2,channels:1,length:0}},paramArray:[],_nextId:1,newId:function() {
         return AL.freeIds.length > 0 ? AL.freeIds.pop() : AL._nextId++;
@@ -25770,24 +27101,6 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   function _Mix_LoadWAV_RW(rwopsID, freesrc) {
       var rwops = SDL.rwops[rwopsID];
   
-      if (rwops === undefined) {
-        var type = HEAP32[((rwopsID + 20)>>2)];
-  
-        if (type === 2/*SDL_RWOPS_STDFILE*/) {
-          var fp = HEAP32[((rwopsID + 28)>>2)];
-          var fd = Module['_fileno'](fp);
-          var stream = FS.getStream(fd);
-          if (stream) {
-            rwops = { filename: stream.path };
-          }
-        }
-        else if (type === 4/*SDL_RWOPS_MEMORY*/ || type === 5/*SDL_RWOPS_MEMORY_RO*/) {
-          var base = HEAP32[((rwopsID + 24)>>2)];
-          var stop = HEAP32[((rwopsID + 32)>>2)];
-  
-          rwops = { bytes: base, count: stop - base };
-        }
-      }
   
       if (rwops === undefined)
         return 0;
@@ -29189,6 +30502,14 @@ function _emscripten_asm_const_iii(code, sigPtr, argbuf) {
   }
   Module["__emscripten_atomic_fetch_and_xor_u64"] = __emscripten_atomic_fetch_and_xor_u64;
 
+Module["requestFullscreen"] = function Module_requestFullscreen(lockPointer, resizeCanvas) { Browser.requestFullscreen(lockPointer, resizeCanvas) };
+  Module["requestFullScreen"] = function Module_requestFullScreen() { Browser.requestFullScreen() };
+  Module["requestAnimationFrame"] = function Module_requestAnimationFrame(func) { Browser.requestAnimationFrame(func) };
+  Module["setCanvasSize"] = function Module_setCanvasSize(width, height, noUpdates) { Browser.setCanvasSize(width, height, noUpdates) };
+  Module["pauseMainLoop"] = function Module_pauseMainLoop() { Browser.mainLoop.pause() };
+  Module["resumeMainLoop"] = function Module_resumeMainLoop() { Browser.mainLoop.resume() };
+  Module["getUserMedia"] = function Module_getUserMedia() { Browser.getUserMedia() }
+  Module["createContext"] = function Module_createContext(canvas, useWebGL, setInModule, webGLContextAttributes) { return Browser.createContext(canvas, useWebGL, setInModule, webGLContextAttributes) };
 var FSNode = /** @constructor */ function(parent, name, mode, rdev) {
     if (!parent) {
       parent = this;  // root node sets parent to itself
@@ -29235,15 +30556,8 @@ var FSNode = /** @constructor */ function(parent, name, mode, rdev) {
   });
   FS.FSNode = FSNode;
   FS.staticInit();Module["FS_createFolder"] = FS.createFolder;Module["FS_createPath"] = FS.createPath;Module["FS_createDataFile"] = FS.createDataFile;Module["FS_createPreloadedFile"] = FS.createPreloadedFile;Module["FS_createLazyFile"] = FS.createLazyFile;Module["FS_createLink"] = FS.createLink;Module["FS_createDevice"] = FS.createDevice;Module["FS_unlink"] = FS.unlink;;
-Module["requestFullscreen"] = function Module_requestFullscreen(lockPointer, resizeCanvas) { Browser.requestFullscreen(lockPointer, resizeCanvas) };
-  Module["requestFullScreen"] = function Module_requestFullScreen() { Browser.requestFullScreen() };
-  Module["requestAnimationFrame"] = function Module_requestAnimationFrame(func) { Browser.requestAnimationFrame(func) };
-  Module["setCanvasSize"] = function Module_setCanvasSize(width, height, noUpdates) { Browser.setCanvasSize(width, height, noUpdates) };
-  Module["pauseMainLoop"] = function Module_pauseMainLoop() { Browser.mainLoop.pause() };
-  Module["resumeMainLoop"] = function Module_resumeMainLoop() { Browser.mainLoop.resume() };
-  Module["getUserMedia"] = function Module_getUserMedia() { Browser.getUserMedia() }
-  Module["createContext"] = function Module_createContext(canvas, useWebGL, setInModule, webGLContextAttributes) { return Browser.createContext(canvas, useWebGL, setInModule, webGLContextAttributes) };
 var GLctx; GL.init();
+for (var i = 0; i < 32; i++) __tempFixedLengthArray.push(new Array(i));;
 Fetch.staticInit();;
 var __setImmediate_id_counter = 0;
   var __setImmediate_queue = [];
@@ -29266,7 +30580,6 @@ var __setImmediate_id_counter = 0;
   if (index >= 0 && index < __setImmediate_queue.length) __setImmediate_queue[index] = function(){};
   })
   };
-for (var i = 0; i < 32; i++) __tempFixedLengthArray.push(new Array(i));;
 var ASSERTIONS = true;
 
 /**
@@ -29304,7 +30617,7 @@ function intArrayToString(array) {
 
 var gb = GLOBAL_BASE, fb = 0;
 var asmGlobalArg = {};
-var asmLibraryArg = { "SDL_uclibc_exp": _SDL_uclibc_exp, "SDL_uclibc_fmod": _SDL_uclibc_fmod, "SDL_uclibc_log10": _SDL_uclibc_log10, "__assert_fail": ___assert_fail, "__clock_gettime": ___clock_gettime, "__handle_stack_overflow": ___handle_stack_overflow, "__map_file": ___map_file, "__memory_base": 1024, "__stack_pointer": STACK_BASE, "__sys__newselect": ___sys__newselect, "__sys_access": ___sys_access, "__sys_acct": ___sys_acct, "__sys_chdir": ___sys_chdir, "__sys_chmod": ___sys_chmod, "__sys_chown32": ___sys_chown32, "__sys_dup": ___sys_dup, "__sys_dup2": ___sys_dup2, "__sys_dup3": ___sys_dup3, "__sys_fadvise64_64": ___sys_fadvise64_64, "__sys_fallocate": ___sys_fallocate, "__sys_fchdir": ___sys_fchdir, "__sys_fchmod": ___sys_fchmod, "__sys_fchmodat": ___sys_fchmodat, "__sys_fchown32": ___sys_fchown32, "__sys_fchownat": ___sys_fchownat, "__sys_fcntl64": ___sys_fcntl64, "__sys_fdatasync": ___sys_fdatasync, "__sys_fstat64": ___sys_fstat64, "__sys_fstatat64": ___sys_fstatat64, "__sys_fstatfs64": ___sys_fstatfs64, "__sys_ftruncate64": ___sys_ftruncate64, "__sys_getcwd": ___sys_getcwd, "__sys_getdents64": ___sys_getdents64, "__sys_getegid32": ___sys_getegid32, "__sys_geteuid32": ___sys_geteuid32, "__sys_getgid32": ___sys_getgid32, "__sys_getgroups32": ___sys_getgroups32, "__sys_getpgid": ___sys_getpgid, "__sys_getpid": ___sys_getpid, "__sys_getppid": ___sys_getppid, "__sys_getpriority": ___sys_getpriority, "__sys_getresgid32": ___sys_getresgid32, "__sys_getresuid32": ___sys_getresuid32, "__sys_getrusage": ___sys_getrusage, "__sys_getsid": ___sys_getsid, "__sys_getuid32": ___sys_getuid32, "__sys_ioctl": ___sys_ioctl, "__sys_lchown32": ___sys_lchown32, "__sys_link": ___sys_link, "__sys_linkat": ___sys_linkat, "__sys_lstat64": ___sys_lstat64, "__sys_madvise1": ___sys_madvise1, "__sys_mincore": ___sys_mincore, "__sys_mkdir": ___sys_mkdir, "__sys_mkdirat": ___sys_mkdirat, "__sys_mknod": ___sys_mknod, "__sys_mknodat": ___sys_mknodat, "__sys_mlock": ___sys_mlock, "__sys_mlockall": ___sys_mlockall, "__sys_mmap2": ___sys_mmap2, "__sys_mprotect": ___sys_mprotect, "__sys_mremap": ___sys_mremap, "__sys_msync": ___sys_msync, "__sys_munlock": ___sys_munlock, "__sys_munlockall": ___sys_munlockall, "__sys_munmap": ___sys_munmap, "__sys_nice": ___sys_nice, "__sys_open": ___sys_open, "__sys_openat": ___sys_openat, "__sys_pause": ___sys_pause, "__sys_pipe": ___sys_pipe, "__sys_pipe2": ___sys_pipe2, "__sys_poll": ___sys_poll, "__sys_pread64": ___sys_pread64, "__sys_preadv": ___sys_preadv, "__sys_prlimit64": ___sys_prlimit64, "__sys_pselect6": ___sys_pselect6, "__sys_pwrite64": ___sys_pwrite64, "__sys_pwritev": ___sys_pwritev, "__sys_read": ___sys_read, "__sys_readlink": ___sys_readlink, "__sys_readlinkat": ___sys_readlinkat, "__sys_recvmmsg": ___sys_recvmmsg, "__sys_rename": ___sys_rename, "__sys_renameat": ___sys_renameat, "__sys_rmdir": ___sys_rmdir, "__sys_sendmmsg": ___sys_sendmmsg, "__sys_setdomainname": ___sys_setdomainname, "__sys_setpgid": ___sys_setpgid, "__sys_setpriority": ___sys_setpriority, "__sys_setrlimit": ___sys_setrlimit, "__sys_setsid": ___sys_setsid, "__sys_socketcall": ___sys_socketcall, "__sys_stat64": ___sys_stat64, "__sys_statfs64": ___sys_statfs64, "__sys_symlink": ___sys_symlink, "__sys_symlinkat": ___sys_symlinkat, "__sys_sync": ___sys_sync, "__sys_truncate64": ___sys_truncate64, "__sys_ugetrlimit": ___sys_ugetrlimit, "__sys_umask": ___sys_umask, "__sys_uname": ___sys_uname, "__sys_unlink": ___sys_unlink, "__sys_unlinkat": ___sys_unlinkat, "__sys_utimensat": ___sys_utimensat, "__sys_wait4": ___sys_wait4, "__table_base": 1, "__wait": ___wait, "_emscripten_fetch_free": __emscripten_fetch_free, "_emscripten_fetch_get_response_headers": __emscripten_fetch_get_response_headers, "_emscripten_fetch_get_response_headers_length": __emscripten_fetch_get_response_headers_length, "_emscripten_get_fetch_work_queue": __emscripten_get_fetch_work_queue, "_exit": __exit, "abort": _abort, "clock": _clock, "clock_gettime": _clock_gettime, "dlclose": _dlclose, "dlerror": _dlerror, "dlopen": _dlopen, "dlsym": _dlsym, "eglBindAPI": _eglBindAPI, "eglChooseConfig": _eglChooseConfig, "eglCreateContext": _eglCreateContext, "eglCreateWindowSurface": _eglCreateWindowSurface, "eglDestroyContext": _eglDestroyContext, "eglDestroySurface": _eglDestroySurface, "eglGetConfigAttrib": _eglGetConfigAttrib, "eglGetDisplay": _eglGetDisplay, "eglGetError": _eglGetError, "eglGetProcAddress": _eglGetProcAddress, "eglInitialize": _eglInitialize, "eglMakeCurrent": _eglMakeCurrent, "eglQueryString": _eglQueryString, "eglSwapBuffers": _eglSwapBuffers, "eglSwapInterval": _eglSwapInterval, "eglTerminate": _eglTerminate, "eglWaitGL": _eglWaitGL, "eglWaitNative": _eglWaitNative, "emscripten_asm_const_iii": _emscripten_asm_const_iii, "emscripten_cancel_main_loop": _emscripten_cancel_main_loop, "emscripten_exit_fullscreen": _emscripten_exit_fullscreen, "emscripten_exit_pointerlock": _emscripten_exit_pointerlock, "emscripten_force_exit": _emscripten_force_exit, "emscripten_get_battery_status": _emscripten_get_battery_status, "emscripten_get_device_pixel_ratio": _emscripten_get_device_pixel_ratio, "emscripten_get_element_css_size": _emscripten_get_element_css_size, "emscripten_get_gamepad_status": _emscripten_get_gamepad_status, "emscripten_get_num_gamepads": _emscripten_get_num_gamepads, "emscripten_get_sbrk_ptr": _emscripten_get_sbrk_ptr, "emscripten_has_asyncify": _emscripten_has_asyncify, "emscripten_is_main_browser_thread": _emscripten_is_main_browser_thread, "emscripten_longjmp": _emscripten_longjmp, "emscripten_memcpy_big": _emscripten_memcpy_big, "emscripten_request_fullscreen_strategy": _emscripten_request_fullscreen_strategy, "emscripten_request_pointerlock": _emscripten_request_pointerlock, "emscripten_resize_heap": _emscripten_resize_heap, "emscripten_run_script": _emscripten_run_script, "emscripten_sample_gamepad_data": _emscripten_sample_gamepad_data, "emscripten_set_beforeunload_callback_on_thread": _emscripten_set_beforeunload_callback_on_thread, "emscripten_set_blur_callback_on_thread": _emscripten_set_blur_callback_on_thread, "emscripten_set_canvas_element_size": _emscripten_set_canvas_element_size, "emscripten_set_element_css_size": _emscripten_set_element_css_size, "emscripten_set_focus_callback_on_thread": _emscripten_set_focus_callback_on_thread, "emscripten_set_fullscreenchange_callback_on_thread": _emscripten_set_fullscreenchange_callback_on_thread, "emscripten_set_gamepadconnected_callback_on_thread": _emscripten_set_gamepadconnected_callback_on_thread, "emscripten_set_gamepaddisconnected_callback_on_thread": _emscripten_set_gamepaddisconnected_callback_on_thread, "emscripten_set_keydown_callback_on_thread": _emscripten_set_keydown_callback_on_thread, "emscripten_set_keypress_callback_on_thread": _emscripten_set_keypress_callback_on_thread, "emscripten_set_keyup_callback_on_thread": _emscripten_set_keyup_callback_on_thread, "emscripten_set_main_loop": _emscripten_set_main_loop, "emscripten_set_mousedown_callback_on_thread": _emscripten_set_mousedown_callback_on_thread, "emscripten_set_mouseenter_callback_on_thread": _emscripten_set_mouseenter_callback_on_thread, "emscripten_set_mouseleave_callback_on_thread": _emscripten_set_mouseleave_callback_on_thread, "emscripten_set_mousemove_callback_on_thread": _emscripten_set_mousemove_callback_on_thread, "emscripten_set_mouseup_callback_on_thread": _emscripten_set_mouseup_callback_on_thread, "emscripten_set_pointerlockchange_callback_on_thread": _emscripten_set_pointerlockchange_callback_on_thread, "emscripten_set_resize_callback_on_thread": _emscripten_set_resize_callback_on_thread, "emscripten_set_touchcancel_callback_on_thread": _emscripten_set_touchcancel_callback_on_thread, "emscripten_set_touchend_callback_on_thread": _emscripten_set_touchend_callback_on_thread, "emscripten_set_touchmove_callback_on_thread": _emscripten_set_touchmove_callback_on_thread, "emscripten_set_touchstart_callback_on_thread": _emscripten_set_touchstart_callback_on_thread, "emscripten_set_visibilitychange_callback_on_thread": _emscripten_set_visibilitychange_callback_on_thread, "emscripten_set_wheel_callback_on_thread": _emscripten_set_wheel_callback_on_thread, "emscripten_sleep": _emscripten_sleep, "emscripten_start_fetch": _emscripten_start_fetch, "environ_get": _environ_get, "environ_sizes_get": _environ_sizes_get, "exit": _exit, "fd_close": _fd_close, "fd_fdstat_get": _fd_fdstat_get, "fd_read": _fd_read, "fd_seek": _fd_seek, "fd_sync": _fd_sync, "fd_write": _fd_write, "fork": _fork, "fp$eglBindAPI$ii": _fp$eglBindAPI$ii, "fp$eglChooseConfig$iiiiii": _fp$eglChooseConfig$iiiiii, "fp$eglCreateContext$iiiii": _fp$eglCreateContext$iiiii, "fp$eglCreateWindowSurface$iiiii": _fp$eglCreateWindowSurface$iiiii, "fp$eglDestroyContext$iii": _fp$eglDestroyContext$iii, "fp$eglDestroySurface$iii": _fp$eglDestroySurface$iii, "fp$eglGetConfigAttrib$iiiii": _fp$eglGetConfigAttrib$iiiii, "fp$eglGetDisplay$ii": _fp$eglGetDisplay$ii, "fp$eglGetError$i": _fp$eglGetError$i, "fp$eglGetProcAddress$ii": _fp$eglGetProcAddress$ii, "fp$eglInitialize$iiii": _fp$eglInitialize$iiii, "fp$eglMakeCurrent$iiiii": _fp$eglMakeCurrent$iiiii, "fp$eglQueryString$iii": _fp$eglQueryString$iii, "fp$eglSwapBuffers$iii": _fp$eglSwapBuffers$iii, "fp$eglSwapInterval$iii": _fp$eglSwapInterval$iii, "fp$eglTerminate$ii": _fp$eglTerminate$ii, "fp$eglWaitGL$i": _fp$eglWaitGL$i, "fp$eglWaitNative$ii": _fp$eglWaitNative$ii, "getTempRet0": getTempRet0, "getnameinfo": _getnameinfo, "gettimeofday": _gettimeofday, "gmtime_r": _gmtime_r, "inet_addr": _inet_addr, "invoke_X": invoke_X, "invoke_ii": invoke_ii, "invoke_iiii": invoke_iiii, "invoke_iiiii": invoke_iiiii, "invoke_v": invoke_v, "invoke_vi": invoke_vi, "invoke_vii": invoke_vii, "invoke_viii": invoke_viii, "localtime": _localtime, "memory": wasmMemory, "nanosleep": _nanosleep, "pthread_cleanup_pop": _pthread_cleanup_pop, "pthread_cleanup_push": _pthread_cleanup_push, "pthread_setcancelstate": _pthread_setcancelstate, "pthread_sigmask": _pthread_sigmask, "round": _round, "roundf": _roundf, "saveSetjmp": _saveSetjmp, "setTempRet0": setTempRet0, "setitimer": _setitimer, "sigaction": _sigaction, "sigfillset": _sigfillset, "signal": _signal, "strftime": _strftime, "system": _system, "table": wasmTable, "testSetjmp": _testSetjmp, "time": _time, "waitpid": _waitpid };
+var asmLibraryArg = { "SDL_uclibc_exp": _SDL_uclibc_exp, "SDL_uclibc_fmod": _SDL_uclibc_fmod, "SDL_uclibc_log10": _SDL_uclibc_log10, "__assert_fail": ___assert_fail, "__clock_gettime": ___clock_gettime, "__handle_stack_overflow": ___handle_stack_overflow, "__map_file": ___map_file, "__memory_base": 1024, "__stack_pointer": STACK_BASE, "__sys__newselect": ___sys__newselect, "__sys_access": ___sys_access, "__sys_acct": ___sys_acct, "__sys_chdir": ___sys_chdir, "__sys_chmod": ___sys_chmod, "__sys_chown32": ___sys_chown32, "__sys_dup": ___sys_dup, "__sys_dup2": ___sys_dup2, "__sys_dup3": ___sys_dup3, "__sys_fadvise64_64": ___sys_fadvise64_64, "__sys_fallocate": ___sys_fallocate, "__sys_fchdir": ___sys_fchdir, "__sys_fchmod": ___sys_fchmod, "__sys_fchmodat": ___sys_fchmodat, "__sys_fchown32": ___sys_fchown32, "__sys_fchownat": ___sys_fchownat, "__sys_fcntl64": ___sys_fcntl64, "__sys_fdatasync": ___sys_fdatasync, "__sys_fstat64": ___sys_fstat64, "__sys_fstatat64": ___sys_fstatat64, "__sys_fstatfs64": ___sys_fstatfs64, "__sys_ftruncate64": ___sys_ftruncate64, "__sys_getcwd": ___sys_getcwd, "__sys_getdents64": ___sys_getdents64, "__sys_getegid32": ___sys_getegid32, "__sys_geteuid32": ___sys_geteuid32, "__sys_getgid32": ___sys_getgid32, "__sys_getgroups32": ___sys_getgroups32, "__sys_getpgid": ___sys_getpgid, "__sys_getpid": ___sys_getpid, "__sys_getppid": ___sys_getppid, "__sys_getpriority": ___sys_getpriority, "__sys_getresgid32": ___sys_getresgid32, "__sys_getresuid32": ___sys_getresuid32, "__sys_getrusage": ___sys_getrusage, "__sys_getsid": ___sys_getsid, "__sys_getuid32": ___sys_getuid32, "__sys_ioctl": ___sys_ioctl, "__sys_lchown32": ___sys_lchown32, "__sys_link": ___sys_link, "__sys_linkat": ___sys_linkat, "__sys_lstat64": ___sys_lstat64, "__sys_madvise1": ___sys_madvise1, "__sys_mincore": ___sys_mincore, "__sys_mkdir": ___sys_mkdir, "__sys_mkdirat": ___sys_mkdirat, "__sys_mknod": ___sys_mknod, "__sys_mknodat": ___sys_mknodat, "__sys_mlock": ___sys_mlock, "__sys_mlockall": ___sys_mlockall, "__sys_mmap2": ___sys_mmap2, "__sys_mprotect": ___sys_mprotect, "__sys_mremap": ___sys_mremap, "__sys_msync": ___sys_msync, "__sys_munlock": ___sys_munlock, "__sys_munlockall": ___sys_munlockall, "__sys_munmap": ___sys_munmap, "__sys_nice": ___sys_nice, "__sys_open": ___sys_open, "__sys_openat": ___sys_openat, "__sys_pause": ___sys_pause, "__sys_pipe": ___sys_pipe, "__sys_pipe2": ___sys_pipe2, "__sys_poll": ___sys_poll, "__sys_pread64": ___sys_pread64, "__sys_preadv": ___sys_preadv, "__sys_prlimit64": ___sys_prlimit64, "__sys_pselect6": ___sys_pselect6, "__sys_pwrite64": ___sys_pwrite64, "__sys_pwritev": ___sys_pwritev, "__sys_read": ___sys_read, "__sys_readlink": ___sys_readlink, "__sys_readlinkat": ___sys_readlinkat, "__sys_recvmmsg": ___sys_recvmmsg, "__sys_rename": ___sys_rename, "__sys_renameat": ___sys_renameat, "__sys_rmdir": ___sys_rmdir, "__sys_sendmmsg": ___sys_sendmmsg, "__sys_setdomainname": ___sys_setdomainname, "__sys_setpgid": ___sys_setpgid, "__sys_setpriority": ___sys_setpriority, "__sys_setrlimit": ___sys_setrlimit, "__sys_setsid": ___sys_setsid, "__sys_socketcall": ___sys_socketcall, "__sys_stat64": ___sys_stat64, "__sys_statfs64": ___sys_statfs64, "__sys_symlink": ___sys_symlink, "__sys_symlinkat": ___sys_symlinkat, "__sys_sync": ___sys_sync, "__sys_truncate64": ___sys_truncate64, "__sys_ugetrlimit": ___sys_ugetrlimit, "__sys_umask": ___sys_umask, "__sys_uname": ___sys_uname, "__sys_unlink": ___sys_unlink, "__sys_unlinkat": ___sys_unlinkat, "__sys_utimensat": ___sys_utimensat, "__sys_wait4": ___sys_wait4, "__table_base": 1, "__wait": ___wait, "_emscripten_fetch_free": __emscripten_fetch_free, "_emscripten_fetch_get_response_headers": __emscripten_fetch_get_response_headers, "_emscripten_fetch_get_response_headers_length": __emscripten_fetch_get_response_headers_length, "_emscripten_get_fetch_work_queue": __emscripten_get_fetch_work_queue, "_exit": __exit, "abort": _abort, "clock": _clock, "clock_gettime": _clock_gettime, "dlclose": _dlclose, "dlerror": _dlerror, "dlopen": _dlopen, "dlsym": _dlsym, "eglBindAPI": _eglBindAPI, "eglChooseConfig": _eglChooseConfig, "eglCreateContext": _eglCreateContext, "eglCreateWindowSurface": _eglCreateWindowSurface, "eglDestroyContext": _eglDestroyContext, "eglDestroySurface": _eglDestroySurface, "eglGetConfigAttrib": _eglGetConfigAttrib, "eglGetDisplay": _eglGetDisplay, "eglGetError": _eglGetError, "eglGetProcAddress": _eglGetProcAddress, "eglInitialize": _eglInitialize, "eglMakeCurrent": _eglMakeCurrent, "eglQueryString": _eglQueryString, "eglSwapBuffers": _eglSwapBuffers, "eglSwapInterval": _eglSwapInterval, "eglTerminate": _eglTerminate, "eglWaitGL": _eglWaitGL, "eglWaitNative": _eglWaitNative, "emscripten_asm_const_iii": _emscripten_asm_const_iii, "emscripten_cancel_main_loop": _emscripten_cancel_main_loop, "emscripten_exit_fullscreen": _emscripten_exit_fullscreen, "emscripten_exit_pointerlock": _emscripten_exit_pointerlock, "emscripten_force_exit": _emscripten_force_exit, "emscripten_get_battery_status": _emscripten_get_battery_status, "emscripten_get_device_pixel_ratio": _emscripten_get_device_pixel_ratio, "emscripten_get_element_css_size": _emscripten_get_element_css_size, "emscripten_get_gamepad_status": _emscripten_get_gamepad_status, "emscripten_get_num_gamepads": _emscripten_get_num_gamepads, "emscripten_get_sbrk_ptr": _emscripten_get_sbrk_ptr, "emscripten_glActiveTexture": _emscripten_glActiveTexture, "emscripten_glAttachShader": _emscripten_glAttachShader, "emscripten_glBeginQueryEXT": _emscripten_glBeginQueryEXT, "emscripten_glBindAttribLocation": _emscripten_glBindAttribLocation, "emscripten_glBindBuffer": _emscripten_glBindBuffer, "emscripten_glBindFramebuffer": _emscripten_glBindFramebuffer, "emscripten_glBindRenderbuffer": _emscripten_glBindRenderbuffer, "emscripten_glBindTexture": _emscripten_glBindTexture, "emscripten_glBindVertexArrayOES": _emscripten_glBindVertexArrayOES, "emscripten_glBlendColor": _emscripten_glBlendColor, "emscripten_glBlendEquation": _emscripten_glBlendEquation, "emscripten_glBlendEquationSeparate": _emscripten_glBlendEquationSeparate, "emscripten_glBlendFunc": _emscripten_glBlendFunc, "emscripten_glBlendFuncSeparate": _emscripten_glBlendFuncSeparate, "emscripten_glBufferData": _emscripten_glBufferData, "emscripten_glBufferSubData": _emscripten_glBufferSubData, "emscripten_glCheckFramebufferStatus": _emscripten_glCheckFramebufferStatus, "emscripten_glClear": _emscripten_glClear, "emscripten_glClearColor": _emscripten_glClearColor, "emscripten_glClearDepthf": _emscripten_glClearDepthf, "emscripten_glClearStencil": _emscripten_glClearStencil, "emscripten_glColorMask": _emscripten_glColorMask, "emscripten_glCompileShader": _emscripten_glCompileShader, "emscripten_glCompressedTexImage2D": _emscripten_glCompressedTexImage2D, "emscripten_glCompressedTexSubImage2D": _emscripten_glCompressedTexSubImage2D, "emscripten_glCopyTexImage2D": _emscripten_glCopyTexImage2D, "emscripten_glCopyTexSubImage2D": _emscripten_glCopyTexSubImage2D, "emscripten_glCreateProgram": _emscripten_glCreateProgram, "emscripten_glCreateShader": _emscripten_glCreateShader, "emscripten_glCullFace": _emscripten_glCullFace, "emscripten_glDeleteBuffers": _emscripten_glDeleteBuffers, "emscripten_glDeleteFramebuffers": _emscripten_glDeleteFramebuffers, "emscripten_glDeleteProgram": _emscripten_glDeleteProgram, "emscripten_glDeleteQueriesEXT": _emscripten_glDeleteQueriesEXT, "emscripten_glDeleteRenderbuffers": _emscripten_glDeleteRenderbuffers, "emscripten_glDeleteShader": _emscripten_glDeleteShader, "emscripten_glDeleteTextures": _emscripten_glDeleteTextures, "emscripten_glDeleteVertexArraysOES": _emscripten_glDeleteVertexArraysOES, "emscripten_glDepthFunc": _emscripten_glDepthFunc, "emscripten_glDepthMask": _emscripten_glDepthMask, "emscripten_glDepthRangef": _emscripten_glDepthRangef, "emscripten_glDetachShader": _emscripten_glDetachShader, "emscripten_glDisable": _emscripten_glDisable, "emscripten_glDisableVertexAttribArray": _emscripten_glDisableVertexAttribArray, "emscripten_glDrawArrays": _emscripten_glDrawArrays, "emscripten_glDrawArraysInstancedANGLE": _emscripten_glDrawArraysInstancedANGLE, "emscripten_glDrawBuffersWEBGL": _emscripten_glDrawBuffersWEBGL, "emscripten_glDrawElements": _emscripten_glDrawElements, "emscripten_glDrawElementsInstancedANGLE": _emscripten_glDrawElementsInstancedANGLE, "emscripten_glEnable": _emscripten_glEnable, "emscripten_glEnableVertexAttribArray": _emscripten_glEnableVertexAttribArray, "emscripten_glEndQueryEXT": _emscripten_glEndQueryEXT, "emscripten_glFinish": _emscripten_glFinish, "emscripten_glFlush": _emscripten_glFlush, "emscripten_glFramebufferRenderbuffer": _emscripten_glFramebufferRenderbuffer, "emscripten_glFramebufferTexture2D": _emscripten_glFramebufferTexture2D, "emscripten_glFrontFace": _emscripten_glFrontFace, "emscripten_glGenBuffers": _emscripten_glGenBuffers, "emscripten_glGenFramebuffers": _emscripten_glGenFramebuffers, "emscripten_glGenQueriesEXT": _emscripten_glGenQueriesEXT, "emscripten_glGenRenderbuffers": _emscripten_glGenRenderbuffers, "emscripten_glGenTextures": _emscripten_glGenTextures, "emscripten_glGenVertexArraysOES": _emscripten_glGenVertexArraysOES, "emscripten_glGenerateMipmap": _emscripten_glGenerateMipmap, "emscripten_glGetActiveAttrib": _emscripten_glGetActiveAttrib, "emscripten_glGetActiveUniform": _emscripten_glGetActiveUniform, "emscripten_glGetAttachedShaders": _emscripten_glGetAttachedShaders, "emscripten_glGetAttribLocation": _emscripten_glGetAttribLocation, "emscripten_glGetBooleanv": _emscripten_glGetBooleanv, "emscripten_glGetBufferParameteriv": _emscripten_glGetBufferParameteriv, "emscripten_glGetError": _emscripten_glGetError, "emscripten_glGetFloatv": _emscripten_glGetFloatv, "emscripten_glGetFramebufferAttachmentParameteriv": _emscripten_glGetFramebufferAttachmentParameteriv, "emscripten_glGetIntegerv": _emscripten_glGetIntegerv, "emscripten_glGetProgramInfoLog": _emscripten_glGetProgramInfoLog, "emscripten_glGetProgramiv": _emscripten_glGetProgramiv, "emscripten_glGetQueryObjecti64vEXT": _emscripten_glGetQueryObjecti64vEXT, "emscripten_glGetQueryObjectivEXT": _emscripten_glGetQueryObjectivEXT, "emscripten_glGetQueryObjectui64vEXT": _emscripten_glGetQueryObjectui64vEXT, "emscripten_glGetQueryObjectuivEXT": _emscripten_glGetQueryObjectuivEXT, "emscripten_glGetQueryivEXT": _emscripten_glGetQueryivEXT, "emscripten_glGetRenderbufferParameteriv": _emscripten_glGetRenderbufferParameteriv, "emscripten_glGetShaderInfoLog": _emscripten_glGetShaderInfoLog, "emscripten_glGetShaderPrecisionFormat": _emscripten_glGetShaderPrecisionFormat, "emscripten_glGetShaderSource": _emscripten_glGetShaderSource, "emscripten_glGetShaderiv": _emscripten_glGetShaderiv, "emscripten_glGetString": _emscripten_glGetString, "emscripten_glGetTexParameterfv": _emscripten_glGetTexParameterfv, "emscripten_glGetTexParameteriv": _emscripten_glGetTexParameteriv, "emscripten_glGetUniformLocation": _emscripten_glGetUniformLocation, "emscripten_glGetUniformfv": _emscripten_glGetUniformfv, "emscripten_glGetUniformiv": _emscripten_glGetUniformiv, "emscripten_glGetVertexAttribPointerv": _emscripten_glGetVertexAttribPointerv, "emscripten_glGetVertexAttribfv": _emscripten_glGetVertexAttribfv, "emscripten_glGetVertexAttribiv": _emscripten_glGetVertexAttribiv, "emscripten_glHint": _emscripten_glHint, "emscripten_glIsBuffer": _emscripten_glIsBuffer, "emscripten_glIsEnabled": _emscripten_glIsEnabled, "emscripten_glIsFramebuffer": _emscripten_glIsFramebuffer, "emscripten_glIsProgram": _emscripten_glIsProgram, "emscripten_glIsQueryEXT": _emscripten_glIsQueryEXT, "emscripten_glIsRenderbuffer": _emscripten_glIsRenderbuffer, "emscripten_glIsShader": _emscripten_glIsShader, "emscripten_glIsTexture": _emscripten_glIsTexture, "emscripten_glIsVertexArrayOES": _emscripten_glIsVertexArrayOES, "emscripten_glLineWidth": _emscripten_glLineWidth, "emscripten_glLinkProgram": _emscripten_glLinkProgram, "emscripten_glPixelStorei": _emscripten_glPixelStorei, "emscripten_glPolygonOffset": _emscripten_glPolygonOffset, "emscripten_glQueryCounterEXT": _emscripten_glQueryCounterEXT, "emscripten_glReadPixels": _emscripten_glReadPixels, "emscripten_glReleaseShaderCompiler": _emscripten_glReleaseShaderCompiler, "emscripten_glRenderbufferStorage": _emscripten_glRenderbufferStorage, "emscripten_glSampleCoverage": _emscripten_glSampleCoverage, "emscripten_glScissor": _emscripten_glScissor, "emscripten_glShaderBinary": _emscripten_glShaderBinary, "emscripten_glShaderSource": _emscripten_glShaderSource, "emscripten_glStencilFunc": _emscripten_glStencilFunc, "emscripten_glStencilFuncSeparate": _emscripten_glStencilFuncSeparate, "emscripten_glStencilMask": _emscripten_glStencilMask, "emscripten_glStencilMaskSeparate": _emscripten_glStencilMaskSeparate, "emscripten_glStencilOp": _emscripten_glStencilOp, "emscripten_glStencilOpSeparate": _emscripten_glStencilOpSeparate, "emscripten_glTexImage2D": _emscripten_glTexImage2D, "emscripten_glTexParameterf": _emscripten_glTexParameterf, "emscripten_glTexParameterfv": _emscripten_glTexParameterfv, "emscripten_glTexParameteri": _emscripten_glTexParameteri, "emscripten_glTexParameteriv": _emscripten_glTexParameteriv, "emscripten_glTexSubImage2D": _emscripten_glTexSubImage2D, "emscripten_glUniform1f": _emscripten_glUniform1f, "emscripten_glUniform1fv": _emscripten_glUniform1fv, "emscripten_glUniform1i": _emscripten_glUniform1i, "emscripten_glUniform1iv": _emscripten_glUniform1iv, "emscripten_glUniform2f": _emscripten_glUniform2f, "emscripten_glUniform2fv": _emscripten_glUniform2fv, "emscripten_glUniform2i": _emscripten_glUniform2i, "emscripten_glUniform2iv": _emscripten_glUniform2iv, "emscripten_glUniform3f": _emscripten_glUniform3f, "emscripten_glUniform3fv": _emscripten_glUniform3fv, "emscripten_glUniform3i": _emscripten_glUniform3i, "emscripten_glUniform3iv": _emscripten_glUniform3iv, "emscripten_glUniform4f": _emscripten_glUniform4f, "emscripten_glUniform4fv": _emscripten_glUniform4fv, "emscripten_glUniform4i": _emscripten_glUniform4i, "emscripten_glUniform4iv": _emscripten_glUniform4iv, "emscripten_glUniformMatrix2fv": _emscripten_glUniformMatrix2fv, "emscripten_glUniformMatrix3fv": _emscripten_glUniformMatrix3fv, "emscripten_glUniformMatrix4fv": _emscripten_glUniformMatrix4fv, "emscripten_glUseProgram": _emscripten_glUseProgram, "emscripten_glValidateProgram": _emscripten_glValidateProgram, "emscripten_glVertexAttrib1f": _emscripten_glVertexAttrib1f, "emscripten_glVertexAttrib1fv": _emscripten_glVertexAttrib1fv, "emscripten_glVertexAttrib2f": _emscripten_glVertexAttrib2f, "emscripten_glVertexAttrib2fv": _emscripten_glVertexAttrib2fv, "emscripten_glVertexAttrib3f": _emscripten_glVertexAttrib3f, "emscripten_glVertexAttrib3fv": _emscripten_glVertexAttrib3fv, "emscripten_glVertexAttrib4f": _emscripten_glVertexAttrib4f, "emscripten_glVertexAttrib4fv": _emscripten_glVertexAttrib4fv, "emscripten_glVertexAttribDivisorANGLE": _emscripten_glVertexAttribDivisorANGLE, "emscripten_glVertexAttribPointer": _emscripten_glVertexAttribPointer, "emscripten_glViewport": _emscripten_glViewport, "emscripten_has_asyncify": _emscripten_has_asyncify, "emscripten_is_main_browser_thread": _emscripten_is_main_browser_thread, "emscripten_longjmp": _emscripten_longjmp, "emscripten_memcpy_big": _emscripten_memcpy_big, "emscripten_request_fullscreen_strategy": _emscripten_request_fullscreen_strategy, "emscripten_request_pointerlock": _emscripten_request_pointerlock, "emscripten_resize_heap": _emscripten_resize_heap, "emscripten_run_script": _emscripten_run_script, "emscripten_sample_gamepad_data": _emscripten_sample_gamepad_data, "emscripten_set_beforeunload_callback_on_thread": _emscripten_set_beforeunload_callback_on_thread, "emscripten_set_blur_callback_on_thread": _emscripten_set_blur_callback_on_thread, "emscripten_set_canvas_element_size": _emscripten_set_canvas_element_size, "emscripten_set_element_css_size": _emscripten_set_element_css_size, "emscripten_set_focus_callback_on_thread": _emscripten_set_focus_callback_on_thread, "emscripten_set_fullscreenchange_callback_on_thread": _emscripten_set_fullscreenchange_callback_on_thread, "emscripten_set_gamepadconnected_callback_on_thread": _emscripten_set_gamepadconnected_callback_on_thread, "emscripten_set_gamepaddisconnected_callback_on_thread": _emscripten_set_gamepaddisconnected_callback_on_thread, "emscripten_set_keydown_callback_on_thread": _emscripten_set_keydown_callback_on_thread, "emscripten_set_keypress_callback_on_thread": _emscripten_set_keypress_callback_on_thread, "emscripten_set_keyup_callback_on_thread": _emscripten_set_keyup_callback_on_thread, "emscripten_set_main_loop": _emscripten_set_main_loop, "emscripten_set_mousedown_callback_on_thread": _emscripten_set_mousedown_callback_on_thread, "emscripten_set_mouseenter_callback_on_thread": _emscripten_set_mouseenter_callback_on_thread, "emscripten_set_mouseleave_callback_on_thread": _emscripten_set_mouseleave_callback_on_thread, "emscripten_set_mousemove_callback_on_thread": _emscripten_set_mousemove_callback_on_thread, "emscripten_set_mouseup_callback_on_thread": _emscripten_set_mouseup_callback_on_thread, "emscripten_set_pointerlockchange_callback_on_thread": _emscripten_set_pointerlockchange_callback_on_thread, "emscripten_set_resize_callback_on_thread": _emscripten_set_resize_callback_on_thread, "emscripten_set_touchcancel_callback_on_thread": _emscripten_set_touchcancel_callback_on_thread, "emscripten_set_touchend_callback_on_thread": _emscripten_set_touchend_callback_on_thread, "emscripten_set_touchmove_callback_on_thread": _emscripten_set_touchmove_callback_on_thread, "emscripten_set_touchstart_callback_on_thread": _emscripten_set_touchstart_callback_on_thread, "emscripten_set_visibilitychange_callback_on_thread": _emscripten_set_visibilitychange_callback_on_thread, "emscripten_set_wheel_callback_on_thread": _emscripten_set_wheel_callback_on_thread, "emscripten_sleep": _emscripten_sleep, "emscripten_start_fetch": _emscripten_start_fetch, "environ_get": _environ_get, "environ_sizes_get": _environ_sizes_get, "exit": _exit, "fd_close": _fd_close, "fd_fdstat_get": _fd_fdstat_get, "fd_read": _fd_read, "fd_seek": _fd_seek, "fd_sync": _fd_sync, "fd_write": _fd_write, "fork": _fork, "fp$eglBindAPI$ii": _fp$eglBindAPI$ii, "fp$eglChooseConfig$iiiiii": _fp$eglChooseConfig$iiiiii, "fp$eglCreateContext$iiiii": _fp$eglCreateContext$iiiii, "fp$eglCreateWindowSurface$iiiii": _fp$eglCreateWindowSurface$iiiii, "fp$eglDestroyContext$iii": _fp$eglDestroyContext$iii, "fp$eglDestroySurface$iii": _fp$eglDestroySurface$iii, "fp$eglGetConfigAttrib$iiiii": _fp$eglGetConfigAttrib$iiiii, "fp$eglGetDisplay$ii": _fp$eglGetDisplay$ii, "fp$eglGetError$i": _fp$eglGetError$i, "fp$eglGetProcAddress$ii": _fp$eglGetProcAddress$ii, "fp$eglInitialize$iiii": _fp$eglInitialize$iiii, "fp$eglMakeCurrent$iiiii": _fp$eglMakeCurrent$iiiii, "fp$eglQueryString$iii": _fp$eglQueryString$iii, "fp$eglSwapBuffers$iii": _fp$eglSwapBuffers$iii, "fp$eglSwapInterval$iii": _fp$eglSwapInterval$iii, "fp$eglTerminate$ii": _fp$eglTerminate$ii, "fp$eglWaitGL$i": _fp$eglWaitGL$i, "fp$eglWaitNative$ii": _fp$eglWaitNative$ii, "fp$emscripten_glActiveTexture$vi": _fp$emscripten_glActiveTexture$vi, "fp$emscripten_glAttachShader$vii": _fp$emscripten_glAttachShader$vii, "fp$emscripten_glBeginQueryEXT$vii": _fp$emscripten_glBeginQueryEXT$vii, "fp$emscripten_glBindAttribLocation$viii": _fp$emscripten_glBindAttribLocation$viii, "fp$emscripten_glBindBuffer$vii": _fp$emscripten_glBindBuffer$vii, "fp$emscripten_glBindFramebuffer$vii": _fp$emscripten_glBindFramebuffer$vii, "fp$emscripten_glBindRenderbuffer$vii": _fp$emscripten_glBindRenderbuffer$vii, "fp$emscripten_glBindTexture$vii": _fp$emscripten_glBindTexture$vii, "fp$emscripten_glBindVertexArrayOES$vi": _fp$emscripten_glBindVertexArrayOES$vi, "fp$emscripten_glBlendColor$vffff": _fp$emscripten_glBlendColor$vffff, "fp$emscripten_glBlendEquation$vi": _fp$emscripten_glBlendEquation$vi, "fp$emscripten_glBlendEquationSeparate$vii": _fp$emscripten_glBlendEquationSeparate$vii, "fp$emscripten_glBlendFunc$vii": _fp$emscripten_glBlendFunc$vii, "fp$emscripten_glBlendFuncSeparate$viiii": _fp$emscripten_glBlendFuncSeparate$viiii, "fp$emscripten_glBufferData$viiii": _fp$emscripten_glBufferData$viiii, "fp$emscripten_glBufferSubData$viiii": _fp$emscripten_glBufferSubData$viiii, "fp$emscripten_glCheckFramebufferStatus$ii": _fp$emscripten_glCheckFramebufferStatus$ii, "fp$emscripten_glClear$vi": _fp$emscripten_glClear$vi, "fp$emscripten_glClearColor$vffff": _fp$emscripten_glClearColor$vffff, "fp$emscripten_glClearDepthf$vf": _fp$emscripten_glClearDepthf$vf, "fp$emscripten_glClearStencil$vi": _fp$emscripten_glClearStencil$vi, "fp$emscripten_glColorMask$viiii": _fp$emscripten_glColorMask$viiii, "fp$emscripten_glCompileShader$vi": _fp$emscripten_glCompileShader$vi, "fp$emscripten_glCompressedTexImage2D$viiiiiiii": _fp$emscripten_glCompressedTexImage2D$viiiiiiii, "fp$emscripten_glCompressedTexSubImage2D$viiiiiiiii": _fp$emscripten_glCompressedTexSubImage2D$viiiiiiiii, "fp$emscripten_glCopyTexImage2D$viiiiiiii": _fp$emscripten_glCopyTexImage2D$viiiiiiii, "fp$emscripten_glCopyTexSubImage2D$viiiiiiii": _fp$emscripten_glCopyTexSubImage2D$viiiiiiii, "fp$emscripten_glCreateProgram$i": _fp$emscripten_glCreateProgram$i, "fp$emscripten_glCreateShader$ii": _fp$emscripten_glCreateShader$ii, "fp$emscripten_glCullFace$vi": _fp$emscripten_glCullFace$vi, "fp$emscripten_glDeleteBuffers$vii": _fp$emscripten_glDeleteBuffers$vii, "fp$emscripten_glDeleteFramebuffers$vii": _fp$emscripten_glDeleteFramebuffers$vii, "fp$emscripten_glDeleteProgram$vi": _fp$emscripten_glDeleteProgram$vi, "fp$emscripten_glDeleteQueriesEXT$vii": _fp$emscripten_glDeleteQueriesEXT$vii, "fp$emscripten_glDeleteRenderbuffers$vii": _fp$emscripten_glDeleteRenderbuffers$vii, "fp$emscripten_glDeleteShader$vi": _fp$emscripten_glDeleteShader$vi, "fp$emscripten_glDeleteTextures$vii": _fp$emscripten_glDeleteTextures$vii, "fp$emscripten_glDeleteVertexArraysOES$vii": _fp$emscripten_glDeleteVertexArraysOES$vii, "fp$emscripten_glDepthFunc$vi": _fp$emscripten_glDepthFunc$vi, "fp$emscripten_glDepthMask$vi": _fp$emscripten_glDepthMask$vi, "fp$emscripten_glDepthRangef$vff": _fp$emscripten_glDepthRangef$vff, "fp$emscripten_glDetachShader$vii": _fp$emscripten_glDetachShader$vii, "fp$emscripten_glDisable$vi": _fp$emscripten_glDisable$vi, "fp$emscripten_glDisableVertexAttribArray$vi": _fp$emscripten_glDisableVertexAttribArray$vi, "fp$emscripten_glDrawArrays$viii": _fp$emscripten_glDrawArrays$viii, "fp$emscripten_glDrawArraysInstancedANGLE$viiii": _fp$emscripten_glDrawArraysInstancedANGLE$viiii, "fp$emscripten_glDrawBuffersWEBGL$vii": _fp$emscripten_glDrawBuffersWEBGL$vii, "fp$emscripten_glDrawElements$viiii": _fp$emscripten_glDrawElements$viiii, "fp$emscripten_glDrawElementsInstancedANGLE$viiiii": _fp$emscripten_glDrawElementsInstancedANGLE$viiiii, "fp$emscripten_glEnable$vi": _fp$emscripten_glEnable$vi, "fp$emscripten_glEnableVertexAttribArray$vi": _fp$emscripten_glEnableVertexAttribArray$vi, "fp$emscripten_glEndQueryEXT$vi": _fp$emscripten_glEndQueryEXT$vi, "fp$emscripten_glFinish$v": _fp$emscripten_glFinish$v, "fp$emscripten_glFlush$v": _fp$emscripten_glFlush$v, "fp$emscripten_glFramebufferRenderbuffer$viiii": _fp$emscripten_glFramebufferRenderbuffer$viiii, "fp$emscripten_glFramebufferTexture2D$viiiii": _fp$emscripten_glFramebufferTexture2D$viiiii, "fp$emscripten_glFrontFace$vi": _fp$emscripten_glFrontFace$vi, "fp$emscripten_glGenBuffers$vii": _fp$emscripten_glGenBuffers$vii, "fp$emscripten_glGenFramebuffers$vii": _fp$emscripten_glGenFramebuffers$vii, "fp$emscripten_glGenQueriesEXT$vii": _fp$emscripten_glGenQueriesEXT$vii, "fp$emscripten_glGenRenderbuffers$vii": _fp$emscripten_glGenRenderbuffers$vii, "fp$emscripten_glGenTextures$vii": _fp$emscripten_glGenTextures$vii, "fp$emscripten_glGenVertexArraysOES$vii": _fp$emscripten_glGenVertexArraysOES$vii, "fp$emscripten_glGenerateMipmap$vi": _fp$emscripten_glGenerateMipmap$vi, "fp$emscripten_glGetActiveAttrib$viiiiiii": _fp$emscripten_glGetActiveAttrib$viiiiiii, "fp$emscripten_glGetActiveUniform$viiiiiii": _fp$emscripten_glGetActiveUniform$viiiiiii, "fp$emscripten_glGetAttachedShaders$viiii": _fp$emscripten_glGetAttachedShaders$viiii, "fp$emscripten_glGetAttribLocation$iii": _fp$emscripten_glGetAttribLocation$iii, "fp$emscripten_glGetBooleanv$vii": _fp$emscripten_glGetBooleanv$vii, "fp$emscripten_glGetBufferParameteriv$viii": _fp$emscripten_glGetBufferParameteriv$viii, "fp$emscripten_glGetError$i": _fp$emscripten_glGetError$i, "fp$emscripten_glGetFloatv$vii": _fp$emscripten_glGetFloatv$vii, "fp$emscripten_glGetFramebufferAttachmentParameteriv$viiii": _fp$emscripten_glGetFramebufferAttachmentParameteriv$viiii, "fp$emscripten_glGetIntegerv$vii": _fp$emscripten_glGetIntegerv$vii, "fp$emscripten_glGetProgramInfoLog$viiii": _fp$emscripten_glGetProgramInfoLog$viiii, "fp$emscripten_glGetProgramiv$viii": _fp$emscripten_glGetProgramiv$viii, "fp$emscripten_glGetQueryObjecti64vEXT$viii": _fp$emscripten_glGetQueryObjecti64vEXT$viii, "fp$emscripten_glGetQueryObjectivEXT$viii": _fp$emscripten_glGetQueryObjectivEXT$viii, "fp$emscripten_glGetQueryObjectui64vEXT$viii": _fp$emscripten_glGetQueryObjectui64vEXT$viii, "fp$emscripten_glGetQueryObjectuivEXT$viii": _fp$emscripten_glGetQueryObjectuivEXT$viii, "fp$emscripten_glGetQueryivEXT$viii": _fp$emscripten_glGetQueryivEXT$viii, "fp$emscripten_glGetRenderbufferParameteriv$viii": _fp$emscripten_glGetRenderbufferParameteriv$viii, "fp$emscripten_glGetShaderInfoLog$viiii": _fp$emscripten_glGetShaderInfoLog$viiii, "fp$emscripten_glGetShaderPrecisionFormat$viiii": _fp$emscripten_glGetShaderPrecisionFormat$viiii, "fp$emscripten_glGetShaderSource$viiii": _fp$emscripten_glGetShaderSource$viiii, "fp$emscripten_glGetShaderiv$viii": _fp$emscripten_glGetShaderiv$viii, "fp$emscripten_glGetString$ii": _fp$emscripten_glGetString$ii, "fp$emscripten_glGetTexParameterfv$viii": _fp$emscripten_glGetTexParameterfv$viii, "fp$emscripten_glGetTexParameteriv$viii": _fp$emscripten_glGetTexParameteriv$viii, "fp$emscripten_glGetUniformLocation$iii": _fp$emscripten_glGetUniformLocation$iii, "fp$emscripten_glGetUniformfv$viii": _fp$emscripten_glGetUniformfv$viii, "fp$emscripten_glGetUniformiv$viii": _fp$emscripten_glGetUniformiv$viii, "fp$emscripten_glGetVertexAttribPointerv$viii": _fp$emscripten_glGetVertexAttribPointerv$viii, "fp$emscripten_glGetVertexAttribfv$viii": _fp$emscripten_glGetVertexAttribfv$viii, "fp$emscripten_glGetVertexAttribiv$viii": _fp$emscripten_glGetVertexAttribiv$viii, "fp$emscripten_glHint$vii": _fp$emscripten_glHint$vii, "fp$emscripten_glIsBuffer$ii": _fp$emscripten_glIsBuffer$ii, "fp$emscripten_glIsEnabled$ii": _fp$emscripten_glIsEnabled$ii, "fp$emscripten_glIsFramebuffer$ii": _fp$emscripten_glIsFramebuffer$ii, "fp$emscripten_glIsProgram$ii": _fp$emscripten_glIsProgram$ii, "fp$emscripten_glIsQueryEXT$ii": _fp$emscripten_glIsQueryEXT$ii, "fp$emscripten_glIsRenderbuffer$ii": _fp$emscripten_glIsRenderbuffer$ii, "fp$emscripten_glIsShader$ii": _fp$emscripten_glIsShader$ii, "fp$emscripten_glIsTexture$ii": _fp$emscripten_glIsTexture$ii, "fp$emscripten_glIsVertexArrayOES$ii": _fp$emscripten_glIsVertexArrayOES$ii, "fp$emscripten_glLineWidth$vf": _fp$emscripten_glLineWidth$vf, "fp$emscripten_glLinkProgram$vi": _fp$emscripten_glLinkProgram$vi, "fp$emscripten_glPixelStorei$vii": _fp$emscripten_glPixelStorei$vii, "fp$emscripten_glPolygonOffset$vff": _fp$emscripten_glPolygonOffset$vff, "fp$emscripten_glQueryCounterEXT$vii": _fp$emscripten_glQueryCounterEXT$vii, "fp$emscripten_glReadPixels$viiiiiii": _fp$emscripten_glReadPixels$viiiiiii, "fp$emscripten_glReleaseShaderCompiler$v": _fp$emscripten_glReleaseShaderCompiler$v, "fp$emscripten_glRenderbufferStorage$viiii": _fp$emscripten_glRenderbufferStorage$viiii, "fp$emscripten_glSampleCoverage$vfi": _fp$emscripten_glSampleCoverage$vfi, "fp$emscripten_glScissor$viiii": _fp$emscripten_glScissor$viiii, "fp$emscripten_glShaderBinary$viiiii": _fp$emscripten_glShaderBinary$viiiii, "fp$emscripten_glShaderSource$viiii": _fp$emscripten_glShaderSource$viiii, "fp$emscripten_glStencilFunc$viii": _fp$emscripten_glStencilFunc$viii, "fp$emscripten_glStencilFuncSeparate$viiii": _fp$emscripten_glStencilFuncSeparate$viiii, "fp$emscripten_glStencilMask$vi": _fp$emscripten_glStencilMask$vi, "fp$emscripten_glStencilMaskSeparate$vii": _fp$emscripten_glStencilMaskSeparate$vii, "fp$emscripten_glStencilOp$viii": _fp$emscripten_glStencilOp$viii, "fp$emscripten_glStencilOpSeparate$viiii": _fp$emscripten_glStencilOpSeparate$viiii, "fp$emscripten_glTexImage2D$viiiiiiiii": _fp$emscripten_glTexImage2D$viiiiiiiii, "fp$emscripten_glTexParameterf$viif": _fp$emscripten_glTexParameterf$viif, "fp$emscripten_glTexParameterfv$viii": _fp$emscripten_glTexParameterfv$viii, "fp$emscripten_glTexParameteri$viii": _fp$emscripten_glTexParameteri$viii, "fp$emscripten_glTexParameteriv$viii": _fp$emscripten_glTexParameteriv$viii, "fp$emscripten_glTexSubImage2D$viiiiiiiii": _fp$emscripten_glTexSubImage2D$viiiiiiiii, "fp$emscripten_glUniform1f$vif": _fp$emscripten_glUniform1f$vif, "fp$emscripten_glUniform1fv$viii": _fp$emscripten_glUniform1fv$viii, "fp$emscripten_glUniform1i$vii": _fp$emscripten_glUniform1i$vii, "fp$emscripten_glUniform1iv$viii": _fp$emscripten_glUniform1iv$viii, "fp$emscripten_glUniform2f$viff": _fp$emscripten_glUniform2f$viff, "fp$emscripten_glUniform2fv$viii": _fp$emscripten_glUniform2fv$viii, "fp$emscripten_glUniform2i$viii": _fp$emscripten_glUniform2i$viii, "fp$emscripten_glUniform2iv$viii": _fp$emscripten_glUniform2iv$viii, "fp$emscripten_glUniform3f$vifff": _fp$emscripten_glUniform3f$vifff, "fp$emscripten_glUniform3fv$viii": _fp$emscripten_glUniform3fv$viii, "fp$emscripten_glUniform3i$viiii": _fp$emscripten_glUniform3i$viiii, "fp$emscripten_glUniform3iv$viii": _fp$emscripten_glUniform3iv$viii, "fp$emscripten_glUniform4f$viffff": _fp$emscripten_glUniform4f$viffff, "fp$emscripten_glUniform4fv$viii": _fp$emscripten_glUniform4fv$viii, "fp$emscripten_glUniform4i$viiiii": _fp$emscripten_glUniform4i$viiiii, "fp$emscripten_glUniform4iv$viii": _fp$emscripten_glUniform4iv$viii, "fp$emscripten_glUniformMatrix2fv$viiii": _fp$emscripten_glUniformMatrix2fv$viiii, "fp$emscripten_glUniformMatrix3fv$viiii": _fp$emscripten_glUniformMatrix3fv$viiii, "fp$emscripten_glUniformMatrix4fv$viiii": _fp$emscripten_glUniformMatrix4fv$viiii, "fp$emscripten_glUseProgram$vi": _fp$emscripten_glUseProgram$vi, "fp$emscripten_glValidateProgram$vi": _fp$emscripten_glValidateProgram$vi, "fp$emscripten_glVertexAttrib1f$vif": _fp$emscripten_glVertexAttrib1f$vif, "fp$emscripten_glVertexAttrib1fv$vii": _fp$emscripten_glVertexAttrib1fv$vii, "fp$emscripten_glVertexAttrib2f$viff": _fp$emscripten_glVertexAttrib2f$viff, "fp$emscripten_glVertexAttrib2fv$vii": _fp$emscripten_glVertexAttrib2fv$vii, "fp$emscripten_glVertexAttrib3f$vifff": _fp$emscripten_glVertexAttrib3f$vifff, "fp$emscripten_glVertexAttrib3fv$vii": _fp$emscripten_glVertexAttrib3fv$vii, "fp$emscripten_glVertexAttrib4f$viffff": _fp$emscripten_glVertexAttrib4f$viffff, "fp$emscripten_glVertexAttrib4fv$vii": _fp$emscripten_glVertexAttrib4fv$vii, "fp$emscripten_glVertexAttribDivisorANGLE$vii": _fp$emscripten_glVertexAttribDivisorANGLE$vii, "fp$emscripten_glVertexAttribPointer$viiiiii": _fp$emscripten_glVertexAttribPointer$viiiiii, "fp$emscripten_glViewport$viiii": _fp$emscripten_glViewport$viiii, "getTempRet0": getTempRet0, "getnameinfo": _getnameinfo, "gettimeofday": _gettimeofday, "gmtime_r": _gmtime_r, "inet_addr": _inet_addr, "invoke_X": invoke_X, "invoke_ii": invoke_ii, "invoke_iiii": invoke_iiii, "invoke_iiiii": invoke_iiiii, "invoke_v": invoke_v, "invoke_vi": invoke_vi, "invoke_vii": invoke_vii, "invoke_viii": invoke_viii, "localtime": _localtime, "memory": wasmMemory, "nanosleep": _nanosleep, "ogg_page_bos": _ogg_page_bos, "ogg_page_continued": _ogg_page_continued, "ogg_page_eos": _ogg_page_eos, "ogg_page_granulepos": _ogg_page_granulepos, "ogg_page_serialno": _ogg_page_serialno, "ogg_stream_clear": _ogg_stream_clear, "ogg_stream_init": _ogg_stream_init, "ogg_stream_packetout": _ogg_stream_packetout, "ogg_stream_packetpeek": _ogg_stream_packetpeek, "ogg_stream_pagein": _ogg_stream_pagein, "ogg_stream_reset": _ogg_stream_reset, "ogg_stream_reset_serialno": _ogg_stream_reset_serialno, "ogg_sync_buffer": _ogg_sync_buffer, "ogg_sync_clear": _ogg_sync_clear, "ogg_sync_init": _ogg_sync_init, "ogg_sync_pageseek": _ogg_sync_pageseek, "ogg_sync_reset": _ogg_sync_reset, "ogg_sync_wrote": _ogg_sync_wrote, "oggpack_adv": _oggpack_adv, "oggpack_bytes": _oggpack_bytes, "oggpack_get_buffer": _oggpack_get_buffer, "oggpack_look": _oggpack_look, "oggpack_read": _oggpack_read, "oggpack_readinit": _oggpack_readinit, "oggpack_reset": _oggpack_reset, "oggpack_write": _oggpack_write, "oggpack_writeclear": _oggpack_writeclear, "oggpack_writeinit": _oggpack_writeinit, "oggpack_writetrunc": _oggpack_writetrunc, "pthread_cleanup_pop": _pthread_cleanup_pop, "pthread_cleanup_push": _pthread_cleanup_push, "pthread_setcancelstate": _pthread_setcancelstate, "pthread_sigmask": _pthread_sigmask, "round": _round, "roundf": _roundf, "saveSetjmp": _saveSetjmp, "setTempRet0": setTempRet0, "setitimer": _setitimer, "sigaction": _sigaction, "sigfillset": _sigfillset, "signal": _signal, "strftime": _strftime, "system": _system, "table": wasmTable, "testSetjmp": _testSetjmp, "time": _time, "waitpid": _waitpid };
 var asm = createWasm();
 Module["asm"] = asm;
 /** @type {function(...*):?} */
@@ -29840,6 +31153,13 @@ var _Py_Init = Module["_Py_Init"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_embed = Module["_SDL_embed"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_embed"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _main_loop_or_step = Module["_main_loop_or_step"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -29963,13 +31283,6 @@ var _mp_obj_cell_get = Module["_mp_obj_cell_get"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["mp_obj_cell_get"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _mp_map_lookup = Module["_mp_map_lookup"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["mp_map_lookup"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -30197,6 +31510,13 @@ var _mp_obj_exception_get_value = Module["_mp_obj_exception_get_value"] = functi
 };
 
 /** @type {function(...*):?} */
+var _mp_map_lookup = Module["_mp_map_lookup"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["mp_map_lookup"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _mp_builtin___import__ = Module["_mp_builtin___import__"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -30313,6 +31633,13 @@ var _main = Module["_main"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["main"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _emscripten_GetProcAddress = Module["_emscripten_GetProcAddress"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["emscripten_GetProcAddress"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -30659,10 +31986,10 @@ var _vstr_init_print = Module["_vstr_init_print"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _vstr_add_strn = Module["_vstr_add_strn"] = function() {
+var _void_add_strn = Module["_void_add_strn"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["vstr_add_strn"].apply(null, arguments)
+  return Module["asm"]["void_add_strn"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -30754,6 +32081,13 @@ var _vstr_add_str = Module["_vstr_add_str"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["vstr_add_str"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vstr_add_strn = Module["_vstr_add_strn"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vstr_add_strn"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -38625,31 +39959,10 @@ var _rbo_init = Module["_rbo_init"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _rbo_append = Module["_rbo_append"] = function() {
+var _rbo_next_end_index = Module["_rbo_next_end_index"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["rbo_append"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _rbo_is_empty = Module["_rbo_is_empty"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["rbo_is_empty"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _rbo_is_full = Module["_rbo_is_full"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["rbo_is_full"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _rbo_incr_start = Module["_rbo_incr_start"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["rbo_incr_start"].apply(null, arguments)
+  return Module["asm"]["rbo_next_end_index"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -38660,17 +39973,38 @@ var _rbo_incr_end = Module["_rbo_incr_end"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _rbo_next_end_index = Module["_rbo_next_end_index"] = function() {
+var _rbo_incr_start = Module["_rbo_incr_start"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["rbo_next_end_index"].apply(null, arguments)
+  return Module["asm"]["rbo_incr_start"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
-var _rbo_pop = Module["_rbo_pop"] = function() {
+var _rbo_is_full = Module["_rbo_is_full"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["rbo_pop"].apply(null, arguments)
+  return Module["asm"]["rbo_is_full"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _rbo_is_empty = Module["_rbo_is_empty"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["rbo_is_empty"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _rbo_append = Module["_rbo_append"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["rbo_append"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _rbo_count = Module["_rbo_count"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["rbo_count"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -38681,10 +40015,10 @@ var _rbo_peek = Module["_rbo_peek"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _rbo_count = Module["_rbo_count"] = function() {
+var _rbo_pop = Module["_rbo_pop"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["rbo_count"].apply(null, arguments)
+  return Module["asm"]["rbo_pop"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -39213,6 +40547,13 @@ var _embed_STI = Module["_embed_STI"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _embed_sdl = Module["_embed_sdl"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["embed_sdl"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _embed_os_print = Module["_embed_os_print"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -39500,17 +40841,10 @@ var _SDL_TicksInit = Module["_SDL_TicksInit"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _SDL_StartEventLoop = Module["_SDL_StartEventLoop"] = function() {
+var _SDL_EventsInit = Module["_SDL_EventsInit"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_StartEventLoop"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _SDL_QuitInit = Module["_SDL_QuitInit"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_QuitInit"].apply(null, arguments)
+  return Module["asm"]["SDL_EventsInit"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -39619,17 +40953,10 @@ var _SDL_TimerQuit = Module["_SDL_TimerQuit"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _SDL_QuitQuit = Module["_SDL_QuitQuit"] = function() {
+var _SDL_EventsQuit = Module["_SDL_EventsQuit"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_QuitQuit"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _SDL_StopEventLoop = Module["_SDL_StopEventLoop"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_StopEventLoop"].apply(null, arguments)
+  return Module["asm"]["SDL_EventsQuit"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -40606,10 +41933,59 @@ var _SDL_LoadWAV_RW = Module["_SDL_LoadWAV_RW"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_sscanf = Module["_SDL_sscanf"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_sscanf"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RWtell = Module["_SDL_RWtell"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RWtell"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RWseek = Module["_SDL_RWseek"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RWseek"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RWread = Module["_SDL_RWread"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RWread"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RWFromConstMem = Module["_SDL_RWFromConstMem"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RWFromConstMem"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_ReadLE16 = Module["_SDL_ReadLE16"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_ReadLE16"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_ReadLE32 = Module["_SDL_ReadLE32"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_ReadLE32"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RWclose = Module["_SDL_RWclose"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RWclose"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -40788,6 +42164,20 @@ var _SDL_SendDropComplete = Module["_SDL_SendDropComplete"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_StopEventLoop = Module["_SDL_StopEventLoop"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_StopEventLoop"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_StartEventLoop = Module["_SDL_StartEventLoop"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_StartEventLoop"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_FlushEvents = Module["_SDL_FlushEvents"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -40865,10 +42255,10 @@ var _SDL_SensorUpdate = Module["_SDL_SensorUpdate"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _SDL_SendPendingQuit = Module["_SDL_SendPendingQuit"] = function() {
+var _SDL_SendPendingSignalEvents = Module["_SDL_SendPendingSignalEvents"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_SendPendingQuit"].apply(null, arguments)
+  return Module["asm"]["SDL_SendPendingSignalEvents"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -40970,6 +42360,20 @@ var _SDL_SendKeymapChangedEvent = Module["_SDL_SendKeymapChangedEvent"] = functi
 };
 
 /** @type {function(...*):?} */
+var _SDL_QuitInit = Module["_SDL_QuitInit"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_QuitInit"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_QuitQuit = Module["_SDL_QuitQuit"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_QuitQuit"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_RecordGesture = Module["_SDL_RecordGesture"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -40988,6 +42392,13 @@ var _SDL_SaveAllDollarTemplates = Module["_SDL_SaveAllDollarTemplates"] = functi
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_SaveAllDollarTemplates"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RWwrite = Module["_SDL_RWwrite"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RWwrite"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -41243,6 +42654,13 @@ var _SDL_atof = Module["_SDL_atof"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_AddTouch = Module["_SDL_AddTouch"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_AddTouch"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_SetDefaultCursor = Module["_SDL_SetDefaultCursor"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -41285,6 +42703,13 @@ var _SDL_GetWindowSize = Module["_SDL_GetWindowSize"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_SendTouchMotion = Module["_SDL_SendTouchMotion"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_SendTouchMotion"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_floor = Module["_SDL_floor"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -41296,6 +42721,13 @@ var _SDL_SendMouseButtonClicks = Module["_SDL_SendMouseButtonClicks"] = function
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_SendMouseButtonClicks"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_SendTouch = Module["_SDL_SendTouch"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_SendTouch"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -41488,6 +42920,13 @@ var _SDL_GetTouch = Module["_SDL_GetTouch"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_GetTouchDeviceType = Module["_SDL_GetTouchDeviceType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_GetTouchDeviceType"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_GetNumTouchFingers = Module["_SDL_GetNumTouchFingers"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -41499,27 +42938,6 @@ var _SDL_GetTouchFinger = Module["_SDL_GetTouchFinger"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_GetTouchFinger"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _SDL_AddTouch = Module["_SDL_AddTouch"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_AddTouch"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _SDL_SendTouch = Module["_SDL_SendTouch"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_SendTouch"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _SDL_SendTouchMotion = Module["_SDL_SendTouchMotion"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_SendTouchMotion"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -41663,13 +43081,6 @@ var _SDL_RWFromMem = Module["_SDL_RWFromMem"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _SDL_RWFromConstMem = Module["_SDL_RWFromConstMem"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_RWFromConstMem"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
 var _SDL_FreeRW = Module["_SDL_FreeRW"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -41684,17 +43095,24 @@ var _SDL_LoadFile_RW = Module["_SDL_LoadFile_RW"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_RWsize = Module["_SDL_RWsize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RWsize"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_LoadFile = Module["_SDL_LoadFile"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_LoadFile"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_ReadU8 = Module["_SDL_ReadU8"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_ReadU8"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _SDL_ReadLE16 = Module["_SDL_ReadLE16"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_ReadLE16"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -42965,6 +44383,20 @@ var _SDL_GetPowerInfo_Emscripten = Module["_SDL_GetPowerInfo_Emscripten"] = func
 };
 
 /** @type {function(...*):?} */
+var _SDL_RenderFlush = Module["_SDL_RenderFlush"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderFlush"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_AllocateRenderVertices = Module["_SDL_AllocateRenderVertices"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_AllocateRenderVertices"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_GetNumRenderDrivers = Module["_SDL_GetNumRenderDrivers"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -43406,6 +44838,20 @@ var _SDL_RenderDrawPoint = Module["_SDL_RenderDrawPoint"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_RenderDrawPointsF = Module["_SDL_RenderDrawPointsF"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderDrawPointsF"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RenderDrawPointF = Module["_SDL_RenderDrawPointF"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderDrawPointF"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_RenderDrawPoints = Module["_SDL_RenderDrawPoints"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -43417,6 +44863,20 @@ var _SDL_RenderDrawLine = Module["_SDL_RenderDrawLine"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_RenderDrawLine"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RenderDrawLinesF = Module["_SDL_RenderDrawLinesF"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderDrawLinesF"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RenderDrawLineF = Module["_SDL_RenderDrawLineF"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderDrawLineF"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -43434,6 +44894,13 @@ var _SDL_RenderDrawRect = Module["_SDL_RenderDrawRect"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_RenderDrawRectF = Module["_SDL_RenderDrawRectF"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderDrawRectF"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_RenderDrawRects = Module["_SDL_RenderDrawRects"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -43441,10 +44908,31 @@ var _SDL_RenderDrawRects = Module["_SDL_RenderDrawRects"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_RenderDrawRectsF = Module["_SDL_RenderDrawRectsF"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderDrawRectsF"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_RenderFillRect = Module["_SDL_RenderFillRect"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_RenderFillRect"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RenderFillRectsF = Module["_SDL_RenderFillRectsF"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderFillRectsF"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RenderFillRectF = Module["_SDL_RenderFillRectF"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderFillRectF"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -43462,6 +44950,13 @@ var _SDL_RenderCopy = Module["_SDL_RenderCopy"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_RenderCopyF = Module["_SDL_RenderCopyF"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderCopyF"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_IntersectRect = Module["_SDL_IntersectRect"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -43469,17 +44964,17 @@ var _SDL_IntersectRect = Module["_SDL_IntersectRect"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _SDL_HasIntersection = Module["_SDL_HasIntersection"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_HasIntersection"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
 var _SDL_RenderCopyEx = Module["_SDL_RenderCopyEx"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_RenderCopyEx"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_RenderCopyExF = Module["_SDL_RenderCopyExF"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_RenderCopyExF"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -43658,6 +45153,13 @@ var _SDL_GL_MakeCurrent = Module["_SDL_GL_MakeCurrent"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_GL_DeleteContext = Module["_SDL_GL_DeleteContext"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_GL_DeleteContext"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_GL_GetProcAddress = Module["_SDL_GL_GetProcAddress"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -43679,10 +45181,10 @@ var _SDL_GL_GetSwapInterval = Module["_SDL_GL_GetSwapInterval"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _SDL_GL_DeleteContext = Module["_SDL_GL_DeleteContext"] = function() {
+var _SDL_GL_GetCurrentContext = Module["_SDL_GL_GetCurrentContext"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_GL_DeleteContext"].apply(null, arguments)
+  return Module["asm"]["SDL_GL_GetCurrentContext"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -43805,13 +45307,6 @@ var _SDL_GetWindowSurface = Module["_SDL_GetWindowSurface"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _SDL_SetClipRect = Module["_SDL_SetClipRect"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_SetClipRect"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
 var _SDL_SetSurfaceColorMod = Module["_SDL_SetSurfaceColorMod"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -43837,6 +45332,13 @@ var _SDL_SetSurfaceRLE = Module["_SDL_SetSurfaceRLE"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_SetSurfaceRLE"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_SetClipRect = Module["_SDL_SetClipRect"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_SetClipRect"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -44610,13 +46112,6 @@ var _strncasecmp = Module["_strncasecmp"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _SDL_sscanf = Module["_SDL_sscanf"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_sscanf"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
 var _vsscanf = Module["_vsscanf"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -44988,6 +46483,13 @@ var _SDL_LoadFunction = Module["_SDL_LoadFunction"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _SDL_EGL_SetRequiredVisualId = Module["_SDL_EGL_SetRequiredVisualId"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_EGL_SetRequiredVisualId"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _SDL_EGL_ChooseConfig = Module["_SDL_EGL_ChooseConfig"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -44999,13 +46501,6 @@ var _SDL_EGL_CreateContext = Module["_SDL_EGL_CreateContext"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_EGL_CreateContext"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _SDL_GL_GetCurrentContext = Module["_SDL_GL_GetCurrentContext"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["SDL_GL_GetCurrentContext"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -45153,6 +46648,13 @@ var _SDL_CalculateGammaRamp = Module["_SDL_CalculateGammaRamp"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_CalculateGammaRamp"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _SDL_HasIntersection = Module["_SDL_HasIntersection"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["SDL_HasIntersection"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -46273,6 +47775,1056 @@ var _SDL_SemValue = Module["_SDL_SemValue"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["SDL_SemValue"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_block_init = Module["_vorbis_block_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_block_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vorbis_block_alloc = Module["__vorbis_block_alloc"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vorbis_block_alloc"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vorbis_block_ripcord = Module["__vorbis_block_ripcord"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vorbis_block_ripcord"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_block_clear = Module["_vorbis_block_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_block_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_analysis_init = Module["_vorbis_analysis_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_analysis_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vp_global_look = Module["__vp_global_look"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vp_global_look"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __ve_envelope_init = Module["__ve_envelope_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_ve_envelope_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_bitrate_init = Module["_vorbis_bitrate_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_bitrate_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_ilog = Module["_ov_ilog"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_ilog"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _mdct_init = Module["_mdct_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["mdct_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _drft_init = Module["_drft_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["drft_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_init_encode = Module["_vorbis_book_init_encode"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_init_encode"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vp_psy_init = Module["__vp_psy_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vp_psy_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_init_decode = Module["_vorbis_book_init_decode"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_init_decode"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_staticbook_destroy = Module["_vorbis_staticbook_destroy"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_staticbook_destroy"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_dsp_clear = Module["_vorbis_dsp_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_dsp_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __ve_envelope_clear = Module["__ve_envelope_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_ve_envelope_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _mdct_clear = Module["_mdct_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["mdct_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vp_psy_clear = Module["__vp_psy_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vp_psy_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vp_global_free = Module["__vp_global_free"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vp_global_free"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_bitrate_clear = Module["_vorbis_bitrate_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_bitrate_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _drft_clear = Module["_drft_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["drft_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_analysis_buffer = Module["_vorbis_analysis_buffer"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_analysis_buffer"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_analysis_wrote = Module["_vorbis_analysis_wrote"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_analysis_wrote"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_lpc_from_data = Module["_vorbis_lpc_from_data"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_lpc_from_data"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_lpc_predict = Module["_vorbis_lpc_predict"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_lpc_predict"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_analysis_blockout = Module["_vorbis_analysis_blockout"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_analysis_blockout"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __ve_envelope_search = Module["__ve_envelope_search"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_ve_envelope_search"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __ve_envelope_mark = Module["__ve_envelope_mark"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_ve_envelope_mark"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vp_ampmax_decay = Module["__vp_ampmax_decay"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vp_ampmax_decay"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __ve_envelope_shift = Module["__ve_envelope_shift"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_ve_envelope_shift"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_restart = Module["_vorbis_synthesis_restart"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_restart"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_init = Module["_vorbis_synthesis_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_blockin = Module["_vorbis_synthesis_blockin"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_blockin"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vorbis_window_get = Module["__vorbis_window_get"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vorbis_window_get"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_pcmout = Module["_vorbis_synthesis_pcmout"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_pcmout"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_read = Module["_vorbis_synthesis_read"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_read"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_lapout = Module["_vorbis_synthesis_lapout"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_lapout"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_window = Module["_vorbis_window"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_window"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_bitrate_managed = Module["_vorbis_bitrate_managed"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_bitrate_managed"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_bitrate_addblock = Module["_vorbis_bitrate_addblock"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_bitrate_addblock"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_bitrate_flushpacket = Module["_vorbis_bitrate_flushpacket"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_bitrate_flushpacket"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_clear = Module["_ov_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_info_clear = Module["_vorbis_info_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_info_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_comment_clear = Module["_vorbis_comment_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_comment_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_open_callbacks = Module["_ov_open_callbacks"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_open_callbacks"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_raw_seek = Module["_ov_raw_seek"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_raw_seek"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_open = Module["_ov_open"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_open"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_fopen = Module["_ov_fopen"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_fopen"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_halfrate = Module["_ov_halfrate"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_halfrate"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_pcm_seek = Module["_ov_pcm_seek"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_pcm_seek"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_halfrate = Module["_vorbis_synthesis_halfrate"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_halfrate"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_pcm_seek_page = Module["_ov_pcm_seek_page"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_pcm_seek_page"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_packet_blocksize = Module["_vorbis_packet_blocksize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_packet_blocksize"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_info_blocksize = Module["_vorbis_info_blocksize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_info_blocksize"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_trackonly = Module["_vorbis_synthesis_trackonly"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_trackonly"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_halfrate_p = Module["_vorbis_synthesis_halfrate_p"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_halfrate_p"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_pcm_total = Module["_ov_pcm_total"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_pcm_total"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_halfrate_p = Module["_ov_halfrate_p"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_halfrate_p"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_test_callbacks = Module["_ov_test_callbacks"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_test_callbacks"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_test = Module["_ov_test"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_test"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_test_open = Module["_ov_test_open"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_test_open"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_streams = Module["_ov_streams"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_streams"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_seekable = Module["_ov_seekable"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_seekable"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_bitrate = Module["_ov_bitrate"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_bitrate"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_time_total = Module["_ov_time_total"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_time_total"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_bitrate_instant = Module["_ov_bitrate_instant"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_bitrate_instant"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_serialnumber = Module["_ov_serialnumber"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_serialnumber"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_raw_total = Module["_ov_raw_total"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_raw_total"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis = Module["_vorbis_synthesis"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_time_seek = Module["_ov_time_seek"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_time_seek"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_time_seek_page = Module["_ov_time_seek_page"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_time_seek_page"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_raw_tell = Module["_ov_raw_tell"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_raw_tell"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_pcm_tell = Module["_ov_pcm_tell"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_pcm_tell"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_time_tell = Module["_ov_time_tell"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_time_tell"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_info = Module["_ov_info"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_info"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_comment = Module["_ov_comment"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_comment"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_read_filter = Module["_ov_read_filter"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_read_filter"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_read = Module["_ov_read"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_read"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_read_float = Module["_ov_read_float"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_read_float"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_crosslap = Module["_ov_crosslap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_crosslap"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_raw_seek_lap = Module["_ov_raw_seek_lap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_raw_seek_lap"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_pcm_seek_lap = Module["_ov_pcm_seek_lap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_pcm_seek_lap"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_pcm_seek_page_lap = Module["_ov_pcm_seek_page_lap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_pcm_seek_page_lap"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_time_seek_lap = Module["_ov_time_seek_lap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_time_seek_lap"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _ov_time_seek_page_lap = Module["_ov_time_seek_page_lap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["ov_time_seek_page_lap"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_info_init = Module["_vorbis_info_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_info_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_comment_init = Module["_vorbis_comment_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_comment_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_idheader = Module["_vorbis_synthesis_idheader"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_idheader"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_synthesis_headerin = Module["_vorbis_synthesis_headerin"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_synthesis_headerin"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vorbis_apply_window = Module["__vorbis_apply_window"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vorbis_apply_window"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_lsp_to_curve = Module["_vorbis_lsp_to_curve"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_lsp_to_curve"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_lpc_to_lsp = Module["_vorbis_lpc_to_lsp"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_lpc_to_lsp"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _mdct_forward = Module["_mdct_forward"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["mdct_forward"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_encode_setup_init = Module["_vorbis_encode_setup_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_encode_setup_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_encode_setup_vbr = Module["_vorbis_encode_setup_vbr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_encode_setup_vbr"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_encode_init_vbr = Module["_vorbis_encode_init_vbr"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_encode_init_vbr"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_encode_setup_managed = Module["_vorbis_encode_setup_managed"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_encode_setup_managed"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_encode_init = Module["_vorbis_encode_init"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_encode_init"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_encode_ctl = Module["_vorbis_encode_ctl"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_encode_ctl"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _drft_forward = Module["_drft_forward"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["drft_forward"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vp_noisemask = Module["__vp_noisemask"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vp_noisemask"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vp_tonemask = Module["__vp_tonemask"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vp_tonemask"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vp_offset_and_mix = Module["__vp_offset_and_mix"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vp_offset_and_mix"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _floor1_fit = Module["_floor1_fit"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["floor1_fit"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _floor1_interpolate_fit = Module["_floor1_interpolate_fit"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["floor1_interpolate_fit"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _floor1_encode = Module["_floor1_encode"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["floor1_encode"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vp_couple_quantize_normalize = Module["__vp_couple_quantize_normalize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vp_couple_quantize_normalize"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _mdct_backward = Module["_mdct_backward"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["mdct_backward"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res0_free_info = Module["_res0_free_info"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res0_free_info"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res0_free_look = Module["_res0_free_look"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res0_free_look"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res0_pack = Module["_res0_pack"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res0_pack"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res0_unpack = Module["_res0_unpack"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res0_unpack"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res0_look = Module["_res0_look"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res0_look"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res0_inverse = Module["_res0_inverse"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res0_inverse"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_decodevs_add = Module["_vorbis_book_decodevs_add"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_decodevs_add"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_decode = Module["_vorbis_book_decode"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_decode"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res1_forward = Module["_res1_forward"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res1_forward"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_encode = Module["_vorbis_book_encode"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_encode"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res1_class = Module["_res1_class"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res1_class"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res1_inverse = Module["_res1_inverse"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res1_inverse"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_decodev_add = Module["_vorbis_book_decodev_add"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_decodev_add"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res2_class = Module["_res2_class"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res2_class"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res2_forward = Module["_res2_forward"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res2_forward"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _res2_inverse = Module["_res2_inverse"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["res2_inverse"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_decodevv_add = Module["_vorbis_book_decodevv_add"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_decodevv_add"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __float32_pack = Module["__float32_pack"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_float32_pack"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __float32_unpack = Module["__float32_unpack"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_float32_unpack"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __make_words = Module["__make_words"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_make_words"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __book_maptype1_quantvals = Module["__book_maptype1_quantvals"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_book_maptype1_quantvals"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __book_unquantize = Module["__book_unquantize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_book_unquantize"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_clear = Module["_vorbis_book_clear"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_clear"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_codeword = Module["_vorbis_book_codeword"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_codeword"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_codelen = Module["_vorbis_book_codelen"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_codelen"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _drft_backward = Module["_drft_backward"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["drft_backward"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_comment_add = Module["_vorbis_comment_add"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_comment_add"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_comment_add_tag = Module["_vorbis_comment_add_tag"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_comment_add_tag"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _strcat = Module["_strcat"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["strcat"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_comment_query = Module["_vorbis_comment_query"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_comment_query"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_comment_query_count = Module["_vorbis_comment_query_count"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_comment_query_count"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vi_psy_free = Module["__vi_psy_free"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vi_psy_free"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_staticbook_unpack = Module["_vorbis_staticbook_unpack"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_staticbook_unpack"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_commentheader_out = Module["_vorbis_commentheader_out"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_commentheader_out"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_analysis_headerout = Module["_vorbis_analysis_headerout"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_analysis_headerout"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_staticbook_pack = Module["_vorbis_staticbook_pack"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_staticbook_pack"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_granule_time = Module["_vorbis_granule_time"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_granule_time"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_version_string = Module["_vorbis_version_string"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_version_string"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var __vi_gpsy_free = Module["__vi_gpsy_free"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_vi_gpsy_free"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_book_decodev_set = Module["_vorbis_book_decodev_set"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_book_decodev_set"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _vorbis_analysis = Module["_vorbis_analysis"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["vorbis_analysis"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -47939,13 +50491,6 @@ var _fnmatch = Module["_fnmatch"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["fnmatch"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _strcat = Module["_strcat"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["strcat"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -51407,13 +53952,6 @@ var _llrintl = Module["_llrintl"] = function() {
 };
 
 /** @type {function(...*):?} */
-var ___lttf2 = Module["___lttf2"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["__lttf2"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
 var ___fixtfdi = Module["___fixtfdi"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -51663,6 +54201,13 @@ var _frexpl = Module["_frexpl"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["frexpl"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var ___lttf2 = Module["___lttf2"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["__lttf2"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -54991,6 +57536,27 @@ var _emscripten_fetch_free_unpacked_response_headers = Module["_emscripten_fetch
 };
 
 /** @type {function(...*):?} */
+var __webgl1_match_ext_proc_address_without_suffix = Module["__webgl1_match_ext_proc_address_without_suffix"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["_webgl1_match_ext_proc_address_without_suffix"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _emscripten_webgl1_get_proc_address = Module["_emscripten_webgl1_get_proc_address"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["emscripten_webgl1_get_proc_address"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _emscripten_webgl_get_proc_address = Module["_emscripten_webgl_get_proc_address"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["emscripten_webgl_get_proc_address"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _sbrk = Module["_sbrk"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -55320,17 +57886,17 @@ var dynCall_ji = Module["dynCall_ji"] = function() {
 };
 
 /** @type {function(...*):?} */
-var dynCall_iiiiidii = Module["dynCall_iiiiidii"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["dynCall_iiiiidii"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
 var dynCall_iiiiiiiiii = Module["dynCall_iiiiiiiiii"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["dynCall_iiiiiiiiii"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var dynCall_iiiiiidii = Module["dynCall_iiiiiidii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiiiiidii"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -55362,10 +57928,31 @@ var dynCall_viiiiiii = Module["dynCall_viiiiiii"] = function() {
 };
 
 /** @type {function(...*):?} */
+var dynCall_iiji = Module["dynCall_iiji"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iiji"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var dynCall_iidiiii = Module["dynCall_iidiiii"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["dynCall_iidiiii"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var dynCall_iij = Module["dynCall_iij"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iij"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var dynCall_iid = Module["dynCall_iid"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iid"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -55418,6 +58005,20 @@ var _orig$lseek = Module["_orig$lseek"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _orig$SDL_RWtell = Module["_orig$SDL_RWtell"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$SDL_RWtell"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$SDL_RWseek = Module["_orig$SDL_RWseek"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$SDL_RWseek"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _orig$SDL_RecordGesture = Module["_orig$SDL_RecordGesture"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -55453,6 +58054,27 @@ var _orig$SDL_GestureDelTouch = Module["_orig$SDL_GestureDelTouch"] = function()
 };
 
 /** @type {function(...*):?} */
+var _orig$SDL_AddTouch = Module["_orig$SDL_AddTouch"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$SDL_AddTouch"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$SDL_SendTouchMotion = Module["_orig$SDL_SendTouchMotion"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$SDL_SendTouchMotion"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$SDL_SendTouch = Module["_orig$SDL_SendTouch"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$SDL_SendTouch"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _orig$SDL_GetTouchDevice = Module["_orig$SDL_GetTouchDevice"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -55467,6 +58089,13 @@ var _orig$SDL_GetTouch = Module["_orig$SDL_GetTouch"] = function() {
 };
 
 /** @type {function(...*):?} */
+var _orig$SDL_GetTouchDeviceType = Module["_orig$SDL_GetTouchDeviceType"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$SDL_GetTouchDeviceType"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
 var _orig$SDL_GetNumTouchFingers = Module["_orig$SDL_GetNumTouchFingers"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -55478,27 +58107,6 @@ var _orig$SDL_GetTouchFinger = Module["_orig$SDL_GetTouchFinger"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["orig$SDL_GetTouchFinger"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _orig$SDL_AddTouch = Module["_orig$SDL_AddTouch"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["orig$SDL_AddTouch"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _orig$SDL_SendTouch = Module["_orig$SDL_SendTouch"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["orig$SDL_SendTouch"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
-var _orig$SDL_SendTouchMotion = Module["_orig$SDL_SendTouchMotion"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["orig$SDL_SendTouchMotion"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -55520,6 +58128,13 @@ var _orig$ftello = Module["_orig$ftello"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["orig$ftello"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$SDL_RWsize = Module["_orig$SDL_RWsize"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$SDL_RWsize"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -55604,6 +58219,83 @@ var _orig$SDL_GetPerformanceFrequency = Module["_orig$SDL_GetPerformanceFrequenc
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["orig$SDL_GetPerformanceFrequency"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$ov_raw_seek = Module["_orig$ov_raw_seek"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$ov_raw_seek"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$ov_pcm_seek = Module["_orig$ov_pcm_seek"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$ov_pcm_seek"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$ov_pcm_seek_page = Module["_orig$ov_pcm_seek_page"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$ov_pcm_seek_page"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$ov_pcm_total = Module["_orig$ov_pcm_total"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$ov_pcm_total"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$ov_raw_total = Module["_orig$ov_raw_total"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$ov_raw_total"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$ov_raw_tell = Module["_orig$ov_raw_tell"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$ov_raw_tell"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$ov_pcm_tell = Module["_orig$ov_pcm_tell"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$ov_pcm_tell"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$ov_raw_seek_lap = Module["_orig$ov_raw_seek_lap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$ov_raw_seek_lap"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$ov_pcm_seek_lap = Module["_orig$ov_pcm_seek_lap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$ov_pcm_seek_lap"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$ov_pcm_seek_page_lap = Module["_orig$ov_pcm_seek_page_lap"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$ov_pcm_seek_page_lap"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$vorbis_granule_time = Module["_orig$vorbis_granule_time"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$vorbis_granule_time"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -55978,13 +58670,6 @@ var _orig$llrintl = Module["_orig$llrintl"] = function() {
 };
 
 /** @type {function(...*):?} */
-var _orig$__lttf2 = Module["_orig$__lttf2"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["orig$__lttf2"].apply(null, arguments)
-};
-
-/** @type {function(...*):?} */
 var _orig$__fixtfdi = Module["_orig$__fixtfdi"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
@@ -56087,6 +58772,13 @@ var _orig$frexpl = Module["_orig$frexpl"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["orig$frexpl"].apply(null, arguments)
+};
+
+/** @type {function(...*):?} */
+var _orig$__lttf2 = Module["_orig$__lttf2"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["orig$__lttf2"].apply(null, arguments)
 };
 
 /** @type {function(...*):?} */
@@ -56938,1938 +59630,2665 @@ var _orig$floorl = Module["_orig$floorl"] = function() {
 
 
 var NAMED_GLOBALS = {
-  "stderr": 547112,
-  "stdout": 545928,
+  "stderr": 1983512,
+  "stdout": 1982328,
   "i_main": 4588,
   "i_state": 4624,
-  "mp_state_ctx": 319524,
-  "ts": 266916,
-  "stdin": 547840,
+  "mp_state_ctx": 1106040,
+  "ts": 1053348,
+  "stdin": 1984240,
   "out_rbb": 4452,
-  "mp_type_TypeError": 344168,
-  "VMFLAGS_IF": 313912,
-  "mp_type_NameError": 343868,
-  "mp_type_RuntimeError": 343928,
-  "mp_type_GeneratorExit": 343028,
-  "mp_type_StopIteration": 342788,
-  "mp_type_NotImplementedError": 343988,
-  "mp_const_GeneratorExit_obj": 346056,
+  "mp_type_TypeError": 1130424,
+  "VMFLAGS_IF": 1100344,
+  "mp_type_NameError": 1130124,
+  "mp_type_RuntimeError": 1130184,
+  "mp_type_GeneratorExit": 1129284,
+  "mp_type_StopIteration": 1129044,
+  "mp_type_NotImplementedError": 1130244,
+  "mp_const_GeneratorExit_obj": 1132312,
   "out_rbb_data_space": 352,
-  "gc_alloc_count_max": 320072,
-  "mp_plat_print": 328784,
-  "mp_type_tuple": 353996,
-  "mp_type_list": 347412,
-  "mp_type_dict": 341220,
-  "mp_type_str": 351196,
-  "mp_type_bytes": 351112,
-  "mp_type_bytearray": 339848,
-  "mp_type_array": 339908,
-  "mp_type_float": 344824,
-  "mp_type_fun_bc": 345800,
-  "mp_type_module": 348408,
-  "mp_qstr_frozen_const_pool": 371636,
-  "mp_qstr_const_pool": 326376,
-  "mp_type_int": 347024,
-  "attr": 329024,
-  "tok_kw": 329696,
-  "tok_enc_kind": 329440,
-  "tok_enc": 329424,
-  "rule_arg_offset_table": 330944,
-  "rule_arg_combined_table": 330048,
-  "mp_type_SyntaxError": 344048,
-  "mp_constants_map": 331360,
-  "rule_act_table": 329872,
-  "mp_type_IndentationError": 344108,
-  "mp_constants_table": 331344,
-  "mp_module_uerrno": 361088,
-  "mp_module_uctypes": 362544,
-  "scope_simple_name_table": 331782,
-  "compile_function": 334928,
-  "mp_emit_bc_method_table_load_id_ops": 336856,
-  "mp_emit_bc_method_table_store_id_ops": 336864,
-  "mp_emit_bc_method_table_delete_id_ops": 336872,
-  "mp_const_ellipsis_obj": 350968,
-  "mp_type_ValueError": 344228,
-  "mp_type_gen_wrap": 346132,
-  "mp_type_complex": 340992,
-  "mp_type_KeyboardInterrupt": 342968,
-  "mp_const_empty_tuple_obj": 353988,
-  "mp_module_builtins_globals": 358280,
-  "mp_builtin___build_class___obj": 356968,
-  "mp_unary_op_method_name": 355030,
-  "mp_binary_op_method_name": 355040,
-  "mp_type_ZeroDivisionError": 343328,
-  "mp_type_type": 354592,
-  "mp_type_AttributeError": 343448,
-  "mp_type_staticmethod": 355508,
-  "mp_type_classmethod": 355888,
-  "mp_builtin_next_obj": 357168,
-  "mp_type_gen_instance": 346072,
-  "mp_type_ImportError": 343568,
-  "mp_type_MemoryError": 343808,
-  "mp_type_OSError": 342712,
-  "mp_module___main__": 337588,
-  "hash_allocation_sizes": 339088,
-  "mp_const_empty_map": 339064,
-  "mp_sys_stdout_print": 360360,
-  "mp_type_IndexError": 343688,
-  "mp_type_NoneType": 349292,
-  "mp_type_bool": 340516,
-  "mp_identity_obj": 339768,
-  "mp_type_fun_builtin_1": 345148,
-  "mp_type_memoryview": 339968,
-  "mp_type_slice": 350988,
-  "array_it_type": 340360,
-  "array_locals_dict": 340344,
-  "array_append_obj": 340208,
-  "mp_type_fun_builtin_2": 345276,
-  "array_extend_obj": 340232,
-  "array_locals_dict_table": 340320,
-  "bytes_decode_obj": 353300,
-  "mp_type_attrtuple": 340432,
-  "mp_type_bound_meth": 340600,
-  "mp_type_cell": 340812,
-  "closure_type": 340916,
-  "mp_type_ordereddict": 341300,
-  "mp_type_KeyError": 343748,
-  "dict_view_it_type": 341852,
-  "dict_view_type": 342032,
-  "mp_dict_view_names": 341840,
-  "dict_locals_dict": 342496,
-  "dict_clear_obj": 341488,
-  "dict_copy_obj": 341508,
-  "dict_fromkeys_fun_obj": 341516,
-  "mp_type_fun_builtin_var": 345532,
-  "dict_fromkeys_obj": 341528,
-  "dict_get_obj": 341652,
-  "dict_pop_obj": 341664,
-  "dict_setdefault_obj": 341676,
-  "dict_popitem_obj": 341732,
-  "dict_update_obj": 341792,
-  "dict_items_obj": 342332,
-  "dict_keys_obj": 342340,
-  "dict_values_obj": 342348,
-  "dict_locals_dict_table": 342384,
-  "mp_op_getitem_obj": 356224,
-  "mp_op_setitem_obj": 356232,
-  "mp_op_delitem_obj": 356240,
-  "mp_type_enumerate": 342560,
-  "mp_type_BaseException": 342848,
-  "mp_type_Exception": 343088,
-  "mp_type_SystemExit": 342908,
-  "mp_type_StopAsyncIteration": 343148,
-  "mp_type_ArithmeticError": 343208,
-  "mp_type_OverflowError": 343268,
-  "mp_type_AssertionError": 343388,
-  "mp_type_EOFError": 343508,
-  "mp_type_LookupError": 343628,
-  "mp_type_filter": 344764,
-  "mp_const_float_e_obj": 344888,
-  "mp_const_float_pi_obj": 344904,
-  "mp_type_fun_builtin_0": 345000,
-  "mp_type_fun_builtin_3": 345404,
-  "mp_type_fun_native": 345664,
-  "mp_type_native_gen_wrap": 346192,
-  "gen_instance_locals_dict": 346688,
-  "gen_instance_send_obj": 346540,
-  "gen_instance_throw_obj": 346548,
-  "gen_instance_close_obj": 346592,
-  "gen_instance_pend_throw_obj": 346644,
-  "gen_instance_locals_dict_table": 346656,
-  "it_type": 346704,
-  "log_base2_floor": 346816,
-  "int_from_bytes_fun_obj": 346952,
-  "int_from_bytes_obj": 346964,
-  "int_to_bytes_obj": 346972,
-  "int_locals_dict_table": 346992,
-  "int_locals_dict": 347008,
-  "maxsize_dig": 347084,
-  "mp_maxsize_obj": 347088,
-  "mp_type_polymorph_iter": 348908,
-  "list_locals_dict": 348168,
-  "list_append_obj": 347980,
-  "list_extend_obj": 347988,
-  "list_clear_obj": 347996,
-  "list_copy_obj": 348004,
-  "list_count_obj": 348012,
-  "list_index_obj": 348020,
-  "list_insert_obj": 348032,
-  "list_pop_obj": 348040,
-  "list_remove_obj": 348052,
-  "list_reverse_obj": 348060,
-  "list_sort_obj": 348068,
-  "list_locals_dict_table": 348080,
-  "mp_type_map": 348308,
-  "mp_builtin_module_map": 348696,
-  "mp_builtin_module_table": 348480,
-  "mp_module_builtins": 357336,
-  "mp_module_micropython": 360208,
-  "mp_module_io": 358904,
-  "mp_module_collections": 358344,
-  "mp_module_ustruct": 360352,
-  "mp_module_math": 359648,
-  "mp_module_cmath": 359840,
-  "mp_module_sys": 360672,
-  "mp_module_gc": 358496,
-  "mp_module_uzlib": 363592,
-  "mp_module_ujson": 362744,
-  "mp_module_ure": 363176,
-  "mp_module_uheapq": 364000,
-  "mp_module_utimeq": 364224,
-  "mp_module_uhashlib": 364384,
-  "mp_module_ubinascii": 364808,
-  "mp_module_urandom": 364976,
-  "mp_module_time": 427112,
-  "mp_module_ffi": 427848,
-  "mp_module_os": 426856,
-  "mp_module_embed": 432192,
-  "example_user_cmodule": 432304,
-  "mp_module_uarray": 356896,
-  "object___init___obj": 348708,
-  "object___new___fun_obj": 348740,
-  "object___new___obj": 348748,
-  "object___setattr___obj": 348756,
-  "object___delattr___obj": 348784,
-  "object_locals_dict_table": 348800,
-  "object_locals_dict": 348832,
-  "mp_type_object": 348848,
-  "mp_type_property": 349080,
-  "property_getter_obj": 349008,
-  "property_setter_obj": 349016,
-  "property_deleter_obj": 349024,
-  "property_locals_dict_table": 349040,
-  "property_locals_dict": 349064,
-  "mp_namedtuple_obj": 349508,
-  "range_it_type": 349516,
-  "mp_type_range": 349608,
-  "mp_type_reversed": 349808,
-  "mp_type_set": 349868,
-  "mp_type_frozenset": 349928,
-  "set_locals_dict": 350784,
-  "frozenset_locals_dict": 350872,
-  "set_add_obj": 350140,
-  "set_clear_obj": 350160,
-  "set_copy_obj": 350208,
-  "set_discard_obj": 350228,
-  "set_diff_obj": 350340,
-  "set_diff_update_obj": 350352,
-  "set_intersect_obj": 350384,
-  "set_intersect_update_obj": 350392,
-  "set_isdisjoint_obj": 350416,
-  "set_issubset_obj": 350424,
-  "set_issuperset_obj": 350432,
-  "set_pop_obj": 350512,
-  "set_remove_obj": 350532,
-  "set_symmetric_difference_update_obj": 350572,
-  "set_symmetric_difference_obj": 350580,
-  "set_update_obj": 350600,
-  "set_union_obj": 350624,
-  "set_locals_dict_table": 350640,
-  "mp_op_contains_obj": 356248,
-  "frozenset_locals_dict_table": 350800,
-  "mp_type_singleton": 350908,
-  "mp_const_empty_bytes_obj": 351180,
-  "str8_locals_dict": 353552,
-  "str_join_obj": 351588,
-  "str_split_obj": 351612,
-  "str_splitlines_obj": 351632,
-  "str_rsplit_obj": 351660,
-  "str_find_obj": 351840,
-  "str_rfind_obj": 351852,
-  "str_index_obj": 351864,
-  "str_rindex_obj": 351876,
-  "str_startswith_obj": 351888,
-  "str_endswith_obj": 351920,
-  "str_strip_obj": 352020,
-  "str_lstrip_obj": 352032,
-  "str_rstrip_obj": 352044,
-  "str_center_obj": 352056,
-  "str_format_obj": 352756,
-  "str_replace_obj": 353176,
-  "str_count_obj": 353200,
-  "str_partition_obj": 353228,
-  "str_rpartition_obj": 353236,
-  "str_lower_obj": 353244,
-  "str_upper_obj": 353252,
-  "str_isspace_obj": 353260,
-  "str_isalpha_obj": 353268,
-  "str_isdigit_obj": 353276,
-  "str_isupper_obj": 353284,
-  "str_islower_obj": 353292,
-  "str_encode_obj": 353312,
-  "str8_locals_dict_table": 353328,
-  "mp_type_stringio": 353644,
-  "stringio_stream_p": 353880,
-  "stringio_locals_dict": 353864,
-  "stringio_getvalue_obj": 353744,
-  "stringio___exit___obj": 353752,
-  "stringio_locals_dict_table": 353776,
-  "mp_stream_read_obj": 356312,
-  "mp_stream_readinto_obj": 356356,
-  "mp_stream_unbuffered_readline_obj": 356368,
-  "mp_stream_write_obj": 356336,
-  "mp_stream_seek_obj": 356396,
-  "mp_stream_tell_obj": 356408,
-  "mp_stream_flush_obj": 356416,
-  "mp_stream_close_obj": 356388,
-  "bytesio_stream_p": 353896,
-  "mp_type_bytesio": 353912,
-  "tuple_locals_dict": 354464,
-  "tuple_count_obj": 354308,
-  "tuple_index_obj": 354424,
-  "tuple_locals_dict_table": 354448,
-  "native_base_init_wrapper_obj": 354736,
-  "mp_type_super": 355584,
-  "mp_builtin_issubclass_obj": 355872,
-  "mp_builtin_isinstance_obj": 355880,
-  "mp_type_zip": 356164,
-  "mp_stream_read1_obj": 356324,
-  "mp_stream_write1_obj": 356348,
-  "mp_stream_unbuffered_readlines_obj": 356380,
-  "mp_stream_ioctl_obj": 356424,
-  "mp_builtin___import___obj": 356592,
-  "mp_type_code": 356736,
-  "mp_builtin_compile_obj": 356816,
-  "mp_builtin_eval_obj": 356828,
-  "mp_builtin_exec_obj": 356840,
-  "mp_builtin_execfile_obj": 356852,
-  "mp_module_array_globals_table": 356864,
-  "mp_module_array_globals": 356880,
-  "mp_builtin_abs_obj": 356980,
-  "mp_builtin_all_obj": 356988,
-  "mp_builtin_any_obj": 356996,
-  "mp_builtin_bin_obj": 357004,
-  "mp_builtin_callable_obj": 357012,
-  "mp_builtin_chr_obj": 357048,
-  "mp_builtin_dir_obj": 357056,
-  "mp_builtin_divmod_obj": 357068,
-  "mp_builtin_hash_obj": 357076,
-  "mp_builtin_hex_obj": 357084,
-  "mp_builtin_input_obj": 357096,
-  "mp_builtin_iter_obj": 357108,
-  "mp_builtin_max_obj": 357144,
-  "mp_builtin_min_obj": 357156,
-  "mp_builtin_oct_obj": 357180,
-  "mp_builtin_ord_obj": 357248,
-  "mp_builtin_pow_obj": 357284,
-  "mp_sys_stdout_obj": 426676,
-  "mp_builtin_print_obj": 357320,
-  "mp_builtin___repl_print___obj": 357344,
-  "mp_builtin_repr_obj": 357352,
-  "mp_builtin_round_obj": 357360,
-  "mp_builtin_sum_obj": 357372,
-  "mp_builtin_sorted_obj": 357428,
-  "mp_builtin_getattr_obj": 357440,
-  "mp_builtin_setattr_obj": 357452,
-  "mp_builtin_delattr_obj": 357460,
-  "mp_builtin_hasattr_obj": 357468,
-  "mp_builtin_globals_obj": 357476,
-  "mp_builtin_locals_obj": 357484,
-  "mp_builtin_id_obj": 357492,
-  "mp_builtin_len_obj": 357500,
-  "mp_module_builtins_globals_table": 357520,
-  "mp_builtin_open_obj": 426656,
-  "mp_module_collections_globals_table": 358304,
-  "mp_module_collections_globals": 358328,
-  "gc_collect_obj": 358352,
-  "gc_disable_obj": 358360,
-  "gc_enable_obj": 358368,
-  "gc_isenabled_obj": 358376,
-  "gc_mem_free_obj": 358384,
-  "gc_mem_alloc_obj": 358392,
-  "gc_threshold_obj": 358400,
-  "mp_module_gc_globals_table": 358416,
-  "mp_module_gc_globals": 358480,
-  "iobase_singleton": 358564,
-  "mp_type_iobase": 358504,
-  "iobase_p": 358568,
-  "bufwriter_flush_obj": 358676,
-  "bufwriter_locals_dict_table": 358688,
-  "bufwriter_locals_dict": 358704,
-  "bufwriter_stream_p": 358720,
-  "bufwriter_type": 358736,
-  "resource_stream_obj": 358796,
-  "mp_module_io_globals_table": 358816,
-  "mp_type_fileio": 426384,
-  "mp_type_textio": 426444,
-  "mp_module_io_globals": 358888,
-  "mp_math_sqrt_obj": 358932,
-  "mp_math_pow_obj": 358940,
-  "mp_math_exp_obj": 358948,
-  "mp_math_expm1_obj": 358956,
-  "mp_math_log2_obj": 358964,
-  "mp_math_log10_obj": 358972,
-  "mp_math_cosh_obj": 358980,
-  "mp_math_sinh_obj": 358988,
-  "mp_math_tanh_obj": 358996,
-  "mp_math_acosh_obj": 359004,
-  "mp_math_asinh_obj": 359012,
-  "mp_math_atanh_obj": 359020,
-  "mp_math_cos_obj": 359028,
-  "mp_math_sin_obj": 359036,
-  "mp_math_tan_obj": 359044,
-  "mp_math_acos_obj": 359052,
-  "mp_math_asin_obj": 359060,
-  "mp_math_atan_obj": 359068,
-  "mp_math_atan2_obj": 359076,
-  "mp_math_ceil_obj": 359084,
-  "mp_math_copysign_obj": 359092,
-  "mp_math_fabs_obj": 359100,
-  "mp_math_floor_obj": 359108,
-  "mp_math_fmod_obj": 359116,
-  "mp_math_isfinite_obj": 359124,
-  "mp_math_isinf_obj": 359132,
-  "mp_math_isnan_obj": 359140,
-  "mp_math_trunc_obj": 359148,
-  "mp_math_ldexp_obj": 359156,
-  "mp_math_erf_obj": 359164,
-  "mp_math_erfc_obj": 359172,
-  "mp_math_gamma_obj": 359180,
-  "mp_math_lgamma_obj": 359188,
-  "mp_math_log_obj": 359212,
-  "mp_math_frexp_obj": 359224,
-  "mp_math_modf_obj": 359232,
-  "mp_math_radians_obj": 359240,
-  "mp_math_degrees_obj": 359248,
-  "mp_math_factorial_obj": 359276,
-  "mp_module_math_globals_table": 359296,
-  "mp_module_math_globals": 359632,
-  "mp_cmath_phase_obj": 359656,
-  "mp_cmath_polar_obj": 359664,
-  "mp_cmath_rect_obj": 359672,
-  "mp_cmath_exp_obj": 359680,
-  "mp_cmath_log_obj": 359688,
-  "mp_cmath_log10_obj": 359696,
-  "mp_cmath_sqrt_obj": 359704,
-  "mp_cmath_cos_obj": 359712,
-  "mp_cmath_sin_obj": 359720,
-  "mp_module_cmath_globals_table": 359728,
-  "mp_module_cmath_globals": 359824,
-  "mp_micropython_opt_level_obj": 359848,
-  "mp_micropython_mem_total_obj": 359860,
-  "mp_micropython_mem_current_obj": 359868,
-  "mp_micropython_mem_peak_obj": 359876,
-  "mp_micropython_mem_info_obj": 359932,
-  "mp_micropython_qstr_info_obj": 360016,
-  "mp_micropython_stack_use_obj": 360028,
-  "mp_micropython_pystack_use_obj": 360036,
-  "mp_micropython_heap_lock_obj": 360044,
-  "mp_micropython_heap_unlock_obj": 360052,
-  "mp_alloc_emergency_exception_buf_obj": 360060,
-  "mp_micropython_kbd_intr_obj": 360068,
-  "mp_module_micropython_globals_table": 360080,
-  "mp_module_micropython_globals": 360192,
-  "struct_calcsize_obj": 360216,
-  "struct_unpack_from_obj": 360244,
-  "struct_pack_obj": 360256,
-  "struct_pack_into_obj": 360268,
-  "mp_module_struct_globals_table": 360288,
-  "mp_module_struct_globals": 360336,
-  "version_obj": 360376,
-  "mp_sys_version_info_obj": 360392,
-  "mp_sys_implementation_version_info_obj": 360412,
-  "impl_fields": 360432,
-  "mp_sys_implementation_obj": 360444,
-  "platform_obj": 360476,
-  "mp_sys_exit_obj": 360492,
-  "mp_sys_print_exception_obj": 360504,
-  "mp_sys_getsizeof_obj": 360516,
-  "mp_module_sys_globals_table": 360528,
-  "mp_sys_stdin_obj": 426668,
-  "mp_sys_stderr_obj": 426684,
-  "mp_module_sys_globals": 360656,
-  "errorcode_dict": 360864,
-  "errorcode_table": 360688,
-  "mp_module_uerrno_globals_table": 360880,
-  "mp_module_uerrno_globals": 361072,
-  "mp_frozen_str_names": 365239,
-  "mp_frozen_str_sizes": 365244,
-  "mp_frozen_str_content": 365244,
-  "mp_frozen_mpy_names": 425408,
-  "mp_frozen_mpy_content": 426000,
-  "uctypes_struct_type": 362160,
-  "uctypes_struct_sizeof_obj": 361968,
-  "uctypes_struct_addressof_obj": 362136,
-  "uctypes_struct_bytearray_at_obj": 362144,
-  "uctypes_struct_bytes_at_obj": 362152,
-  "mp_module_uctypes_globals_table": 362224,
-  "mp_module_uctypes_globals": 362528,
-  "mod_ujson_dump_obj": 362628,
-  "mod_ujson_dumps_obj": 362636,
-  "mod_ujson_load_obj": 362668,
-  "mod_ujson_loads_obj": 362676,
-  "mp_module_ujson_globals_table": 362688,
-  "mp_module_ujson_globals": 362728,
-  "match_type": 362800,
-  "re_type": 362992,
-  "match_group_obj": 362768,
-  "match_locals_dict_table": 362776,
-  "match_locals_dict": 362784,
-  "re_match_obj": 362868,
-  "re_search_obj": 362880,
-  "re_split_obj": 362920,
-  "re_sub_obj": 362932,
-  "re_locals_dict_table": 362944,
-  "re_locals_dict": 362976,
-  "mod_re_compile_obj": 363068,
-  "mod_re_match_obj": 363080,
-  "mod_re_search_obj": 363092,
-  "mod_re_sub_obj": 363104,
-  "mp_module_re_globals_table": 363120,
-  "mp_module_re_globals": 363160,
-  "clcidx": 363792,
-  "length_bits": 363600,
-  "length_base": 363632,
-  "dist_bits": 363696,
-  "dist_base": 363728,
-  "decompio_locals_dict_table": 363424,
-  "decompio_locals_dict": 363448,
-  "decompio_stream_p": 363464,
-  "decompio_type": 363480,
-  "mod_uzlib_decompress_obj": 363540,
-  "mp_module_uzlib_globals_table": 363552,
-  "mp_module_uzlib_globals": 363576,
-  "mod_uheapq_heappush_obj": 363908,
-  "mod_uheapq_heappop_obj": 363928,
-  "mod_uheapq_heapify_obj": 363936,
-  "mp_module_uheapq_globals_table": 363952,
-  "mp_module_uheapq_globals": 363984,
-  "utimeq_id": 364024,
-  "mod_utimeq_heappush_obj": 364028,
-  "mod_utimeq_heappop_obj": 364052,
-  "mod_utimeq_peektime_obj": 364060,
-  "utimeq_locals_dict_table": 364080,
-  "utimeq_locals_dict": 364104,
-  "utimeq_type": 364120,
-  "mp_module_utimeq_globals_table": 364192,
-  "mp_module_utimeq_globals": 364208,
-  "uhashlib_sha256_update_obj": 364232,
-  "uhashlib_sha256_digest_obj": 364240,
-  "uhashlib_sha256_locals_dict_table": 364256,
-  "uhashlib_sha256_locals_dict": 364272,
-  "uhashlib_sha256_type": 364288,
-  "mp_module_uhashlib_globals_table": 364352,
-  "mp_module_uhashlib_globals": 364368,
-  "mod_binascii_hexlify_obj": 364656,
-  "mod_binascii_unhexlify_obj": 364708,
-  "mod_binascii_a2b_base64_obj": 364736,
-  "mod_binascii_b2a_base64_obj": 364744,
-  "mp_module_binascii_globals_table": 364752,
-  "mp_module_binascii_globals": 364792,
-  "yasmarang_dat": 364828,
-  "yasmarang_d": 364824,
-  "yasmarang_n": 364820,
-  "yasmarang_pad": 364816,
-  "mod_urandom_getrandbits_obj": 364832,
-  "mod_urandom_seed_obj": 364840,
-  "mod_urandom_randrange_obj": 364848,
-  "mod_urandom_randint_obj": 364860,
-  "mod_urandom_choice_obj": 364868,
-  "mod_urandom_random_obj": 364876,
-  "mod_urandom_uniform_obj": 364884,
-  "mp_module_urandom_globals_table": 364896,
-  "mp_module_urandom_globals": 364960,
-  "mp_utime_sleep_obj": 364984,
-  "mp_utime_sleep_ms_obj": 364992,
-  "mp_utime_sleep_us_obj": 365000,
-  "mp_utime_ticks_ms_obj": 365008,
-  "mp_utime_ticks_us_obj": 365016,
-  "mp_utime_ticks_cpu_obj": 365024,
-  "mp_utime_ticks_diff_obj": 365032,
-  "mp_utime_ticks_add_obj": 365040,
-  "__THREW__": 679296,
-  "__threwValue": 679300,
-  "mp_interrupt_char": 432628,
-  "mp_uos_dupterm_obj": 365212,
-  "fun_data_aio_aio_cpy__lt_module_gt__aio_main": 374208,
-  "const_obj_aio_aio_cpy__lt_module_gt__aio_main_0": 374516,
-  "const_obj_aio_aio_cpy__lt_module_gt__aio_main_1": 374536,
-  "const_table_data_aio_aio_cpy__lt_module_gt__aio_main": 374560,
-  "raw_code_aio_aio_cpy__lt_module_gt__aio_main": 374584,
-  "fun_data_aio_aio_cpy__lt_module_gt__aio__run": 374608,
-  "const_obj_aio_aio_cpy__lt_module_gt__aio__run_0": 374772,
-  "const_table_data_aio_aio_cpy__lt_module_gt__aio__run": 374788,
-  "raw_code_aio_aio_cpy__lt_module_gt__aio__run": 374800,
-  "fun_data_aio_aio_cpy__lt_module_gt__aio": 374832,
-  "const_table_data_aio_aio_cpy__lt_module_gt__aio": 374896,
-  "raw_code_aio_aio_cpy__lt_module_gt__aio": 374904,
-  "fun_data_aio_aio_cpy__lt_module_gt__End": 374928,
-  "const_obj_aio_aio_cpy__lt_module_gt__End_0": 375052,
-  "const_table_data_aio_aio_cpy__lt_module_gt__End": 375068,
-  "raw_code_aio_aio_cpy__lt_module_gt__End": 375072,
-  "fun_data_aio_aio_cpy__lt_module_gt_": 375104,
-  "const_obj_aio_aio_cpy__lt_module_gt__0": 375284,
-  "const_table_data_aio_aio_cpy__lt_module_gt_": 375300,
-  "raw_code_aio_aio_cpy__lt_module_gt_": 375312,
-  "fun_data_aio___init____lt_module_gt_": 375344,
-  "raw_code_aio___init____lt_module_gt_": 375468,
-  "fun_data_aio_input_upy__lt_module_gt__ainput_switch": 375488,
-  "const_table_data_aio_input_upy__lt_module_gt__ainput_switch": 375540,
-  "raw_code_aio_input_upy__lt_module_gt__ainput_switch": 375544,
-  "fun_data_aio_input_upy__lt_module_gt__ainput": 375568,
-  "const_obj_aio_input_upy__lt_module_gt__ainput_0": 375908,
-  "const_table_data_aio_input_upy__lt_module_gt__ainput": 375936,
-  "raw_code_aio_input_upy__lt_module_gt__ainput": 375952,
-  "fun_data_aio_input_upy__lt_module_gt__test": 375984,
-  "const_obj_aio_input_upy__lt_module_gt__test_0": 376076,
-  "const_table_data_aio_input_upy__lt_module_gt__test": 376092,
-  "raw_code_aio_input_upy__lt_module_gt__test": 376096,
-  "fun_data_aio_input_upy__lt_module_gt_": 376128,
-  "const_table_data_aio_input_upy__lt_module_gt_": 376268,
-  "raw_code_aio_input_upy__lt_module_gt_": 376276,
-  "fun_data_aio_input___init____lt_module_gt_": 376304,
-  "raw_code_aio_input___init____lt_module_gt_": 376348,
-  "fun_data_aio_input_cpy__lt_module_gt_": 376368,
-  "raw_code_aio_input_cpy__lt_module_gt_": 376380,
-  "fun_data_aio_core__lt_module_gt__use_gc": 376400,
-  "const_table_data_aio_core__lt_module_gt__use_gc": 376424,
-  "raw_code_aio_core__lt_module_gt__use_gc": 376428,
-  "fun_data_aio_core__lt_module_gt__use": 376448,
-  "const_table_data_aio_core__lt_module_gt__use": 376496,
-  "raw_code_aio_core__lt_module_gt__use": 376500,
-  "fun_data_aio_core__lt_module_gt__task": 376528,
-  "const_obj_aio_core__lt_module_gt__task_0": 376692,
-  "const_table_data_aio_core__lt_module_gt__task": 376708,
-  "raw_code_aio_core__lt_module_gt__task": 376716,
-  "fun_data_aio_core__lt_module_gt__tasks": 376736,
-  "raw_code_aio_core__lt_module_gt__tasks": 376776,
-  "fun_data_aio_core__lt_module_gt__idle": 376800,
-  "raw_code_aio_core__lt_module_gt__idle": 376824,
-  "fun_data_aio_core__lt_module_gt__load": 376848,
-  "const_table_data_aio_core__lt_module_gt__load": 376940,
-  "raw_code_aio_core__lt_module_gt__load": 376944,
-  "fun_data_aio_core__lt_module_gt__step": 376976,
-  "const_obj_aio_core__lt_module_gt__step_0": 377232,
-  "const_obj_aio_core__lt_module_gt__step_1": 377260,
-  "const_obj_aio_core__lt_module_gt__step_2": 377292,
-  "const_obj_aio_core__lt_module_gt__step_3": 377324,
-  "const_table_data_aio_core__lt_module_gt__step": 377344,
-  "raw_code_aio_core__lt_module_gt__step": 377360,
-  "fun_data_aio_core__lt_module_gt__run": 377392,
-  "const_table_data_aio_core__lt_module_gt__run": 377444,
-  "raw_code_aio_core__lt_module_gt__run": 377448,
-  "fun_data_aio_core__lt_module_gt__step2": 377472,
-  "const_obj_aio_core__lt_module_gt__step2_0": 377692,
-  "const_obj_aio_core__lt_module_gt__step2_1": 377708,
-  "const_obj_aio_core__lt_module_gt__step2_2": 377744,
-  "const_table_data_aio_core__lt_module_gt__step2": 377760,
-  "raw_code_aio_core__lt_module_gt__step2": 377772,
-  "fun_data_aio_core__lt_module_gt__asleep_ms": 377792,
-  "const_table_data_aio_core__lt_module_gt__asleep_ms": 377828,
-  "raw_code_aio_core__lt_module_gt__asleep_ms": 377832,
-  "fun_data_aio_core__lt_module_gt_": 377856,
-  "const_obj_aio_core__lt_module_gt__0": 378444,
-  "const_obj_aio_core__lt_module_gt__1": 378500,
-  "const_obj_aio_core__lt_module_gt__2": 378560,
-  "const_obj_aio_core__lt_module_gt__3": 378592,
-  "const_obj_aio_core__lt_module_gt__4": 378628,
-  "const_table_data_aio_core__lt_module_gt_": 378656,
-  "raw_code_aio_core__lt_module_gt_": 378712,
-  "fun_data_aio_aio_upy__lt_module_gt_": 378732,
-  "raw_code_aio_aio_upy__lt_module_gt_": 378744,
-  "fun_data_aio_io__lt_module_gt__finalize": 378768,
-  "raw_code_aio_io__lt_module_gt__finalize": 378852,
-  "fun_data_aio_io__lt_module_gt__step": 378880,
-  "const_obj_aio_io__lt_module_gt__step_0": 379192,
-  "const_table_data_aio_io__lt_module_gt__step": 379208,
-  "raw_code_aio_io__lt_module_gt__step": 379212,
-  "fun_data_aio_io__lt_module_gt__ctl": 379232,
-  "const_obj_aio_io__lt_module_gt__ctl_0": 379344,
-  "const_table_data_aio_io__lt_module_gt__ctl": 379360,
-  "raw_code_aio_io__lt_module_gt__ctl": 379376,
-  "fun_data_aio_io__lt_module_gt__network": 379408,
-  "raw_code_aio_io__lt_module_gt__network": 379480,
-  "fun_data_aio_io__lt_module_gt_": 379504,
-  "const_table_data_aio_io__lt_module_gt_": 379632,
-  "raw_code_aio_io__lt_module_gt_": 379648,
-  "fun_data_aio_synchro__lt_module_gt__Lock___init__": 379680,
-  "const_table_data_aio_synchro__lt_module_gt__Lock___init__": 379708,
-  "raw_code_aio_synchro__lt_module_gt__Lock___init__": 379712,
-  "fun_data_aio_synchro__lt_module_gt__Lock_release": 379744,
-  "const_table_data_aio_synchro__lt_module_gt__Lock_release": 379820,
-  "raw_code_aio_synchro__lt_module_gt__Lock_release": 379824,
-  "fun_data_aio_synchro__lt_module_gt__Lock_acquire": 379856,
-  "const_table_data_aio_synchro__lt_module_gt__Lock_acquire": 379928,
-  "raw_code_aio_synchro__lt_module_gt__Lock_acquire": 379932,
-  "fun_data_aio_synchro__lt_module_gt__Lock": 379952,
-  "const_table_data_aio_synchro__lt_module_gt__Lock": 379996,
-  "raw_code_aio_synchro__lt_module_gt__Lock": 380008,
-  "fun_data_aio_synchro__lt_module_gt_": 380032,
-  "const_table_data_aio_synchro__lt_module_gt_": 380056,
-  "raw_code_aio_synchro__lt_module_gt_": 380060,
-  "fun_data_aio_network__lt_module_gt__StreamReader___init__": 380080,
-  "const_table_data_aio_network__lt_module_gt__StreamReader___init__": 380116,
-  "raw_code_aio_network__lt_module_gt__StreamReader___init__": 380128,
-  "fun_data_aio_network__lt_module_gt__StreamReader_read": 380160,
-  "const_table_data_aio_network__lt_module_gt__StreamReader_read": 380236,
-  "raw_code_aio_network__lt_module_gt__StreamReader_read": 380244,
-  "fun_data_aio_network__lt_module_gt__StreamReader_readexactly": 380272,
-  "const_obj_aio_network__lt_module_gt__StreamReader_readexactly_0": 380376,
-  "const_table_data_aio_network__lt_module_gt__StreamReader_readexactly": 380392,
-  "raw_code_aio_network__lt_module_gt__StreamReader_readexactly": 380404,
-  "fun_data_aio_network__lt_module_gt__StreamReader_readline": 380432,
-  "const_obj_aio_network__lt_module_gt__StreamReader_readline_0": 380600,
-  "const_obj_aio_network__lt_module_gt__StreamReader_readline_1": 380616,
-  "const_obj_aio_network__lt_module_gt__StreamReader_readline_2": 380660,
-  "const_table_data_aio_network__lt_module_gt__StreamReader_readline": 380688,
-  "raw_code_aio_network__lt_module_gt__StreamReader_readline": 380704,
-  "fun_data_aio_network__lt_module_gt__StreamReader_aclose": 380736,
-  "const_table_data_aio_network__lt_module_gt__StreamReader_aclose": 380776,
-  "raw_code_aio_network__lt_module_gt__StreamReader_aclose": 380780,
-  "fun_data_aio_network__lt_module_gt__StreamReader___repr__": 380800,
-  "const_obj_aio_network__lt_module_gt__StreamReader___repr___0": 380848,
-  "const_table_data_aio_network__lt_module_gt__StreamReader___repr__": 380864,
-  "raw_code_aio_network__lt_module_gt__StreamReader___repr__": 380872,
-  "fun_data_aio_network__lt_module_gt__StreamReader": 380896,
-  "const_table_data_aio_network__lt_module_gt__StreamReader": 380976,
-  "raw_code_aio_network__lt_module_gt__StreamReader": 381000,
-  "fun_data_aio_network__lt_module_gt__StreamWriter___init__": 381024,
-  "const_table_data_aio_network__lt_module_gt__StreamWriter___init__": 381048,
-  "raw_code_aio_network__lt_module_gt__StreamWriter___init__": 381060,
-  "fun_data_aio_network__lt_module_gt__StreamWriter_awrite": 381088,
-  "const_obj_aio_network__lt_module_gt__StreamWriter_awrite_0": 381324,
-  "const_obj_aio_network__lt_module_gt__StreamWriter_awrite_1": 381392,
-  "const_obj_aio_network__lt_module_gt__StreamWriter_awrite_2": 381456,
-  "const_obj_aio_network__lt_module_gt__StreamWriter_awrite_3": 381512,
-  "const_table_data_aio_network__lt_module_gt__StreamWriter_awrite": 381536,
-  "raw_code_aio_network__lt_module_gt__StreamWriter_awrite": 381568,
-  "fun_data_aio_network__lt_module_gt__StreamWriter_awritestr": 381600,
-  "const_table_data_aio_network__lt_module_gt__StreamWriter_awritestr": 381628,
-  "raw_code_aio_network__lt_module_gt__StreamWriter_awritestr": 381636,
-  "fun_data_aio_network__lt_module_gt__StreamWriter_awriteiter": 381664,
-  "const_table_data_aio_network__lt_module_gt__StreamWriter_awriteiter": 381700,
-  "raw_code_aio_network__lt_module_gt__StreamWriter_awriteiter": 381708,
-  "fun_data_aio_network__lt_module_gt__StreamWriter_aclose": 381728,
-  "const_table_data_aio_network__lt_module_gt__StreamWriter_aclose": 381768,
-  "raw_code_aio_network__lt_module_gt__StreamWriter_aclose": 381772,
-  "fun_data_aio_network__lt_module_gt__StreamWriter_get_extra_info": 381792,
-  "const_table_data_aio_network__lt_module_gt__StreamWriter_get_extra_info": 381816,
-  "raw_code_aio_network__lt_module_gt__StreamWriter_get_extra_info": 381828,
-  "fun_data_aio_network__lt_module_gt__StreamWriter___repr__": 381856,
-  "const_obj_aio_network__lt_module_gt__StreamWriter___repr___0": 381892,
-  "const_table_data_aio_network__lt_module_gt__StreamWriter___repr__": 381908,
-  "raw_code_aio_network__lt_module_gt__StreamWriter___repr__": 381916,
-  "fun_data_aio_network__lt_module_gt__StreamWriter": 381936,
-  "const_table_data_aio_network__lt_module_gt__StreamWriter": 382016,
-  "raw_code_aio_network__lt_module_gt__StreamWriter": 382044,
-  "fun_data_aio_network__lt_module_gt__open_connection": 382064,
-  "const_obj_aio_network__lt_module_gt__open_connection_0": 382384,
-  "const_obj_aio_network__lt_module_gt__open_connection_1": 382432,
-  "const_obj_aio_network__lt_module_gt__open_connection_2": 382484,
-  "const_obj_aio_network__lt_module_gt__open_connection_3": 382540,
-  "const_table_data_aio_network__lt_module_gt__open_connection": 382560,
-  "raw_code_aio_network__lt_module_gt__open_connection": 382588,
-  "fun_data_aio_network__lt_module_gt__start_server": 382608,
-  "const_obj_aio_network__lt_module_gt__start_server_0": 382928,
-  "const_obj_aio_network__lt_module_gt__start_server_1": 382972,
-  "const_obj_aio_network__lt_module_gt__start_server_2": 383016,
-  "const_obj_aio_network__lt_module_gt__start_server_3": 383064,
-  "const_table_data_aio_network__lt_module_gt__start_server": 383088,
-  "raw_code_aio_network__lt_module_gt__start_server": 383120,
-  "fun_data_aio_network__lt_module_gt_": 383152,
-  "const_table_data_aio_network__lt_module_gt_": 383248,
-  "raw_code_aio_network__lt_module_gt_": 383264,
-  "fun_data_imp__lt_module_gt__new_module": 383296,
-  "const_table_data_imp__lt_module_gt__new_module": 383316,
-  "raw_code_imp__lt_module_gt__new_module": 383320,
-  "fun_data_imp__lt_module_gt__importer": 383344,
-  "const_obj_imp__lt_module_gt__importer_0": 383944,
-  "const_obj_imp__lt_module_gt__importer_1": 384004,
-  "const_obj_imp__lt_module_gt__importer_2": 384040,
-  "const_obj_imp__lt_module_gt__importer_3": 384108,
-  "const_table_data_imp__lt_module_gt__importer": 384128,
-  "raw_code_imp__lt_module_gt__importer": 384148,
-  "fun_data_imp__lt_module_gt__restore": 384176,
-  "const_obj_imp__lt_module_gt__restore_0": 384252,
-  "const_table_data_imp__lt_module_gt__restore": 384268,
-  "raw_code_imp__lt_module_gt__restore": 384272,
-  "fun_data_imp__lt_module_gt_": 384304,
-  "const_obj_imp__lt_module_gt__0": 384436,
-  "const_table_data_imp__lt_module_gt_": 384464,
-  "raw_code_imp__lt_module_gt_": 384480,
-  "fun_data___future____lt_module_gt_": 384512,
-  "raw_code___future____lt_module_gt_": 384528,
-  "fun_data_uwebsockets__lt_module_gt__urlparse": 384560,
-  "const_table_data_uwebsockets__lt_module_gt__urlparse": 384624,
-  "raw_code_uwebsockets__lt_module_gt__urlparse": 384628,
-  "fun_data_uwebsockets__lt_module_gt__Websocket___init__": 384656,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket___init__": 384688,
-  "raw_code_uwebsockets__lt_module_gt__Websocket___init__": 384700,
-  "fun_data_uwebsockets__lt_module_gt__Websocket___enter__": 384720,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket___enter__": 384732,
-  "raw_code_uwebsockets__lt_module_gt__Websocket___enter__": 384736,
-  "fun_data_uwebsockets__lt_module_gt__Websocket___exit__": 384768,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket___exit__": 384800,
-  "raw_code_uwebsockets__lt_module_gt__Websocket___exit__": 384816,
-  "fun_data_uwebsockets__lt_module_gt__Websocket_settimeout": 384848,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket_settimeout": 384880,
-  "raw_code_uwebsockets__lt_module_gt__Websocket_settimeout": 384888,
-  "fun_data_uwebsockets__lt_module_gt__Websocket_read_frame__lt_genexpr_gt_": 384912,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket_read_frame__lt_genexpr_gt_": 384948,
-  "raw_code_uwebsockets__lt_module_gt__Websocket_read_frame__lt_genexpr_gt_": 384956,
-  "fun_data_uwebsockets__lt_module_gt__Websocket_read_frame": 384976,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket_read_frame": 385240,
-  "raw_code_uwebsockets__lt_module_gt__Websocket_read_frame": 385252,
-  "fun_data_uwebsockets__lt_module_gt__Websocket_write_frame__lt_genexpr_gt_": 385280,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket_write_frame__lt_genexpr_gt_": 385316,
-  "raw_code_uwebsockets__lt_module_gt__Websocket_write_frame__lt_genexpr_gt_": 385324,
-  "fun_data_uwebsockets__lt_module_gt__Websocket_write_frame": 385344,
-  "const_obj_uwebsockets__lt_module_gt__Websocket_write_frame_0": 385640,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket_write_frame": 385664,
-  "raw_code_uwebsockets__lt_module_gt__Websocket_write_frame": 385684,
-  "fun_data_uwebsockets__lt_module_gt__Websocket_recv": 385712,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket_recv": 385936,
-  "raw_code_uwebsockets__lt_module_gt__Websocket_recv": 385940,
-  "fun_data_uwebsockets__lt_module_gt__Websocket_send": 385968,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket_send": 386064,
-  "raw_code_uwebsockets__lt_module_gt__Websocket_send": 386072,
-  "fun_data_uwebsockets__lt_module_gt__Websocket_close": 386096,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket_close": 386164,
-  "raw_code_uwebsockets__lt_module_gt__Websocket_close": 386176,
-  "fun_data_uwebsockets__lt_module_gt__Websocket__close": 386208,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket__close": 386240,
-  "raw_code_uwebsockets__lt_module_gt__Websocket__close": 386244,
-  "fun_data_uwebsockets__lt_module_gt__Websocket": 386272,
-  "const_obj_uwebsockets__lt_module_gt__Websocket_0": 386384,
-  "const_table_data_uwebsockets__lt_module_gt__Websocket": 386400,
-  "raw_code_uwebsockets__lt_module_gt__Websocket": 386444,
-  "fun_data_uwebsockets__lt_module_gt__client_connect_send_header": 386464,
-  "const_table_data_uwebsockets__lt_module_gt__client_connect_send_header": 386496,
-  "raw_code_uwebsockets__lt_module_gt__client_connect_send_header": 386504,
-  "fun_data_uwebsockets__lt_module_gt__client_connect__lt_genexpr_gt_": 386528,
-  "const_table_data_uwebsockets__lt_module_gt__client_connect__lt_genexpr_gt_": 386564,
-  "raw_code_uwebsockets__lt_module_gt__client_connect__lt_genexpr_gt_": 386568,
-  "fun_data_uwebsockets__lt_module_gt__client_connect": 386592,
-  "const_obj_uwebsockets__lt_module_gt__client_connect_0": 386868,
-  "const_obj_uwebsockets__lt_module_gt__client_connect_1": 386896,
-  "const_obj_uwebsockets__lt_module_gt__client_connect_2": 386932,
-  "const_obj_uwebsockets__lt_module_gt__client_connect_3": 386968,
-  "const_obj_uwebsockets__lt_module_gt__client_connect_4": 387008,
-  "const_obj_uwebsockets__lt_module_gt__client_connect_5": 387052,
-  "const_obj_uwebsockets__lt_module_gt__client_connect_6": 387096,
-  "const_obj_uwebsockets__lt_module_gt__client_connect_7": 387112,
-  "const_obj_uwebsockets__lt_module_gt__client_connect_8": 387164,
-  "const_table_data_uwebsockets__lt_module_gt__client_connect": 387184,
-  "raw_code_uwebsockets__lt_module_gt__client_connect": 387236,
-  "fun_data_uwebsockets__lt_module_gt__client": 387264,
-  "const_table_data_uwebsockets__lt_module_gt__client": 387300,
-  "raw_code_uwebsockets__lt_module_gt__client": 387304,
-  "fun_data_uwebsockets__lt_module_gt_": 387328,
-  "const_obj_uwebsockets__lt_module_gt__0": 387628,
-  "const_table_data_uwebsockets__lt_module_gt_": 387648,
-  "raw_code_uwebsockets__lt_module_gt_": 387664,
-  "fun_data_imp_pivot__lt_module_gt_": 387696,
-  "raw_code_imp_pivot__lt_module_gt_": 387776,
-  "fun_data_pystone__lt_module_gt__Record___init__": 387808,
-  "const_table_data_pystone__lt_module_gt__Record___init__": 387856,
-  "raw_code_pystone__lt_module_gt__Record___init__": 387880,
-  "fun_data_pystone__lt_module_gt__Record_copy": 387904,
-  "const_table_data_pystone__lt_module_gt__Record_copy": 387948,
-  "raw_code_pystone__lt_module_gt__Record_copy": 387952,
-  "fun_data_pystone__lt_module_gt__Record": 387984,
-  "const_table_data_pystone__lt_module_gt__Record": 388028,
-  "raw_code_pystone__lt_module_gt__Record": 388036,
-  "fun_data_pystone__lt_module_gt__main": 388064,
-  "const_obj_pystone__lt_module_gt__main_0": 388156,
-  "const_obj_pystone__lt_module_gt__main_1": 388220,
-  "const_table_data_pystone__lt_module_gt__main": 388236,
-  "raw_code_pystone__lt_module_gt__main": 388248,
-  "fun_data_pystone__lt_module_gt__pystones": 388272,
-  "const_table_data_pystone__lt_module_gt__pystones": 388292,
-  "raw_code_pystone__lt_module_gt__pystones": 388296,
-  "fun_data_pystone__lt_module_gt___lt_listcomp_gt_": 388320,
-  "const_table_data_pystone__lt_module_gt___lt_listcomp_gt_": 388352,
-  "raw_code_pystone__lt_module_gt___lt_listcomp_gt_": 388356,
-  "fun_data_pystone__lt_module_gt__Proc0": 388384,
-  "const_obj_pystone__lt_module_gt__Proc0_0": 388880,
-  "const_obj_pystone__lt_module_gt__Proc0_1": 388928,
-  "const_obj_pystone__lt_module_gt__Proc0_2": 388976,
-  "const_obj_pystone__lt_module_gt__Proc0_3": 388992,
-  "const_obj_pystone__lt_module_gt__Proc0_4": 389008,
-  "const_obj_pystone__lt_module_gt__Proc0_5": 389036,
-  "const_table_data_pystone__lt_module_gt__Proc0": 389056,
-  "raw_code_pystone__lt_module_gt__Proc0": 389084,
-  "fun_data_pystone__lt_module_gt__Proc1": 389104,
-  "const_table_data_pystone__lt_module_gt__Proc1": 389268,
-  "raw_code_pystone__lt_module_gt__Proc1": 389272,
-  "fun_data_pystone__lt_module_gt__Proc2": 389296,
-  "const_table_data_pystone__lt_module_gt__Proc2": 389364,
-  "raw_code_pystone__lt_module_gt__Proc2": 389368,
-  "fun_data_pystone__lt_module_gt__Proc3": 389392,
-  "const_table_data_pystone__lt_module_gt__Proc3": 389456,
-  "raw_code_pystone__lt_module_gt__Proc3": 389460,
-  "fun_data_pystone__lt_module_gt__Proc4": 389488,
-  "raw_code_pystone__lt_module_gt__Proc4": 389528,
-  "fun_data_pystone__lt_module_gt__Proc5": 389552,
-  "raw_code_pystone__lt_module_gt__Proc5": 389580,
-  "fun_data_pystone__lt_module_gt__Proc6": 389600,
-  "const_table_data_pystone__lt_module_gt__Proc6": 389744,
-  "raw_code_pystone__lt_module_gt__Proc6": 389748,
-  "fun_data_pystone__lt_module_gt__Proc7": 389776,
-  "const_table_data_pystone__lt_module_gt__Proc7": 389800,
-  "raw_code_pystone__lt_module_gt__Proc7": 389808,
-  "fun_data_pystone__lt_module_gt__Proc8": 389840,
-  "const_table_data_pystone__lt_module_gt__Proc8": 389952,
-  "raw_code_pystone__lt_module_gt__Proc8": 389968,
-  "fun_data_pystone__lt_module_gt__Func1": 390000,
-  "const_table_data_pystone__lt_module_gt__Func1": 390036,
-  "raw_code_pystone__lt_module_gt__Func1": 390044,
-  "fun_data_pystone__lt_module_gt__Func2": 390064,
-  "const_table_data_pystone__lt_module_gt__Func2": 390180,
-  "raw_code_pystone__lt_module_gt__Func2": 390188,
-  "fun_data_pystone__lt_module_gt__Func3": 390208,
-  "const_table_data_pystone__lt_module_gt__Func3": 390240,
-  "raw_code_pystone__lt_module_gt__Func3": 390244,
-  "fun_data_pystone__lt_module_gt__error": 390272,
-  "const_obj_pystone__lt_module_gt__error_0": 390388,
-  "const_table_data_pystone__lt_module_gt__error": 390404,
-  "raw_code_pystone__lt_module_gt__error": 390412,
-  "fun_data_pystone__lt_module_gt_": 390432,
-  "const_obj_pystone__lt_module_gt__0": 390996,
-  "const_obj_pystone__lt_module_gt__1": 391036,
-  "const_table_data_pystone__lt_module_gt_": 391056,
-  "raw_code_pystone__lt_module_gt_": 391132,
-  "fun_data_types__lt_module_gt__ModuleType": 391152,
-  "const_obj_types__lt_module_gt__ModuleType_0": 391292,
-  "const_obj_types__lt_module_gt__ModuleType_1": 391332,
-  "const_obj_types__lt_module_gt__ModuleType_2": 391348,
-  "const_table_data_types__lt_module_gt__ModuleType": 391376,
-  "raw_code_types__lt_module_gt__ModuleType": 391392,
-  "fun_data_types__lt_module_gt_": 391424,
-  "const_table_data_types__lt_module_gt_": 391460,
-  "raw_code_types__lt_module_gt_": 391464,
-  "fun_data_m2__lt_module_gt_": 391488,
-  "raw_code_m2__lt_module_gt_": 391508,
-  "fun_data_crt_ld__lt_module_gt__base_setup": 391536,
-  "const_obj_crt_ld__lt_module_gt__base_setup_0": 391748,
-  "const_table_data_crt_ld__lt_module_gt__base_setup": 391776,
-  "raw_code_crt_ld__lt_module_gt__base_setup": 391796,
-  "fun_data_crt_ld__lt_module_gt__stamp_child": 391824,
-  "const_table_data_crt_ld__lt_module_gt__stamp_child": 391872,
-  "raw_code_crt_ld__lt_module_gt__stamp_child": 391884,
-  "fun_data_crt_ld__lt_module_gt__Node_set_tag": 391904,
-  "const_table_data_crt_ld__lt_module_gt__Node_set_tag": 391956,
-  "raw_code_crt_ld__lt_module_gt__Node_set_tag": 391968,
-  "fun_data_crt_ld__lt_module_gt__Node_setup": 392000,
-  "const_table_data_crt_ld__lt_module_gt__Node_setup": 392056,
-  "raw_code_crt_ld__lt_module_gt__Node_setup": 392064,
-  "fun_data_crt_ld__lt_module_gt_": 392096,
-  "const_table_data_crt_ld__lt_module_gt_": 392144,
-  "raw_code_crt_ld__lt_module_gt_": 392160,
-  "fun_data_readline__lt_module_gt_": 392180,
-  "raw_code_readline__lt_module_gt_": 392192,
-  "fun_data_picoweb___init____lt_module_gt__resource_stream": 392224,
-  "const_table_data_picoweb___init____lt_module_gt__resource_stream": 392404,
-  "raw_code_picoweb___init____lt_module_gt__resource_stream": 392412,
-  "fun_data_picoweb___init____lt_module_gt__get_mime_type": 392432,
-  "const_table_data_picoweb___init____lt_module_gt__get_mime_type": 392512,
-  "raw_code_picoweb___init____lt_module_gt__get_mime_type": 392516,
-  "fun_data_picoweb___init____lt_module_gt__sendstream": 392544,
-  "const_table_data_picoweb___init____lt_module_gt__sendstream": 392604,
-  "raw_code_picoweb___init____lt_module_gt__sendstream": 392612,
-  "fun_data_picoweb___init____lt_module_gt__jsonify": 392640,
-  "const_obj_picoweb___init____lt_module_gt__jsonify_0": 392708,
-  "const_table_data_picoweb___init____lt_module_gt__jsonify": 392724,
-  "raw_code_picoweb___init____lt_module_gt__jsonify": 392736,
-  "fun_data_picoweb___init____lt_module_gt__start_response": 392768,
-  "const_obj_picoweb___init____lt_module_gt__start_response_0": 393004,
-  "const_obj_picoweb___init____lt_module_gt__start_response_1": 393036,
-  "const_table_data_picoweb___init____lt_module_gt__start_response": 393056,
-  "raw_code_picoweb___init____lt_module_gt__start_response": 393080,
-  "fun_data_picoweb___init____lt_module_gt__http_error": 393104,
-  "const_table_data_picoweb___init____lt_module_gt__http_error": 393144,
-  "raw_code_picoweb___init____lt_module_gt__http_error": 393152,
-  "fun_data_picoweb___init____lt_module_gt__HTTPRequest___init__": 393172,
-  "const_table_data_picoweb___init____lt_module_gt__HTTPRequest___init__": 393184,
-  "raw_code_picoweb___init____lt_module_gt__HTTPRequest___init__": 393188,
-  "fun_data_picoweb___init____lt_module_gt__HTTPRequest_read_form_data": 393216,
-  "const_obj_picoweb___init____lt_module_gt__HTTPRequest_read_form_data_0": 393296,
-  "const_table_data_picoweb___init____lt_module_gt__HTTPRequest_read_form_data": 393312,
-  "raw_code_picoweb___init____lt_module_gt__HTTPRequest_read_form_data": 393320,
-  "fun_data_picoweb___init____lt_module_gt__HTTPRequest_parse_qs": 393344,
-  "const_table_data_picoweb___init____lt_module_gt__HTTPRequest_parse_qs": 393376,
-  "raw_code_picoweb___init____lt_module_gt__HTTPRequest_parse_qs": 393380,
-  "fun_data_picoweb___init____lt_module_gt__HTTPRequest": 393408,
-  "const_table_data_picoweb___init____lt_module_gt__HTTPRequest": 393452,
-  "raw_code_picoweb___init____lt_module_gt__HTTPRequest": 393464,
-  "fun_data_picoweb___init____lt_module_gt__WebApp___init__": 393488,
-  "const_obj_picoweb___init____lt_module_gt__WebApp___init___0": 393644,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp___init__": 393664,
-  "raw_code_picoweb___init____lt_module_gt__WebApp___init__": 393684,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_parse_headers": 393712,
-  "const_obj_picoweb___init____lt_module_gt__WebApp_parse_headers_0": 393784,
-  "const_obj_picoweb___init____lt_module_gt__WebApp_parse_headers_1": 393804,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_parse_headers": 393824,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_parse_headers": 393840,
-  "fun_data_picoweb___init____lt_module_gt__WebApp__handle": 393872,
-  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_0": 394676,
-  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_1": 394692,
-  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_2": 394736,
-  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_3": 394772,
-  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_4": 394788,
-  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_5": 394820,
-  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_6": 394872,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp__handle": 394896,
-  "raw_code_picoweb___init____lt_module_gt__WebApp__handle": 394936,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_mount": 394960,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_mount": 394992,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_mount": 395004,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_route__route": 395024,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_route__route": 395056,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_route__route": 395072,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_route": 395104,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_route": 395132,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_route": 395144,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_add_url_rule": 395168,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_add_url_rule": 395200,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_add_url_rule": 395212,
-  "fun_data_picoweb___init____lt_module_gt__WebApp__load_template": 395232,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp__load_template": 395296,
-  "raw_code_picoweb___init____lt_module_gt__WebApp__load_template": 395304,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_render_template": 395328,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_render_template": 395376,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_render_template": 395392,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_render_str": 395424,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_render_str": 395460,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_render_str": 395472,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_sendfile": 395504,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_sendfile": 395664,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_sendfile": 395684,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_handle_static": 395712,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_handle_static": 395788,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_handle_static": 395800,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_init": 395824,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_init": 395844,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_init": 395848,
-  "fun_data_picoweb___init____lt_module_gt__WebApp_run": 395872,
-  "const_obj_picoweb___init____lt_module_gt__WebApp_run_0": 396104,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp_run": 396128,
-  "raw_code_picoweb___init____lt_module_gt__WebApp_run": 396156,
-  "fun_data_picoweb___init____lt_module_gt__WebApp": 396176,
-  "const_table_data_picoweb___init____lt_module_gt__WebApp": 396336,
-  "raw_code_picoweb___init____lt_module_gt__WebApp": 396388,
-  "fun_data_picoweb___init____lt_module_gt_": 396416,
-  "const_table_data_picoweb___init____lt_module_gt_": 396608,
-  "raw_code_picoweb___init____lt_module_gt_": 396640,
-  "fun_data_picoweb_utils__lt_module_gt__unquote_plus__lt_listcomp_gt_": 396672,
-  "const_table_data_picoweb_utils__lt_module_gt__unquote_plus__lt_listcomp_gt_": 396724,
-  "raw_code_picoweb_utils__lt_module_gt__unquote_plus__lt_listcomp_gt_": 396728,
-  "fun_data_picoweb_utils__lt_module_gt__unquote_plus": 396752,
-  "const_table_data_picoweb_utils__lt_module_gt__unquote_plus": 396812,
-  "raw_code_picoweb_utils__lt_module_gt__unquote_plus": 396820,
-  "fun_data_picoweb_utils__lt_module_gt__parse_qs__lt_listcomp_gt_": 396848,
-  "const_table_data_picoweb_utils__lt_module_gt__parse_qs__lt_listcomp_gt_": 396880,
-  "raw_code_picoweb_utils__lt_module_gt__parse_qs__lt_listcomp_gt_": 396884,
-  "fun_data_picoweb_utils__lt_module_gt__parse_qs": 396912,
-  "const_table_data_picoweb_utils__lt_module_gt__parse_qs": 397060,
-  "raw_code_picoweb_utils__lt_module_gt__parse_qs": 397068,
-  "fun_data_picoweb_utils__lt_module_gt_": 397088,
-  "const_table_data_picoweb_utils__lt_module_gt_": 397112,
-  "raw_code_picoweb_utils__lt_module_gt_": 397120,
-  "fun_data_crt__lt_module_gt___lt_lambda_gt_": 397152,
-  "const_table_data_crt__lt_module_gt___lt_lambda_gt_": 397172,
-  "raw_code_crt__lt_module_gt___lt_lambda_gt_": 397180,
-  "fun_data_crt__lt_module_gt__base_setup": 397200,
-  "const_table_data_crt__lt_module_gt__base_setup": 397216,
-  "raw_code_crt__lt_module_gt__base_setup": 397220,
-  "fun_data_crt__lt_module_gt__base": 397248,
-  "const_table_data_crt__lt_module_gt__base": 397296,
-  "raw_code_crt__lt_module_gt__base": 397300,
-  "fun_data_crt__lt_module_gt__NodePath": 397328,
-  "raw_code_crt__lt_module_gt__NodePath": 397360,
-  "fun_data_crt__lt_module_gt__Node_setup": 397380,
-  "const_table_data_crt__lt_module_gt__Node_setup": 397396,
-  "raw_code_crt__lt_module_gt__Node_setup": 397400,
-  "fun_data_crt__lt_module_gt__Node_set_tag": 397420,
-  "const_table_data_crt__lt_module_gt__Node_set_tag": 397436,
-  "raw_code_crt__lt_module_gt__Node_set_tag": 397440,
-  "fun_data_crt__lt_module_gt__Node": 397472,
-  "const_table_data_crt__lt_module_gt__Node": 397520,
-  "raw_code_crt__lt_module_gt__Node": 397528,
-  "fun_data_crt__lt_module_gt__root": 397552,
-  "raw_code_crt__lt_module_gt__root": 397580,
-  "fun_data_crt__lt_module_gt__blit": 397600,
-  "raw_code_crt__lt_module_gt__blit": 397780,
-  "fun_data_crt__lt_module_gt__taskMgr": 397808,
-  "const_table_data_crt__lt_module_gt__taskMgr": 397848,
-  "raw_code_crt__lt_module_gt__taskMgr": 397852,
-  "fun_data_crt__lt_module_gt__render___enter__": 397872,
-  "const_table_data_crt__lt_module_gt__render___enter__": 397896,
-  "raw_code_crt__lt_module_gt__render___enter__": 397900,
-  "fun_data_crt__lt_module_gt__render___exit__": 397920,
-  "const_table_data_crt__lt_module_gt__render___exit__": 397952,
-  "raw_code_crt__lt_module_gt__render___exit__": 397956,
-  "fun_data_crt__lt_module_gt__render_draw_child": 397984,
-  "const_table_data_crt__lt_module_gt__render_draw_child": 398112,
-  "raw_code_crt__lt_module_gt__render_draw_child": 398128,
-  "fun_data_crt__lt_module_gt__render": 398160,
-  "const_table_data_crt__lt_module_gt__render": 398252,
-  "raw_code_crt__lt_module_gt__render": 398264,
-  "fun_data_crt__lt_module_gt__set_fps": 398288,
-  "const_obj_crt__lt_module_gt__set_fps_0": 398368,
-  "const_table_data_crt__lt_module_gt__set_fps": 398384,
-  "raw_code_crt__lt_module_gt__set_fps": 398392,
-  "fun_data_crt__lt_module_gt__npos": 398416,
-  "const_table_data_crt__lt_module_gt__npos": 398452,
-  "raw_code_crt__lt_module_gt__npos": 398456,
-  "fun_data_crt__lt_module_gt__get_x": 398480,
-  "const_table_data_crt__lt_module_gt__get_x": 398500,
-  "raw_code_crt__lt_module_gt__get_x": 398504,
-  "fun_data_crt__lt_module_gt__get_z": 398528,
-  "const_table_data_crt__lt_module_gt__get_z": 398548,
-  "raw_code_crt__lt_module_gt__get_z": 398552,
-  "fun_data_crt__lt_module_gt__set_any": 398576,
-  "const_table_data_crt__lt_module_gt__set_any": 398656,
-  "raw_code_crt__lt_module_gt__set_any": 398668,
-  "fun_data_crt__lt_module_gt__set_x": 398688,
-  "const_table_data_crt__lt_module_gt__set_x": 398712,
-  "raw_code_crt__lt_module_gt__set_x": 398720,
-  "fun_data_crt__lt_module_gt__set_z": 398752,
-  "const_table_data_crt__lt_module_gt__set_z": 398776,
-  "raw_code_crt__lt_module_gt__set_z": 398784,
-  "fun_data_crt__lt_module_gt__set_text": 398816,
-  "const_table_data_crt__lt_module_gt__set_text": 398880,
-  "raw_code_crt__lt_module_gt__set_text": 398888,
-  "fun_data_crt__lt_module_gt_": 398912,
-  "const_obj_crt__lt_module_gt__0": 399376,
-  "const_table_data_crt__lt_module_gt_": 399392,
-  "raw_code_crt__lt_module_gt_": 399460,
-  "fun_data_pystone2__lt_module_gt__Record___init__": 399488,
-  "const_table_data_pystone2__lt_module_gt__Record___init__": 399536,
-  "raw_code_pystone2__lt_module_gt__Record___init__": 399560,
-  "fun_data_pystone2__lt_module_gt__Record_copy": 399584,
-  "const_table_data_pystone2__lt_module_gt__Record_copy": 399628,
-  "raw_code_pystone2__lt_module_gt__Record_copy": 399632,
-  "fun_data_pystone2__lt_module_gt__Record": 399664,
-  "const_table_data_pystone2__lt_module_gt__Record": 399708,
-  "raw_code_pystone2__lt_module_gt__Record": 399716,
-  "fun_data_pystone2__lt_module_gt__main": 399744,
-  "const_obj_pystone2__lt_module_gt__main_0": 399800,
-  "const_obj_pystone2__lt_module_gt__main_1": 399816,
-  "const_table_data_pystone2__lt_module_gt__main": 399832,
-  "raw_code_pystone2__lt_module_gt__main": 399844,
-  "fun_data_pystone2__lt_module_gt__pystones": 399872,
-  "const_table_data_pystone2__lt_module_gt__pystones": 399892,
-  "raw_code_pystone2__lt_module_gt__pystones": 399896,
-  "fun_data_pystone2__lt_module_gt___lt_listcomp_gt_": 399920,
-  "const_table_data_pystone2__lt_module_gt___lt_listcomp_gt_": 399952,
-  "raw_code_pystone2__lt_module_gt___lt_listcomp_gt_": 399956,
-  "fun_data_pystone2__lt_module_gt__Proc0": 399984,
-  "const_obj_pystone2__lt_module_gt__Proc0_0": 400396,
-  "const_obj_pystone2__lt_module_gt__Proc0_1": 400412,
-  "const_obj_pystone2__lt_module_gt__Proc0_2": 400428,
-  "const_obj_pystone2__lt_module_gt__Proc0_3": 400448,
-  "const_obj_pystone2__lt_module_gt__Proc0_4": 400464,
-  "const_table_data_pystone2__lt_module_gt__Proc0": 400480,
-  "raw_code_pystone2__lt_module_gt__Proc0": 400504,
-  "fun_data_pystone2__lt_module_gt__Proc1": 400528,
-  "const_table_data_pystone2__lt_module_gt__Proc1": 400692,
-  "raw_code_pystone2__lt_module_gt__Proc1": 400696,
-  "fun_data_pystone2__lt_module_gt__Proc2": 400720,
-  "const_table_data_pystone2__lt_module_gt__Proc2": 400788,
-  "raw_code_pystone2__lt_module_gt__Proc2": 400792,
-  "fun_data_pystone2__lt_module_gt__Proc3": 400816,
-  "const_table_data_pystone2__lt_module_gt__Proc3": 400880,
-  "raw_code_pystone2__lt_module_gt__Proc3": 400884,
-  "fun_data_pystone2__lt_module_gt__Proc4": 400912,
-  "raw_code_pystone2__lt_module_gt__Proc4": 400952,
-  "fun_data_pystone2__lt_module_gt__Proc5": 400976,
-  "raw_code_pystone2__lt_module_gt__Proc5": 401004,
-  "fun_data_pystone2__lt_module_gt__Proc6": 401024,
-  "const_table_data_pystone2__lt_module_gt__Proc6": 401168,
-  "raw_code_pystone2__lt_module_gt__Proc6": 401172,
-  "fun_data_pystone2__lt_module_gt__Proc7": 401200,
-  "const_table_data_pystone2__lt_module_gt__Proc7": 401224,
-  "raw_code_pystone2__lt_module_gt__Proc7": 401232,
-  "fun_data_pystone2__lt_module_gt__Proc8": 401264,
-  "const_table_data_pystone2__lt_module_gt__Proc8": 401376,
-  "raw_code_pystone2__lt_module_gt__Proc8": 401392,
-  "fun_data_pystone2__lt_module_gt__Func1": 401424,
-  "const_table_data_pystone2__lt_module_gt__Func1": 401460,
-  "raw_code_pystone2__lt_module_gt__Func1": 401468,
-  "fun_data_pystone2__lt_module_gt__Func2": 401488,
-  "const_table_data_pystone2__lt_module_gt__Func2": 401604,
-  "raw_code_pystone2__lt_module_gt__Func2": 401612,
-  "fun_data_pystone2__lt_module_gt__Func3": 401632,
-  "const_table_data_pystone2__lt_module_gt__Func3": 401664,
-  "raw_code_pystone2__lt_module_gt__Func3": 401668,
-  "fun_data_pystone2__lt_module_gt__error": 401696,
-  "const_obj_pystone2__lt_module_gt__error_0": 401784,
-  "const_table_data_pystone2__lt_module_gt__error": 401800,
-  "raw_code_pystone2__lt_module_gt__error": 401808,
-  "fun_data_pystone2__lt_module_gt_": 401840,
-  "const_obj_pystone2__lt_module_gt__0": 402348,
-  "const_obj_pystone2__lt_module_gt__1": 402364,
-  "const_table_data_pystone2__lt_module_gt_": 402384,
-  "raw_code_pystone2__lt_module_gt_": 402460,
-  "fun_data_imp_empty_pivot_module__lt_module_gt_": 402480,
-  "raw_code_imp_empty_pivot_module__lt_module_gt_": 402500,
-  "fun_data_pystone1__lt_module_gt__Record___init__": 402528,
-  "const_table_data_pystone1__lt_module_gt__Record___init__": 402576,
-  "raw_code_pystone1__lt_module_gt__Record___init__": 402600,
-  "fun_data_pystone1__lt_module_gt__Record_copy": 402624,
-  "const_table_data_pystone1__lt_module_gt__Record_copy": 402668,
-  "raw_code_pystone1__lt_module_gt__Record_copy": 402672,
-  "fun_data_pystone1__lt_module_gt__Record": 402704,
-  "const_table_data_pystone1__lt_module_gt__Record": 402748,
-  "raw_code_pystone1__lt_module_gt__Record": 402756,
-  "fun_data_pystone1__lt_module_gt__main": 402784,
-  "const_table_data_pystone1__lt_module_gt__main": 402820,
-  "raw_code_pystone1__lt_module_gt__main": 402824,
-  "fun_data_pystone1__lt_module_gt__pystones": 402848,
-  "const_table_data_pystone1__lt_module_gt__pystones": 402868,
-  "raw_code_pystone1__lt_module_gt__pystones": 402872,
-  "fun_data_pystone1__lt_module_gt___lt_listcomp_gt_": 402896,
-  "const_table_data_pystone1__lt_module_gt___lt_listcomp_gt_": 402928,
-  "raw_code_pystone1__lt_module_gt___lt_listcomp_gt_": 402932,
-  "fun_data_pystone1__lt_module_gt__Proc0": 402960,
-  "const_obj_pystone1__lt_module_gt__Proc0_0": 403372,
-  "const_obj_pystone1__lt_module_gt__Proc0_1": 403388,
-  "const_obj_pystone1__lt_module_gt__Proc0_2": 403404,
-  "const_obj_pystone1__lt_module_gt__Proc0_3": 403424,
-  "const_obj_pystone1__lt_module_gt__Proc0_4": 403440,
-  "const_table_data_pystone1__lt_module_gt__Proc0": 403456,
-  "raw_code_pystone1__lt_module_gt__Proc0": 403480,
-  "fun_data_pystone1__lt_module_gt__Proc1": 403504,
-  "const_table_data_pystone1__lt_module_gt__Proc1": 403668,
-  "raw_code_pystone1__lt_module_gt__Proc1": 403672,
-  "fun_data_pystone1__lt_module_gt__Proc2": 403696,
-  "const_table_data_pystone1__lt_module_gt__Proc2": 403764,
-  "raw_code_pystone1__lt_module_gt__Proc2": 403768,
-  "fun_data_pystone1__lt_module_gt__Proc3": 403792,
-  "const_table_data_pystone1__lt_module_gt__Proc3": 403856,
-  "raw_code_pystone1__lt_module_gt__Proc3": 403860,
-  "fun_data_pystone1__lt_module_gt__Proc4": 403888,
-  "raw_code_pystone1__lt_module_gt__Proc4": 403928,
-  "fun_data_pystone1__lt_module_gt__Proc5": 403952,
-  "raw_code_pystone1__lt_module_gt__Proc5": 403980,
-  "fun_data_pystone1__lt_module_gt__Proc6": 404000,
-  "const_table_data_pystone1__lt_module_gt__Proc6": 404144,
-  "raw_code_pystone1__lt_module_gt__Proc6": 404148,
-  "fun_data_pystone1__lt_module_gt__Proc7": 404176,
-  "const_table_data_pystone1__lt_module_gt__Proc7": 404200,
-  "raw_code_pystone1__lt_module_gt__Proc7": 404208,
-  "fun_data_pystone1__lt_module_gt__Proc8": 404240,
-  "const_table_data_pystone1__lt_module_gt__Proc8": 404352,
-  "raw_code_pystone1__lt_module_gt__Proc8": 404368,
-  "fun_data_pystone1__lt_module_gt__Func1": 404400,
-  "const_table_data_pystone1__lt_module_gt__Func1": 404436,
-  "raw_code_pystone1__lt_module_gt__Func1": 404444,
-  "fun_data_pystone1__lt_module_gt__Func2": 404464,
-  "const_table_data_pystone1__lt_module_gt__Func2": 404580,
-  "raw_code_pystone1__lt_module_gt__Func2": 404588,
-  "fun_data_pystone1__lt_module_gt__Func3": 404608,
-  "const_table_data_pystone1__lt_module_gt__Func3": 404640,
-  "raw_code_pystone1__lt_module_gt__Func3": 404644,
-  "fun_data_pystone1__lt_module_gt__error": 404672,
-  "const_obj_pystone1__lt_module_gt__error_0": 404760,
-  "const_table_data_pystone1__lt_module_gt__error": 404776,
-  "raw_code_pystone1__lt_module_gt__error": 404784,
-  "fun_data_pystone1__lt_module_gt_": 404816,
-  "const_obj_pystone1__lt_module_gt__0": 405340,
-  "const_obj_pystone1__lt_module_gt__1": 405356,
-  "const_table_data_pystone1__lt_module_gt_": 405376,
-  "raw_code_pystone1__lt_module_gt_": 405452,
-  "fun_data_uart_input__lt_module_gt__state": 405472,
-  "raw_code_uart_input__lt_module_gt__state": 405496,
-  "fun_data_uart_input__lt_module_gt__ainput": 405520,
-  "const_obj_uart_input__lt_module_gt__ainput_0": 405908,
-  "const_table_data_uart_input__lt_module_gt__ainput": 405936,
-  "raw_code_uart_input__lt_module_gt__ainput": 405960,
-  "fun_data_uart_input__lt_module_gt_": 405984,
-  "const_table_data_uart_input__lt_module_gt_": 406076,
-  "raw_code_uart_input__lt_module_gt_": 406084,
-  "fun_data_uart___init____lt_module_gt__begin": 406112,
-  "raw_code_uart___init____lt_module_gt__begin": 406152,
-  "fun_data_uart___init____lt_module_gt__end": 406176,
-  "raw_code_uart___init____lt_module_gt__end": 406216,
-  "fun_data_uart___init____lt_module_gt__echo": 406240,
-  "const_table_data_uart___init____lt_module_gt__echo": 406292,
-  "raw_code_uart___init____lt_module_gt__echo": 406296,
-  "fun_data_uart___init____lt_module_gt__begin2": 406316,
-  "raw_code_uart___init____lt_module_gt__begin2": 406328,
-  "fun_data_uart___init____lt_module_gt__end2": 406348,
-  "raw_code_uart___init____lt_module_gt__end2": 406360,
-  "fun_data_uart___init____lt_module_gt__echo2": 406384,
-  "const_table_data_uart___init____lt_module_gt__echo2": 406420,
-  "raw_code_uart___init____lt_module_gt__echo2": 406424,
-  "fun_data_uart___init____lt_module_gt_": 406448,
-  "const_obj_uart___init____lt_module_gt__0": 406592,
-  "const_table_data_uart___init____lt_module_gt_": 406608,
-  "raw_code_uart___init____lt_module_gt_": 406636,
-  "fun_data_uart_output__lt_module_gt__NodePath__lt_lambda_gt_": 406656,
-  "const_table_data_uart_output__lt_module_gt__NodePath__lt_lambda_gt_": 406668,
-  "raw_code_uart_output__lt_module_gt__NodePath__lt_lambda_gt_": 406672,
-  "fun_data_uart_output__lt_module_gt__NodePath___init__": 406704,
-  "const_table_data_uart_output__lt_module_gt__NodePath___init__": 406880,
-  "raw_code_uart_output__lt_module_gt__NodePath___init__": 406896,
-  "fun_data_uart_output__lt_module_gt__NodePath": 406928,
-  "const_table_data_uart_output__lt_module_gt__NodePath": 406980,
-  "raw_code_uart_output__lt_module_gt__NodePath": 406988,
-  "fun_data_uart_output__lt_module_gt__npos": 407008,
-  "const_table_data_uart_output__lt_module_gt__npos": 407044,
-  "raw_code_uart_output__lt_module_gt__npos": 407048,
-  "fun_data_uart_output__lt_module_gt__get_x": 407072,
-  "const_table_data_uart_output__lt_module_gt__get_x": 407092,
-  "raw_code_uart_output__lt_module_gt__get_x": 407096,
-  "fun_data_uart_output__lt_module_gt__get_z": 407120,
-  "const_table_data_uart_output__lt_module_gt__get_z": 407140,
-  "raw_code_uart_output__lt_module_gt__get_z": 407144,
-  "fun_data_uart_output__lt_module_gt__set_any": 407168,
-  "const_table_data_uart_output__lt_module_gt__set_any": 407252,
-  "raw_code_uart_output__lt_module_gt__set_any": 407264,
-  "fun_data_uart_output__lt_module_gt__set_x": 407296,
-  "const_table_data_uart_output__lt_module_gt__set_x": 407320,
-  "raw_code_uart_output__lt_module_gt__set_x": 407328,
-  "fun_data_uart_output__lt_module_gt__set_z": 407360,
-  "const_table_data_uart_output__lt_module_gt__set_z": 407384,
-  "raw_code_uart_output__lt_module_gt__set_z": 407392,
-  "fun_data_uart_output__lt_module_gt__set_text": 407424,
-  "const_table_data_uart_output__lt_module_gt__set_text": 407492,
-  "raw_code_uart_output__lt_module_gt__set_text": 407500,
-  "fun_data_uart_output__lt_module_gt__Node___init__": 407520,
-  "const_table_data_uart_output__lt_module_gt__Node___init__": 407568,
-  "raw_code_uart_output__lt_module_gt__Node___init__": 407576,
-  "fun_data_uart_output__lt_module_gt__Node": 407600,
-  "const_table_data_uart_output__lt_module_gt__Node": 407636,
-  "raw_code_uart_output__lt_module_gt__Node": 407640,
-  "fun_data_uart_output__lt_module_gt__render___init__": 407664,
-  "const_table_data_uart_output__lt_module_gt__render___init__": 407708,
-  "raw_code_uart_output__lt_module_gt__render___init__": 407712,
-  "fun_data_uart_output__lt_module_gt__render___enter__": 407744,
-  "const_table_data_uart_output__lt_module_gt__render___enter__": 407768,
-  "raw_code_uart_output__lt_module_gt__render___enter__": 407772,
-  "fun_data_uart_output__lt_module_gt__render___exit__": 407792,
-  "const_table_data_uart_output__lt_module_gt__render___exit__": 407816,
-  "raw_code_uart_output__lt_module_gt__render___exit__": 407820,
-  "fun_data_uart_output__lt_module_gt__render_draw_child": 407840,
-  "const_table_data_uart_output__lt_module_gt__render_draw_child": 407936,
-  "raw_code_uart_output__lt_module_gt__render_draw_child": 407952,
-  "fun_data_uart_output__lt_module_gt__render___call__": 407984,
-  "const_table_data_uart_output__lt_module_gt__render___call__": 408144,
-  "raw_code_uart_output__lt_module_gt__render___call__": 408164,
-  "fun_data_uart_output__lt_module_gt__render": 408192,
-  "const_table_data_uart_output__lt_module_gt__render": 408304,
-  "raw_code_uart_output__lt_module_gt__render": 408324,
-  "fun_data_uart_output__lt_module_gt_": 408352,
-  "const_table_data_uart_output__lt_module_gt_": 408496,
-  "raw_code_uart_output__lt_module_gt_": 408536,
-  "fun_data_imp_app__lt_module_gt__print": 408560,
-  "raw_code_imp_app__lt_module_gt__print": 408684,
-  "fun_data_imp_app__lt_module_gt__reload": 408704,
-  "raw_code_imp_app__lt_module_gt__reload": 408912,
-  "fun_data_imp_app__lt_module_gt_": 408944,
-  "const_table_data_imp_app__lt_module_gt_": 409044,
-  "raw_code_imp_app__lt_module_gt_": 409052,
-  "fun_data_m1__lt_module_gt_": 409072,
-  "raw_code_m1__lt_module_gt_": 409100,
-  "fun_data_uasyncio_asyncify__lt_module_gt_": 409120,
-  "const_obj_uasyncio_asyncify__lt_module_gt__0": 409180,
-  "const_table_data_uasyncio_asyncify__lt_module_gt_": 409196,
-  "raw_code_uasyncio_asyncify__lt_module_gt_": 409200,
-  "fun_data_uasyncio___init____lt_module_gt___lt_lambda_gt_": 409220,
-  "raw_code_uasyncio___init____lt_module_gt___lt_lambda_gt_": 409236,
-  "fun_data_uasyncio___init____lt_module_gt__task": 409264,
-  "const_obj_uasyncio___init____lt_module_gt__task_0": 409364,
-  "const_table_data_uasyncio___init____lt_module_gt__task": 409380,
-  "raw_code_uasyncio___init____lt_module_gt__task": 409388,
-  "fun_data_uasyncio___init____lt_module_gt__start": 409408,
-  "const_obj_uasyncio___init____lt_module_gt__start_0": 409588,
-  "const_obj_uasyncio___init____lt_module_gt__start_1": 409676,
-  "const_table_data_uasyncio___init____lt_module_gt__start": 409692,
-  "raw_code_uasyncio___init____lt_module_gt__start": 409700,
-  "fun_data_uasyncio___init____lt_module_gt____auto__": 409728,
-  "const_obj_uasyncio___init____lt_module_gt____auto___0": 409864,
-  "const_table_data_uasyncio___init____lt_module_gt____auto__": 409880,
-  "raw_code_uasyncio___init____lt_module_gt____auto__": 409884,
-  "fun_data_uasyncio___init____lt_module_gt__select_fake_poll_register": 409904,
-  "const_table_data_uasyncio___init____lt_module_gt__select_fake_poll_register": 409932,
-  "raw_code_uasyncio___init____lt_module_gt__select_fake_poll_register": 409936,
-  "fun_data_uasyncio___init____lt_module_gt__select_fake_poll_unregister": 409968,
-  "const_table_data_uasyncio___init____lt_module_gt__select_fake_poll_unregister": 409996,
-  "raw_code_uasyncio___init____lt_module_gt__select_fake_poll_unregister": 410000,
-  "fun_data_uasyncio___init____lt_module_gt__select_fake_poll_ipoll": 410020,
-  "raw_code_uasyncio___init____lt_module_gt__select_fake_poll_ipoll": 410036,
-  "fun_data_uasyncio___init____lt_module_gt__select_fake_poll": 410064,
-  "const_table_data_uasyncio___init____lt_module_gt__select_fake_poll": 410108,
-  "raw_code_uasyncio___init____lt_module_gt__select_fake_poll": 410120,
-  "fun_data_uasyncio___init____lt_module_gt__select_poll": 410140,
-  "const_table_data_uasyncio___init____lt_module_gt__select_poll": 410156,
-  "raw_code_uasyncio___init____lt_module_gt__select_poll": 410160,
-  "fun_data_uasyncio___init____lt_module_gt__select": 410192,
-  "const_table_data_uasyncio___init____lt_module_gt__select": 410252,
-  "raw_code_uasyncio___init____lt_module_gt__select": 410260,
-  "fun_data_uasyncio___init____lt_module_gt__convert": 410288,
-  "const_obj_uasyncio___init____lt_module_gt__convert_0": 410476,
-  "const_table_data_uasyncio___init____lt_module_gt__convert": 410492,
-  "raw_code_uasyncio___init____lt_module_gt__convert": 410496,
-  "fun_data_uasyncio___init____lt_module_gt__iscoroutine": 410528,
-  "const_table_data_uasyncio___init____lt_module_gt__iscoroutine": 410552,
-  "raw_code_uasyncio___init____lt_module_gt__iscoroutine": 410556,
-  "fun_data_uasyncio___init____lt_module_gt__CancelledError": 410576,
-  "raw_code_uasyncio___init____lt_module_gt__CancelledError": 410600,
-  "fun_data_uasyncio___init____lt_module_gt__TimeoutError": 410624,
-  "raw_code_uasyncio___init____lt_module_gt__TimeoutError": 410648,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop___init__": 410672,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop___init__": 410724,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop___init__": 410736,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_time_ms": 410768,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_time_ms": 410788,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_time_ms": 410792,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_create_task": 410816,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_create_task": 410864,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_create_task": 410872,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_call_soon": 410896,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_call_soon": 410952,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_call_soon": 410960,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_call_later": 410992,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_call_later": 411044,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_call_later": 411056,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_call_later_ms": 411088,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_call_later_ms": 411152,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_call_later_ms": 411164,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_call_at_": 411184,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_call_at_": 411216,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_call_at_": 411232,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_wait": 411264,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_wait": 411296,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_wait": 411304,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_run_once": 411328,
-  "const_obj_uasyncio___init____lt_module_gt__EventLoop_run_once_0": 412268,
-  "const_obj_uasyncio___init____lt_module_gt__EventLoop_run_once_1": 412284,
-  "const_obj_uasyncio___init____lt_module_gt__EventLoop_run_once_2": 412316,
-  "const_obj_uasyncio___init____lt_module_gt__EventLoop_run_once_3": 412376,
-  "const_obj_uasyncio___init____lt_module_gt__EventLoop_run_once_4": 412444,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_run_once": 412464,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_run_once": 412488,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_run_forever": 412512,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_run_forever": 412544,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_run_forever": 412548,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_run_until_complete__run_and_stop": 412576,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_run_until_complete__run_and_stop": 412604,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_run_until_complete__run_and_stop": 412608,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_run_until_complete": 412640,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_run_until_complete": 412680,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_run_until_complete": 412692,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_stop__lt_lambda_gt_": 412720,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_stop__lt_lambda_gt_": 412744,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_stop": 412768,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_stop": 412792,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_stop": 412800,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop_close": 412820,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_close": 412832,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop_close": 412836,
-  "fun_data_uasyncio___init____lt_module_gt__EventLoop": 412864,
-  "const_table_data_uasyncio___init____lt_module_gt__EventLoop": 412992,
-  "raw_code_uasyncio___init____lt_module_gt__EventLoop": 413044,
-  "fun_data_uasyncio___init____lt_module_gt__SysCall___init__": 413072,
-  "const_table_data_uasyncio___init____lt_module_gt__SysCall___init__": 413092,
-  "raw_code_uasyncio___init____lt_module_gt__SysCall___init__": 413096,
-  "fun_data_uasyncio___init____lt_module_gt__SysCall_handle": 413120,
-  "const_table_data_uasyncio___init____lt_module_gt__SysCall_handle": 413136,
-  "raw_code_uasyncio___init____lt_module_gt__SysCall_handle": 413140,
-  "fun_data_uasyncio___init____lt_module_gt__SysCall": 413168,
-  "const_table_data_uasyncio___init____lt_module_gt__SysCall": 413204,
-  "raw_code_uasyncio___init____lt_module_gt__SysCall": 413212,
-  "fun_data_uasyncio___init____lt_module_gt__SysCall1___init__": 413232,
-  "const_table_data_uasyncio___init____lt_module_gt__SysCall1___init__": 413252,
-  "raw_code_uasyncio___init____lt_module_gt__SysCall1___init__": 413260,
-  "fun_data_uasyncio___init____lt_module_gt__SysCall1": 413280,
-  "const_table_data_uasyncio___init____lt_module_gt__SysCall1": 413312,
-  "raw_code_uasyncio___init____lt_module_gt__SysCall1": 413316,
-  "fun_data_uasyncio___init____lt_module_gt__StopLoop": 413344,
-  "raw_code_uasyncio___init____lt_module_gt__StopLoop": 413368,
-  "fun_data_uasyncio___init____lt_module_gt__IORead": 413392,
-  "raw_code_uasyncio___init____lt_module_gt__IORead": 413416,
-  "fun_data_uasyncio___init____lt_module_gt__IOWrite": 413440,
-  "raw_code_uasyncio___init____lt_module_gt__IOWrite": 413464,
-  "fun_data_uasyncio___init____lt_module_gt__IOReadDone": 413488,
-  "raw_code_uasyncio___init____lt_module_gt__IOReadDone": 413512,
-  "fun_data_uasyncio___init____lt_module_gt__IOWriteDone": 413536,
-  "raw_code_uasyncio___init____lt_module_gt__IOWriteDone": 413560,
-  "fun_data_uasyncio___init____lt_module_gt__get_event_loop": 413584,
-  "const_table_data_uasyncio___init____lt_module_gt__get_event_loop": 413624,
-  "raw_code_uasyncio___init____lt_module_gt__get_event_loop": 413632,
-  "fun_data_uasyncio___init____lt_module_gt__sleep": 413664,
-  "const_table_data_uasyncio___init____lt_module_gt__sleep": 413692,
-  "raw_code_uasyncio___init____lt_module_gt__sleep": 413696,
-  "fun_data_uasyncio___init____lt_module_gt__SleepMs___init__": 413728,
-  "const_table_data_uasyncio___init____lt_module_gt__SleepMs___init__": 413752,
-  "raw_code_uasyncio___init____lt_module_gt__SleepMs___init__": 413756,
-  "fun_data_uasyncio___init____lt_module_gt__SleepMs___call__": 413776,
-  "const_table_data_uasyncio___init____lt_module_gt__SleepMs___call__": 413796,
-  "raw_code_uasyncio___init____lt_module_gt__SleepMs___call__": 413804,
-  "fun_data_uasyncio___init____lt_module_gt__SleepMs___iter__": 413824,
-  "const_table_data_uasyncio___init____lt_module_gt__SleepMs___iter__": 413836,
-  "raw_code_uasyncio___init____lt_module_gt__SleepMs___iter__": 413840,
-  "fun_data_uasyncio___init____lt_module_gt__SleepMs___next__": 413872,
-  "const_table_data_uasyncio___init____lt_module_gt__SleepMs___next__": 413932,
-  "raw_code_uasyncio___init____lt_module_gt__SleepMs___next__": 413936,
-  "fun_data_uasyncio___init____lt_module_gt__SleepMs": 413968,
-  "const_table_data_uasyncio___init____lt_module_gt__SleepMs": 414032,
-  "raw_code_uasyncio___init____lt_module_gt__SleepMs": 414048,
-  "fun_data_uasyncio___init____lt_module_gt__cancel": 414080,
-  "const_table_data_uasyncio___init____lt_module_gt__cancel": 414120,
-  "raw_code_uasyncio___init____lt_module_gt__cancel": 414124,
-  "fun_data_uasyncio___init____lt_module_gt__TimeoutObj___init__": 414144,
-  "const_table_data_uasyncio___init____lt_module_gt__TimeoutObj___init__": 414164,
-  "raw_code_uasyncio___init____lt_module_gt__TimeoutObj___init__": 414172,
-  "fun_data_uasyncio___init____lt_module_gt__TimeoutObj": 414192,
-  "const_table_data_uasyncio___init____lt_module_gt__TimeoutObj": 414224,
-  "raw_code_uasyncio___init____lt_module_gt__TimeoutObj": 414228,
-  "fun_data_uasyncio___init____lt_module_gt__wait_for_ms_waiter": 414256,
-  "const_table_data_uasyncio___init____lt_module_gt__wait_for_ms_waiter": 414284,
-  "raw_code_uasyncio___init____lt_module_gt__wait_for_ms_waiter": 414292,
-  "fun_data_uasyncio___init____lt_module_gt__wait_for_ms_timeout_func": 414320,
-  "const_table_data_uasyncio___init____lt_module_gt__wait_for_ms_timeout_func": 414376,
-  "raw_code_uasyncio___init____lt_module_gt__wait_for_ms_timeout_func": 414380,
-  "fun_data_uasyncio___init____lt_module_gt__wait_for_ms": 414400,
-  "const_table_data_uasyncio___init____lt_module_gt__wait_for_ms": 414464,
-  "raw_code_uasyncio___init____lt_module_gt__wait_for_ms": 414480,
-  "fun_data_uasyncio___init____lt_module_gt__wait_for": 414512,
-  "const_table_data_uasyncio___init____lt_module_gt__wait_for": 414540,
-  "raw_code_uasyncio___init____lt_module_gt__wait_for": 414548,
-  "fun_data_uasyncio___init____lt_module_gt__coroutine": 414576,
-  "const_obj_uasyncio___init____lt_module_gt__coroutine_0": 414656,
-  "const_table_data_uasyncio___init____lt_module_gt__coroutine": 414672,
-  "raw_code_uasyncio___init____lt_module_gt__coroutine": 414680,
-  "fun_data_uasyncio___init____lt_module_gt__Task": 414704,
-  "const_table_data_uasyncio___init____lt_module_gt__Task": 414728,
-  "raw_code_uasyncio___init____lt_module_gt__Task": 414736,
-  "fun_data_uasyncio___init____lt_module_gt___event_loop_class___init__": 414768,
-  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class___init__": 414820,
-  "raw_code_uasyncio___init____lt_module_gt___event_loop_class___init__": 414832,
-  "fun_data_uasyncio___init____lt_module_gt___event_loop_class_add_reader": 414864,
-  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class_add_reader": 414940,
-  "raw_code_uasyncio___init____lt_module_gt___event_loop_class_add_reader": 414952,
-  "fun_data_uasyncio___init____lt_module_gt___event_loop_class_remove_reader": 414976,
-  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class_remove_reader": 415016,
-  "raw_code_uasyncio___init____lt_module_gt___event_loop_class_remove_reader": 415024,
-  "fun_data_uasyncio___init____lt_module_gt___event_loop_class_add_writer": 415056,
-  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class_add_writer": 415132,
-  "raw_code_uasyncio___init____lt_module_gt___event_loop_class_add_writer": 415144,
-  "fun_data_uasyncio___init____lt_module_gt___event_loop_class_remove_writer": 415168,
-  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class_remove_writer": 415260,
-  "raw_code_uasyncio___init____lt_module_gt___event_loop_class_remove_writer": 415268,
-  "fun_data_uasyncio___init____lt_module_gt___event_loop_class_wait": 415296,
-  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class_wait": 415428,
-  "raw_code_uasyncio___init____lt_module_gt___event_loop_class_wait": 415436,
-  "fun_data_uasyncio___init____lt_module_gt___event_loop_class": 415456,
-  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class": 415536,
-  "raw_code_uasyncio___init____lt_module_gt___event_loop_class": 415560,
-  "fun_data_uasyncio___init____lt_module_gt_": 415584,
-  "const_obj_uasyncio___init____lt_module_gt__0": 416256,
-  "const_obj_uasyncio___init____lt_module_gt__1": 416320,
-  "const_obj_uasyncio___init____lt_module_gt__2": 416368,
-  "const_table_data_uasyncio___init____lt_module_gt_": 416384,
-  "raw_code_uasyncio___init____lt_module_gt_": 416504,
-  "fun_data_uasyncio_queues__lt_module_gt__QueueEmpty": 416528,
-  "raw_code_uasyncio_queues__lt_module_gt__QueueEmpty": 416552,
-  "fun_data_uasyncio_queues__lt_module_gt__QueueFull": 416576,
-  "raw_code_uasyncio_queues__lt_module_gt__QueueFull": 416600,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue___init__": 416624,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue___init__": 416656,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue___init__": 416664,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue__get": 416688,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue__get": 416708,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue__get": 416712,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue_get": 416736,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue_get": 416784,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue_get": 416788,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue_get_nowait": 416816,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue_get_nowait": 416852,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue_get_nowait": 416856,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue__put": 416880,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue__put": 416904,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue__put": 416912,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue_put": 416944,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue_put": 417012,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue_put": 417020,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue_put_nowait": 417040,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue_put_nowait": 417096,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue_put_nowait": 417104,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue_qsize": 417136,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue_qsize": 417160,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue_qsize": 417164,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue_empty": 417184,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue_empty": 417204,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue_empty": 417208,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue_full": 417232,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue_full": 417272,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue_full": 417276,
-  "fun_data_uasyncio_queues__lt_module_gt__Queue": 417296,
-  "const_obj_uasyncio_queues__lt_module_gt__Queue_0": 417400,
-  "const_table_data_uasyncio_queues__lt_module_gt__Queue": 417424,
-  "raw_code_uasyncio_queues__lt_module_gt__Queue": 417468,
-  "fun_data_uasyncio_queues__lt_module_gt_": 417488,
-  "const_table_data_uasyncio_queues__lt_module_gt_": 417576,
-  "raw_code_uasyncio_queues__lt_module_gt_": 417588,
-  "fun_data_uasyncio_ws_server__lt_module_gt__make_respkey": 417616,
-  "const_obj_uasyncio_ws_server__lt_module_gt__make_respkey_0": 417712,
-  "const_table_data_uasyncio_ws_server__lt_module_gt__make_respkey": 417728,
-  "raw_code_uasyncio_ws_server__lt_module_gt__make_respkey": 417736,
-  "fun_data_uasyncio_ws_server__lt_module_gt__WSWriter___init__": 417760,
-  "const_table_data_uasyncio_ws_server__lt_module_gt__WSWriter___init__": 417780,
-  "raw_code_uasyncio_ws_server__lt_module_gt__WSWriter___init__": 417792,
-  "fun_data_uasyncio_ws_server__lt_module_gt__WSWriter_awrite": 417824,
-  "const_obj_uasyncio_ws_server__lt_module_gt__WSWriter_awrite_0": 417920,
-  "const_table_data_uasyncio_ws_server__lt_module_gt__WSWriter_awrite": 417936,
-  "raw_code_uasyncio_ws_server__lt_module_gt__WSWriter_awrite": 417948,
-  "fun_data_uasyncio_ws_server__lt_module_gt__WSWriter": 417968,
-  "const_table_data_uasyncio_ws_server__lt_module_gt__WSWriter": 418004,
-  "raw_code_uasyncio_ws_server__lt_module_gt__WSWriter": 418012,
-  "fun_data_uasyncio_ws_server__lt_module_gt__WSReader": 418032,
-  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_0": 418236,
-  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_1": 418272,
-  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_2": 418288,
-  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_3": 418328,
-  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_4": 418444,
-  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_5": 418488,
-  "const_table_data_uasyncio_ws_server__lt_module_gt__WSReader": 418512,
-  "raw_code_uasyncio_ws_server__lt_module_gt__WSReader": 418544,
-  "fun_data_uasyncio_ws_server__lt_module_gt_": 418576,
-  "const_table_data_uasyncio_ws_server__lt_module_gt_": 418648,
-  "raw_code_uasyncio_ws_server__lt_module_gt_": 418660,
-  "fun_data_uasyncio_udp__lt_module_gt__set_debug": 418688,
-  "const_obj_uasyncio_udp__lt_module_gt__set_debug_0": 418740,
-  "const_table_data_uasyncio_udp__lt_module_gt__set_debug": 418756,
-  "raw_code_uasyncio_udp__lt_module_gt__set_debug": 418764,
-  "fun_data_uasyncio_udp__lt_module_gt__socket": 418784,
-  "const_table_data_uasyncio_udp__lt_module_gt__socket": 418828,
-  "raw_code_uasyncio_udp__lt_module_gt__socket": 418832,
-  "fun_data_uasyncio_udp__lt_module_gt__recv": 418864,
-  "const_table_data_uasyncio_udp__lt_module_gt__recv": 418928,
-  "raw_code_uasyncio_udp__lt_module_gt__recv": 418936,
-  "fun_data_uasyncio_udp__lt_module_gt__recvfrom": 418960,
-  "const_table_data_uasyncio_udp__lt_module_gt__recvfrom": 419024,
-  "raw_code_uasyncio_udp__lt_module_gt__recvfrom": 419032,
-  "fun_data_uasyncio_udp__lt_module_gt__sendto": 419056,
-  "const_obj_uasyncio_udp__lt_module_gt__sendto_0": 419140,
-  "const_table_data_uasyncio_udp__lt_module_gt__sendto": 419168,
-  "raw_code_uasyncio_udp__lt_module_gt__sendto": 419184,
-  "fun_data_uasyncio_udp__lt_module_gt__close": 419216,
-  "const_table_data_uasyncio_udp__lt_module_gt__close": 419248,
-  "raw_code_uasyncio_udp__lt_module_gt__close": 419252,
-  "fun_data_uasyncio_udp__lt_module_gt_": 419280,
-  "const_table_data_uasyncio_udp__lt_module_gt_": 419392,
-  "raw_code_uasyncio_udp__lt_module_gt_": 419416,
-  "fun_data_time__lt_module_gt____getattr__": 419440,
-  "const_table_data_time__lt_module_gt____getattr__": 419480,
-  "raw_code_time__lt_module_gt____getattr__": 419484,
-  "fun_data_time__lt_module_gt_": 419504,
-  "const_table_data_time__lt_module_gt_": 419536,
-  "raw_code_time__lt_module_gt_": 419540,
-  "fun_data_m3__lt_module_gt_": 419568,
-  "raw_code_m3__lt_module_gt_": 419604,
-  "fun_data_ulogging__lt_module_gt__Logger___init__": 419632,
-  "const_table_data_ulogging__lt_module_gt__Logger___init__": 419652,
-  "raw_code_ulogging__lt_module_gt__Logger___init__": 419660,
-  "fun_data_ulogging__lt_module_gt__Logger__level_str": 419680,
-  "const_table_data_ulogging__lt_module_gt__Logger__level_str": 419720,
-  "raw_code_ulogging__lt_module_gt__Logger__level_str": 419728,
-  "fun_data_ulogging__lt_module_gt__Logger_setLevel": 419760,
-  "const_table_data_ulogging__lt_module_gt__Logger_setLevel": 419780,
-  "raw_code_ulogging__lt_module_gt__Logger_setLevel": 419788,
-  "fun_data_ulogging__lt_module_gt__Logger_isEnabledFor": 419808,
-  "const_table_data_ulogging__lt_module_gt__Logger_isEnabledFor": 419832,
-  "raw_code_ulogging__lt_module_gt__Logger_isEnabledFor": 419840,
-  "fun_data_ulogging__lt_module_gt__Logger_log": 419872,
-  "const_table_data_ulogging__lt_module_gt__Logger_log": 419976,
-  "raw_code_ulogging__lt_module_gt__Logger_log": 419988,
-  "fun_data_ulogging__lt_module_gt__Logger_debug": 420016,
-  "const_table_data_ulogging__lt_module_gt__Logger_debug": 420044,
-  "raw_code_ulogging__lt_module_gt__Logger_debug": 420052,
-  "fun_data_ulogging__lt_module_gt__Logger_info": 420080,
-  "const_table_data_ulogging__lt_module_gt__Logger_info": 420108,
-  "raw_code_ulogging__lt_module_gt__Logger_info": 420116,
-  "fun_data_ulogging__lt_module_gt__Logger_warning": 420144,
-  "const_table_data_ulogging__lt_module_gt__Logger_warning": 420172,
-  "raw_code_ulogging__lt_module_gt__Logger_warning": 420180,
-  "fun_data_ulogging__lt_module_gt__Logger_error": 420208,
-  "const_table_data_ulogging__lt_module_gt__Logger_error": 420236,
-  "raw_code_ulogging__lt_module_gt__Logger_error": 420244,
-  "fun_data_ulogging__lt_module_gt__Logger_critical": 420272,
-  "const_table_data_ulogging__lt_module_gt__Logger_critical": 420300,
-  "raw_code_ulogging__lt_module_gt__Logger_critical": 420308,
-  "fun_data_ulogging__lt_module_gt__Logger_exc": 420336,
-  "const_table_data_ulogging__lt_module_gt__Logger_exc": 420380,
-  "raw_code_ulogging__lt_module_gt__Logger_exc": 420392,
-  "fun_data_ulogging__lt_module_gt__Logger_exception": 420416,
-  "const_table_data_ulogging__lt_module_gt__Logger_exception": 420452,
-  "raw_code_ulogging__lt_module_gt__Logger_exception": 420460,
-  "fun_data_ulogging__lt_module_gt__Logger": 420480,
-  "const_table_data_ulogging__lt_module_gt__Logger": 420592,
-  "raw_code_ulogging__lt_module_gt__Logger": 420640,
-  "fun_data_ulogging__lt_module_gt__getLogger": 420672,
-  "const_table_data_ulogging__lt_module_gt__getLogger": 420720,
-  "raw_code_ulogging__lt_module_gt__getLogger": 420724,
-  "fun_data_ulogging__lt_module_gt__info": 420752,
-  "const_table_data_ulogging__lt_module_gt__info": 420784,
-  "raw_code_ulogging__lt_module_gt__info": 420788,
-  "fun_data_ulogging__lt_module_gt__debug": 420816,
-  "const_table_data_ulogging__lt_module_gt__debug": 420848,
-  "raw_code_ulogging__lt_module_gt__debug": 420852,
-  "fun_data_ulogging__lt_module_gt__basicConfig": 420880,
-  "const_obj_ulogging__lt_module_gt__basicConfig_0": 420996,
-  "const_obj_ulogging__lt_module_gt__basicConfig_1": 421064,
-  "const_table_data_ulogging__lt_module_gt__basicConfig": 421088,
-  "raw_code_ulogging__lt_module_gt__basicConfig": 421112,
-  "fun_data_ulogging__lt_module_gt_": 421136,
-  "const_table_data_ulogging__lt_module_gt_": 421312,
-  "raw_code_ulogging__lt_module_gt_": 421332,
-  "fun_data_frozen_mpy__lt_module_gt_": 421360,
-  "const_obj_frozen_mpy__lt_module_gt__0": 421484,
-  "const_obj_frozen_mpy__lt_module_gt__1": 421512,
-  "const_table_data_frozen_mpy__lt_module_gt_": 421528,
-  "raw_code_frozen_mpy__lt_module_gt_": 421536,
-  "fun_data_urequests__lt_module_gt__Response___init__": 421568,
-  "const_table_data_urequests__lt_module_gt__Response___init__": 421604,
-  "raw_code_urequests__lt_module_gt__Response___init__": 421612,
-  "fun_data_urequests__lt_module_gt__Response_close": 421632,
-  "const_table_data_urequests__lt_module_gt__Response_close": 421680,
-  "raw_code_urequests__lt_module_gt__Response_close": 421684,
-  "fun_data_urequests__lt_module_gt__Response_content": 421712,
-  "const_table_data_urequests__lt_module_gt__Response_content": 421780,
-  "raw_code_urequests__lt_module_gt__Response_content": 421784,
-  "fun_data_urequests__lt_module_gt__Response_text": 421808,
-  "const_table_data_urequests__lt_module_gt__Response_text": 421836,
-  "raw_code_urequests__lt_module_gt__Response_text": 421840,
-  "fun_data_urequests__lt_module_gt__Response_json": 421872,
-  "const_table_data_urequests__lt_module_gt__Response_json": 421900,
-  "raw_code_urequests__lt_module_gt__Response_json": 421904,
-  "fun_data_urequests__lt_module_gt__Response": 421936,
-  "const_table_data_urequests__lt_module_gt__Response": 422016,
-  "raw_code_urequests__lt_module_gt__Response": 422036,
-  "fun_data_urequests__lt_module_gt__request": 422064,
-  "const_obj_urequests__lt_module_gt__request_0": 422752,
-  "const_obj_urequests__lt_module_gt__request_1": 422788,
-  "const_obj_urequests__lt_module_gt__request_2": 422816,
-  "const_obj_urequests__lt_module_gt__request_3": 422836,
-  "const_obj_urequests__lt_module_gt__request_4": 422852,
-  "const_obj_urequests__lt_module_gt__request_5": 422904,
-  "const_obj_urequests__lt_module_gt__request_6": 422944,
-  "const_obj_urequests__lt_module_gt__request_7": 422960,
-  "const_obj_urequests__lt_module_gt__request_8": 422976,
-  "const_obj_urequests__lt_module_gt__request_9": 423012,
-  "const_obj_urequests__lt_module_gt__request_10": 423036,
-  "const_obj_urequests__lt_module_gt__request_11": 423068,
-  "const_obj_urequests__lt_module_gt__request_12": 423096,
-  "const_obj_urequests__lt_module_gt__request_13": 423140,
-  "const_table_data_urequests__lt_module_gt__request": 423168,
-  "raw_code_urequests__lt_module_gt__request": 423248,
-  "fun_data_urequests__lt_module_gt__head": 423280,
-  "const_table_data_urequests__lt_module_gt__head": 423304,
-  "raw_code_urequests__lt_module_gt__head": 423308,
-  "fun_data_urequests__lt_module_gt__get": 423328,
-  "const_table_data_urequests__lt_module_gt__get": 423352,
-  "raw_code_urequests__lt_module_gt__get": 423356,
-  "fun_data_urequests__lt_module_gt__post": 423376,
-  "const_table_data_urequests__lt_module_gt__post": 423400,
-  "raw_code_urequests__lt_module_gt__post": 423404,
-  "fun_data_urequests__lt_module_gt__put": 423424,
-  "const_table_data_urequests__lt_module_gt__put": 423448,
-  "raw_code_urequests__lt_module_gt__put": 423452,
-  "fun_data_urequests__lt_module_gt__patch": 423472,
-  "const_table_data_urequests__lt_module_gt__patch": 423496,
-  "raw_code_urequests__lt_module_gt__patch": 423500,
-  "fun_data_urequests__lt_module_gt__delete": 423520,
-  "const_table_data_urequests__lt_module_gt__delete": 423544,
-  "raw_code_urequests__lt_module_gt__delete": 423548,
-  "fun_data_urequests__lt_module_gt_": 423568,
-  "const_table_data_urequests__lt_module_gt_": 423664,
-  "raw_code_urequests__lt_module_gt_": 423696,
-  "fun_data_site__lt_module_gt__vars": 423728,
-  "const_obj_site__lt_module_gt__vars_0": 423820,
-  "const_table_data_site__lt_module_gt__vars": 423836,
-  "raw_code_site__lt_module_gt__vars": 423844,
-  "fun_data_site__lt_module_gt__await_": 423872,
-  "const_table_data_site__lt_module_gt__await_": 423924,
-  "raw_code_site__lt_module_gt__await_": 423928,
-  "fun_data_site__lt_module_gt__awaited_syscall": 423952,
-  "const_table_data_site__lt_module_gt__awaited_syscall": 423980,
-  "raw_code_site__lt_module_gt__awaited_syscall": 423984,
-  "fun_data_site__lt_module_gt__awaited": 424016,
-  "const_table_data_site__lt_module_gt__awaited": 424040,
-  "raw_code_site__lt_module_gt__awaited": 424048,
-  "fun_data_site__lt_module_gt__sleep": 424080,
-  "const_table_data_site__lt_module_gt__sleep": 424156,
-  "raw_code_site__lt_module_gt__sleep": 424160,
-  "fun_data_site__lt_module_gt__late_repl": 424192,
-  "const_obj_site__lt_module_gt__late_repl_0": 424256,
-  "const_obj_site__lt_module_gt__late_repl_1": 424292,
-  "const_table_data_site__lt_module_gt__late_repl": 424308,
-  "raw_code_site__lt_module_gt__late_repl": 424320,
-  "fun_data_site__lt_module_gt__noop": 424340,
-  "raw_code_site__lt_module_gt__noop": 424356,
-  "fun_data_site__lt_module_gt__interact": 424384,
-  "raw_code_site__lt_module_gt__interact": 424452,
-  "fun_data_site__lt_module_gt_": 424480,
-  "const_obj_site__lt_module_gt__0": 425232,
-  "const_table_data_site__lt_module_gt_": 425248,
-  "raw_code_site__lt_module_gt_": 425280,
-  "fun_data_hello__lt_module_gt_": 425312,
-  "const_obj_hello__lt_module_gt__0": 425360,
-  "const_table_data_hello__lt_module_gt_": 425376,
-  "raw_code_hello__lt_module_gt_": 425380,
-  "file_open_args": 426352,
-  "fdfile___exit___obj": 426328,
-  "fdfile_fileno_obj": 426340,
-  "fileio_stream_p": 426624,
-  "rawfile_locals_dict": 426608,
-  "textio_stream_p": 426640,
-  "rawfile_locals_dict_table": 426512,
-  "mod_os_stat_obj": 426692,
-  "mod_os_remove_obj": 426700,
-  "mod_os_system_obj": 426708,
-  "mod_os_getenv_obj": 426716,
-  "mod_os_mkdir_obj": 426724,
-  "mod_os_ilistdir_obj": 426736,
-  "mod_os_errno_obj": 426748,
-  "mp_module_os_globals_table": 426768,
-  "mp_module_os_globals": 426840,
-  "mod_time_clock_obj": 426864,
-  "mod_time_time_obj": 426872,
-  "mod_time_time_ns_obj": 426880,
-  "mod_time_sleep_obj": 426904,
-  "mod_time_sleep_ms_obj": 426932,
-  "mod_time_sleep_us_obj": 426960,
-  "mod_time_localtime_obj": 426968,
-  "mp_module_time_globals_table": 426992,
-  "mp_module_time_globals": 427096,
-  "ffi_type_sint8": 430800,
-  "ffi_type_uint8": 430788,
-  "ffi_type_sint16": 430824,
-  "ffi_type_uint16": 430812,
-  "ffi_type_sint32": 430848,
-  "ffi_type_uint32": 430836,
-  "ffi_type_sint64": 430872,
-  "ffi_type_uint64": 430860,
-  "ffi_type_float": 430896,
-  "ffi_type_double": 430908,
-  "ffi_type_pointer": 430884,
-  "ffi_type_void": 430776,
-  "ffifunc_type": 427156,
-  "fficallback_type": 427260,
-  "ffivar_type": 427352,
-  "ffimod_type": 427488,
-  "ffimod_close_obj": 427148,
-  "ffimod_func_obj": 427240,
-  "mod_ffi_func_obj": 427252,
-  "mod_ffi_callback_obj": 427344,
-  "ffivar_locals_dict": 427744,
-  "ffimod_var_obj": 427412,
-  "ffimod_addr_obj": 427420,
-  "ffimod_locals_dict_table": 427440,
-  "ffimod_locals_dict": 427472,
-  "ffivar_get_obj": 427708,
-  "ffivar_set_obj": 427716,
-  "ffivar_locals_dict_table": 427728,
-  "mod_ffi_open_obj": 427760,
-  "mod_ffi_as_bytearray_obj": 427772,
-  "mp_module_ffi_globals_table": 427792,
-  "mp_module_ffi_globals": 427832,
-  "embed_hello_type": 431100,
-  "mp_type_on_del": 431160,
-  "on_del_del_obj": 431220,
-  "embed_hello___del__": 431056,
-  "embed_hello_locals_dict_table": 431064,
-  "embed_hello_locals_dict": 431072,
-  "embed_CLI_obj": 431740,
-  "embed_STI_obj": 431752,
-  "embed_builtins_vars_obj": 431764,
-  "embed_callsome_obj": 431776,
-  "embed_echosum1_obj": 431788,
-  "embed_log_obj": 431800,
-  "embed_os_compile_obj": 431812,
-  "embed_os_hook_obj": 431824,
-  "embed_os_print_obj": 431836,
-  "embed_os_read_useless_obj": 431848,
-  "embed_os_showloop_obj": 431860,
-  "embed_os_stderr_obj": 431872,
-  "embed_os_write_obj": 431884,
-  "embed_sleep_obj": 431896,
-  "embed_sleep_ms_obj": 431908,
-  "embed_somecall_obj": 431920,
-  "embed_ticks_add_obj": 431932,
-  "embed_ticks_period_obj": 431944,
-  "embed_time_ms_obj": 431956,
-  "embed_time_ns_obj": 431968,
-  "embed_globals_table": 431984,
-  "mp_module_embed_globals": 432176,
-  "example_add_ints_obj": 432252,
-  "example_module_globals_table": 432272,
-  "example_module_globals": 432288,
-  "mp_stderr_print": 432328,
-  "pyexec_system_exit": 432320,
-  "repl": 432370,
-  "pyexec_mode_kind": 432316,
-  "pyexec_repl_active": 432590,
-  "repl_display_debugging_info": 432324,
-  "pyb_set_repl_info_obj": 432620,
-  "rl": 432740,
-  "EMSCRIPTENAUDIO_bootstrap": 495152,
-  "DISKAUDIO_bootstrap": 501084,
-  "DUMMYAUDIO_bootstrap": 501364,
-  "SDL_Convert_S8_to_F32": 437572,
-  "SDL_Convert_U8_to_F32": 437576,
-  "SDL_Convert_U16_to_F32": 437584,
-  "SDL_Convert_S32_to_F32": 437588,
-  "SDL_Convert_S16_to_F32": 437580,
-  "SDL_Convert_F32_to_S8": 437592,
-  "SDL_Convert_F32_to_U8": 437596,
-  "SDL_Convert_F32_to_U16": 437604,
-  "SDL_Convert_F32_to_S32": 437608,
-  "SDL_Convert_F32_to_S16": 437600,
-  "SDL_haptics": 449868,
-  "SDL_EMSCRIPTEN_JoystickDriver": 501404,
-  "GLES2_RenderDriver": 456700,
-  "SW_RenderDriver": 469740,
-  "SDL_expand_byte": 486096,
-  "SDL_GeneratedBlitFuncTable": 480048,
-  "Emscripten_bootstrap": 494800,
-  "__progname": 516248,
-  "__progname_full": 516252,
-  "__libc": 516256,
-  "__hwcap": 516320,
-  "__sysinfo": 516324,
-  "program_invocation_short_name": 516248,
-  "program_invocation_name": 516252,
-  "__optreset": 517632,
-  "optind": 517624,
-  "__optpos": 517636,
-  "optarg": 517640,
-  "optopt": 517644,
-  "opterr": 517628,
-  "optreset": 517632,
-  "in6addr_loopback": 518088,
-  "h_errno": 518388,
-  "in6addr_any": 518472,
-  "_ns_flagdata": 519024,
-  "__fsmu8": 533136,
-  "__pio2_hi": 536000,
-  "__pio2_lo": 536016,
-  "__signgam": 544232,
-  "signgam": 544232,
-  "__seed48": 544800,
-  "__stdin_used": 547844,
-  "__stdout_used": 545932,
-  "__stderr_used": 547116,
-  "__c_locale": 549648,
-  "__c_dot_utf8_locale": 549672,
-  "__c_dot_utf8": 549620,
-  "__environ": 675172,
-  "___environ": 675172,
-  "_environ": 675172,
-  "environ": 675172,
-  "__env_map": 675180,
-  "tzname": 675184,
-  "daylight": 675192,
-  "timezone": 675196,
-  "atanlo": 679472,
-  "atanhi": 679408,
-  "aT": 679536,
+  "gc_alloc_count_max": 1106588,
+  "mp_plat_print": 1115052,
+  "mp_type_tuple": 1140252,
+  "mp_type_list": 1133668,
+  "mp_type_dict": 1127476,
+  "mp_type_str": 1137452,
+  "mp_type_bytes": 1137368,
+  "mp_type_bytearray": 1126104,
+  "mp_type_array": 1126164,
+  "mp_type_float": 1131080,
+  "mp_type_fun_bc": 1132056,
+  "mp_type_module": 1134664,
+  "mp_qstr_frozen_const_pool": 1189108,
+  "mp_qstr_const_pool": 1112712,
+  "mp_type_int": 1133280,
+  "attr": 1115280,
+  "tok_kw": 1115952,
+  "tok_enc_kind": 1115696,
+  "tok_enc": 1115680,
+  "rule_arg_offset_table": 1117200,
+  "rule_arg_combined_table": 1116304,
+  "mp_type_SyntaxError": 1130304,
+  "mp_constants_map": 1117616,
+  "rule_act_table": 1116128,
+  "mp_type_IndentationError": 1130364,
+  "mp_constants_table": 1117600,
+  "mp_module_uerrno": 1147344,
+  "mp_module_uctypes": 1148800,
+  "scope_simple_name_table": 1118038,
+  "compile_function": 1121184,
+  "mp_emit_bc_method_table_load_id_ops": 1123112,
+  "mp_emit_bc_method_table_store_id_ops": 1123120,
+  "mp_emit_bc_method_table_delete_id_ops": 1123128,
+  "mp_const_ellipsis_obj": 1137224,
+  "mp_type_ValueError": 1130484,
+  "mp_type_gen_wrap": 1132388,
+  "mp_type_complex": 1127248,
+  "mp_type_KeyboardInterrupt": 1129224,
+  "mp_const_empty_tuple_obj": 1140244,
+  "mp_module_builtins_globals": 1144536,
+  "mp_builtin___build_class___obj": 1143224,
+  "mp_unary_op_method_name": 1141286,
+  "mp_binary_op_method_name": 1141296,
+  "mp_type_ZeroDivisionError": 1129584,
+  "mp_type_type": 1140848,
+  "mp_type_AttributeError": 1129704,
+  "mp_type_staticmethod": 1141764,
+  "mp_type_classmethod": 1142144,
+  "mp_builtin_next_obj": 1143424,
+  "mp_type_gen_instance": 1132328,
+  "mp_type_ImportError": 1129824,
+  "mp_type_MemoryError": 1130064,
+  "mp_type_OSError": 1128968,
+  "mp_module___main__": 1123844,
+  "hash_allocation_sizes": 1125344,
+  "mp_const_empty_map": 1125320,
+  "mp_sys_stdout_print": 1146616,
+  "mp_type_IndexError": 1129944,
+  "mp_type_NoneType": 1135548,
+  "mp_type_bool": 1126772,
+  "mp_identity_obj": 1126024,
+  "mp_type_fun_builtin_1": 1131404,
+  "mp_type_memoryview": 1126224,
+  "mp_type_slice": 1137244,
+  "array_it_type": 1126616,
+  "array_locals_dict": 1126600,
+  "array_append_obj": 1126464,
+  "mp_type_fun_builtin_2": 1131532,
+  "array_extend_obj": 1126488,
+  "array_locals_dict_table": 1126576,
+  "bytes_decode_obj": 1139556,
+  "mp_type_attrtuple": 1126688,
+  "mp_type_bound_meth": 1126856,
+  "mp_type_cell": 1127068,
+  "closure_type": 1127172,
+  "mp_type_ordereddict": 1127556,
+  "mp_type_KeyError": 1130004,
+  "dict_view_it_type": 1128108,
+  "dict_view_type": 1128288,
+  "mp_dict_view_names": 1128096,
+  "dict_locals_dict": 1128752,
+  "dict_clear_obj": 1127744,
+  "dict_copy_obj": 1127764,
+  "dict_fromkeys_fun_obj": 1127772,
+  "mp_type_fun_builtin_var": 1131788,
+  "dict_fromkeys_obj": 1127784,
+  "dict_get_obj": 1127908,
+  "dict_pop_obj": 1127920,
+  "dict_setdefault_obj": 1127932,
+  "dict_popitem_obj": 1127988,
+  "dict_update_obj": 1128048,
+  "dict_items_obj": 1128588,
+  "dict_keys_obj": 1128596,
+  "dict_values_obj": 1128604,
+  "dict_locals_dict_table": 1128640,
+  "mp_op_getitem_obj": 1142480,
+  "mp_op_setitem_obj": 1142488,
+  "mp_op_delitem_obj": 1142496,
+  "mp_type_enumerate": 1128816,
+  "mp_type_BaseException": 1129104,
+  "mp_type_Exception": 1129344,
+  "mp_type_SystemExit": 1129164,
+  "mp_type_StopAsyncIteration": 1129404,
+  "mp_type_ArithmeticError": 1129464,
+  "mp_type_OverflowError": 1129524,
+  "mp_type_AssertionError": 1129644,
+  "mp_type_EOFError": 1129764,
+  "mp_type_LookupError": 1129884,
+  "mp_type_filter": 1131020,
+  "mp_const_float_e_obj": 1131144,
+  "mp_const_float_pi_obj": 1131160,
+  "mp_type_fun_builtin_0": 1131256,
+  "mp_type_fun_builtin_3": 1131660,
+  "mp_type_fun_native": 1131920,
+  "mp_type_native_gen_wrap": 1132448,
+  "gen_instance_locals_dict": 1132944,
+  "gen_instance_send_obj": 1132796,
+  "gen_instance_throw_obj": 1132804,
+  "gen_instance_close_obj": 1132848,
+  "gen_instance_pend_throw_obj": 1132900,
+  "gen_instance_locals_dict_table": 1132912,
+  "it_type": 1132960,
+  "log_base2_floor": 1133072,
+  "int_from_bytes_fun_obj": 1133208,
+  "int_from_bytes_obj": 1133220,
+  "int_to_bytes_obj": 1133228,
+  "int_locals_dict_table": 1133248,
+  "int_locals_dict": 1133264,
+  "maxsize_dig": 1133340,
+  "mp_maxsize_obj": 1133344,
+  "mp_type_polymorph_iter": 1135164,
+  "list_locals_dict": 1134424,
+  "list_append_obj": 1134236,
+  "list_extend_obj": 1134244,
+  "list_clear_obj": 1134252,
+  "list_copy_obj": 1134260,
+  "list_count_obj": 1134268,
+  "list_index_obj": 1134276,
+  "list_insert_obj": 1134288,
+  "list_pop_obj": 1134296,
+  "list_remove_obj": 1134308,
+  "list_reverse_obj": 1134316,
+  "list_sort_obj": 1134324,
+  "list_locals_dict_table": 1134336,
+  "mp_type_map": 1134564,
+  "mp_builtin_module_map": 1134952,
+  "mp_builtin_module_table": 1134736,
+  "mp_module_builtins": 1143592,
+  "mp_module_micropython": 1146464,
+  "mp_module_io": 1145160,
+  "mp_module_collections": 1144600,
+  "mp_module_ustruct": 1146608,
+  "mp_module_math": 1145904,
+  "mp_module_cmath": 1146096,
+  "mp_module_sys": 1146928,
+  "mp_module_gc": 1144752,
+  "mp_module_uzlib": 1149848,
+  "mp_module_ujson": 1149000,
+  "mp_module_ure": 1149432,
+  "mp_module_uheapq": 1150256,
+  "mp_module_utimeq": 1150480,
+  "mp_module_uhashlib": 1150640,
+  "mp_module_ubinascii": 1151064,
+  "mp_module_urandom": 1151232,
+  "mp_module_time": 1300904,
+  "mp_module_ffi": 1301640,
+  "mp_module_os": 1300648,
+  "mp_module_embed": 1306008,
+  "example_user_cmodule": 1306112,
+  "mp_module_uarray": 1143152,
+  "object___init___obj": 1134964,
+  "object___new___fun_obj": 1134996,
+  "object___new___obj": 1135004,
+  "object___setattr___obj": 1135012,
+  "object___delattr___obj": 1135040,
+  "object_locals_dict_table": 1135056,
+  "object_locals_dict": 1135088,
+  "mp_type_object": 1135104,
+  "mp_type_property": 1135336,
+  "property_getter_obj": 1135264,
+  "property_setter_obj": 1135272,
+  "property_deleter_obj": 1135280,
+  "property_locals_dict_table": 1135296,
+  "property_locals_dict": 1135320,
+  "mp_namedtuple_obj": 1135764,
+  "range_it_type": 1135772,
+  "mp_type_range": 1135864,
+  "mp_type_reversed": 1136064,
+  "mp_type_set": 1136124,
+  "mp_type_frozenset": 1136184,
+  "set_locals_dict": 1137040,
+  "frozenset_locals_dict": 1137128,
+  "set_add_obj": 1136396,
+  "set_clear_obj": 1136416,
+  "set_copy_obj": 1136464,
+  "set_discard_obj": 1136484,
+  "set_diff_obj": 1136596,
+  "set_diff_update_obj": 1136608,
+  "set_intersect_obj": 1136640,
+  "set_intersect_update_obj": 1136648,
+  "set_isdisjoint_obj": 1136672,
+  "set_issubset_obj": 1136680,
+  "set_issuperset_obj": 1136688,
+  "set_pop_obj": 1136768,
+  "set_remove_obj": 1136788,
+  "set_symmetric_difference_update_obj": 1136828,
+  "set_symmetric_difference_obj": 1136836,
+  "set_update_obj": 1136856,
+  "set_union_obj": 1136880,
+  "set_locals_dict_table": 1136896,
+  "mp_op_contains_obj": 1142504,
+  "frozenset_locals_dict_table": 1137056,
+  "mp_type_singleton": 1137164,
+  "mp_const_empty_bytes_obj": 1137436,
+  "str8_locals_dict": 1139808,
+  "str_join_obj": 1137844,
+  "str_split_obj": 1137868,
+  "str_splitlines_obj": 1137888,
+  "str_rsplit_obj": 1137916,
+  "str_find_obj": 1138096,
+  "str_rfind_obj": 1138108,
+  "str_index_obj": 1138120,
+  "str_rindex_obj": 1138132,
+  "str_startswith_obj": 1138144,
+  "str_endswith_obj": 1138176,
+  "str_strip_obj": 1138276,
+  "str_lstrip_obj": 1138288,
+  "str_rstrip_obj": 1138300,
+  "str_center_obj": 1138312,
+  "str_format_obj": 1139012,
+  "str_replace_obj": 1139432,
+  "str_count_obj": 1139456,
+  "str_partition_obj": 1139484,
+  "str_rpartition_obj": 1139492,
+  "str_lower_obj": 1139500,
+  "str_upper_obj": 1139508,
+  "str_isspace_obj": 1139516,
+  "str_isalpha_obj": 1139524,
+  "str_isdigit_obj": 1139532,
+  "str_isupper_obj": 1139540,
+  "str_islower_obj": 1139548,
+  "str_encode_obj": 1139568,
+  "str8_locals_dict_table": 1139584,
+  "mp_type_stringio": 1139900,
+  "stringio_stream_p": 1140136,
+  "stringio_locals_dict": 1140120,
+  "stringio_getvalue_obj": 1140000,
+  "stringio___exit___obj": 1140008,
+  "stringio_locals_dict_table": 1140032,
+  "mp_stream_read_obj": 1142568,
+  "mp_stream_readinto_obj": 1142612,
+  "mp_stream_unbuffered_readline_obj": 1142624,
+  "mp_stream_write_obj": 1142592,
+  "mp_stream_seek_obj": 1142652,
+  "mp_stream_tell_obj": 1142664,
+  "mp_stream_flush_obj": 1142672,
+  "mp_stream_close_obj": 1142644,
+  "bytesio_stream_p": 1140152,
+  "mp_type_bytesio": 1140168,
+  "tuple_locals_dict": 1140720,
+  "tuple_count_obj": 1140564,
+  "tuple_index_obj": 1140680,
+  "tuple_locals_dict_table": 1140704,
+  "native_base_init_wrapper_obj": 1140992,
+  "mp_type_super": 1141840,
+  "mp_builtin_issubclass_obj": 1142128,
+  "mp_builtin_isinstance_obj": 1142136,
+  "mp_type_zip": 1142420,
+  "mp_stream_read1_obj": 1142580,
+  "mp_stream_write1_obj": 1142604,
+  "mp_stream_unbuffered_readlines_obj": 1142636,
+  "mp_stream_ioctl_obj": 1142680,
+  "mp_builtin___import___obj": 1142848,
+  "mp_type_code": 1142992,
+  "mp_builtin_compile_obj": 1143072,
+  "mp_builtin_eval_obj": 1143084,
+  "mp_builtin_exec_obj": 1143096,
+  "mp_builtin_execfile_obj": 1143108,
+  "mp_module_array_globals_table": 1143120,
+  "mp_module_array_globals": 1143136,
+  "mp_builtin_abs_obj": 1143236,
+  "mp_builtin_all_obj": 1143244,
+  "mp_builtin_any_obj": 1143252,
+  "mp_builtin_bin_obj": 1143260,
+  "mp_builtin_callable_obj": 1143268,
+  "mp_builtin_chr_obj": 1143304,
+  "mp_builtin_dir_obj": 1143312,
+  "mp_builtin_divmod_obj": 1143324,
+  "mp_builtin_hash_obj": 1143332,
+  "mp_builtin_hex_obj": 1143340,
+  "mp_builtin_input_obj": 1143352,
+  "mp_builtin_iter_obj": 1143364,
+  "mp_builtin_max_obj": 1143400,
+  "mp_builtin_min_obj": 1143412,
+  "mp_builtin_oct_obj": 1143436,
+  "mp_builtin_ord_obj": 1143504,
+  "mp_builtin_pow_obj": 1143540,
+  "mp_sys_stdout_obj": 1300468,
+  "mp_builtin_print_obj": 1143576,
+  "mp_builtin___repl_print___obj": 1143600,
+  "mp_builtin_repr_obj": 1143608,
+  "mp_builtin_round_obj": 1143616,
+  "mp_builtin_sum_obj": 1143628,
+  "mp_builtin_sorted_obj": 1143684,
+  "mp_builtin_getattr_obj": 1143696,
+  "mp_builtin_setattr_obj": 1143708,
+  "mp_builtin_delattr_obj": 1143716,
+  "mp_builtin_hasattr_obj": 1143724,
+  "mp_builtin_globals_obj": 1143732,
+  "mp_builtin_locals_obj": 1143740,
+  "mp_builtin_id_obj": 1143748,
+  "mp_builtin_len_obj": 1143756,
+  "mp_module_builtins_globals_table": 1143776,
+  "mp_builtin_open_obj": 1300448,
+  "mp_module_collections_globals_table": 1144560,
+  "mp_module_collections_globals": 1144584,
+  "gc_collect_obj": 1144608,
+  "gc_disable_obj": 1144616,
+  "gc_enable_obj": 1144624,
+  "gc_isenabled_obj": 1144632,
+  "gc_mem_free_obj": 1144640,
+  "gc_mem_alloc_obj": 1144648,
+  "gc_threshold_obj": 1144656,
+  "mp_module_gc_globals_table": 1144672,
+  "mp_module_gc_globals": 1144736,
+  "iobase_singleton": 1144820,
+  "mp_type_iobase": 1144760,
+  "iobase_p": 1144824,
+  "bufwriter_flush_obj": 1144932,
+  "bufwriter_locals_dict_table": 1144944,
+  "bufwriter_locals_dict": 1144960,
+  "bufwriter_stream_p": 1144976,
+  "bufwriter_type": 1144992,
+  "resource_stream_obj": 1145052,
+  "mp_module_io_globals_table": 1145072,
+  "mp_type_fileio": 1300176,
+  "mp_type_textio": 1300236,
+  "mp_module_io_globals": 1145144,
+  "mp_math_sqrt_obj": 1145188,
+  "mp_math_pow_obj": 1145196,
+  "mp_math_exp_obj": 1145204,
+  "mp_math_expm1_obj": 1145212,
+  "mp_math_log2_obj": 1145220,
+  "mp_math_log10_obj": 1145228,
+  "mp_math_cosh_obj": 1145236,
+  "mp_math_sinh_obj": 1145244,
+  "mp_math_tanh_obj": 1145252,
+  "mp_math_acosh_obj": 1145260,
+  "mp_math_asinh_obj": 1145268,
+  "mp_math_atanh_obj": 1145276,
+  "mp_math_cos_obj": 1145284,
+  "mp_math_sin_obj": 1145292,
+  "mp_math_tan_obj": 1145300,
+  "mp_math_acos_obj": 1145308,
+  "mp_math_asin_obj": 1145316,
+  "mp_math_atan_obj": 1145324,
+  "mp_math_atan2_obj": 1145332,
+  "mp_math_ceil_obj": 1145340,
+  "mp_math_copysign_obj": 1145348,
+  "mp_math_fabs_obj": 1145356,
+  "mp_math_floor_obj": 1145364,
+  "mp_math_fmod_obj": 1145372,
+  "mp_math_isfinite_obj": 1145380,
+  "mp_math_isinf_obj": 1145388,
+  "mp_math_isnan_obj": 1145396,
+  "mp_math_trunc_obj": 1145404,
+  "mp_math_ldexp_obj": 1145412,
+  "mp_math_erf_obj": 1145420,
+  "mp_math_erfc_obj": 1145428,
+  "mp_math_gamma_obj": 1145436,
+  "mp_math_lgamma_obj": 1145444,
+  "mp_math_log_obj": 1145468,
+  "mp_math_frexp_obj": 1145480,
+  "mp_math_modf_obj": 1145488,
+  "mp_math_radians_obj": 1145496,
+  "mp_math_degrees_obj": 1145504,
+  "mp_math_factorial_obj": 1145532,
+  "mp_module_math_globals_table": 1145552,
+  "mp_module_math_globals": 1145888,
+  "mp_cmath_phase_obj": 1145912,
+  "mp_cmath_polar_obj": 1145920,
+  "mp_cmath_rect_obj": 1145928,
+  "mp_cmath_exp_obj": 1145936,
+  "mp_cmath_log_obj": 1145944,
+  "mp_cmath_log10_obj": 1145952,
+  "mp_cmath_sqrt_obj": 1145960,
+  "mp_cmath_cos_obj": 1145968,
+  "mp_cmath_sin_obj": 1145976,
+  "mp_module_cmath_globals_table": 1145984,
+  "mp_module_cmath_globals": 1146080,
+  "mp_micropython_opt_level_obj": 1146104,
+  "mp_micropython_mem_total_obj": 1146116,
+  "mp_micropython_mem_current_obj": 1146124,
+  "mp_micropython_mem_peak_obj": 1146132,
+  "mp_micropython_mem_info_obj": 1146188,
+  "mp_micropython_qstr_info_obj": 1146272,
+  "mp_micropython_stack_use_obj": 1146284,
+  "mp_micropython_pystack_use_obj": 1146292,
+  "mp_micropython_heap_lock_obj": 1146300,
+  "mp_micropython_heap_unlock_obj": 1146308,
+  "mp_alloc_emergency_exception_buf_obj": 1146316,
+  "mp_micropython_kbd_intr_obj": 1146324,
+  "mp_module_micropython_globals_table": 1146336,
+  "mp_module_micropython_globals": 1146448,
+  "struct_calcsize_obj": 1146472,
+  "struct_unpack_from_obj": 1146500,
+  "struct_pack_obj": 1146512,
+  "struct_pack_into_obj": 1146524,
+  "mp_module_struct_globals_table": 1146544,
+  "mp_module_struct_globals": 1146592,
+  "version_obj": 1146632,
+  "mp_sys_version_info_obj": 1146648,
+  "mp_sys_implementation_version_info_obj": 1146668,
+  "impl_fields": 1146688,
+  "mp_sys_implementation_obj": 1146700,
+  "platform_obj": 1146732,
+  "mp_sys_exit_obj": 1146748,
+  "mp_sys_print_exception_obj": 1146760,
+  "mp_sys_getsizeof_obj": 1146772,
+  "mp_module_sys_globals_table": 1146784,
+  "mp_sys_stdin_obj": 1300460,
+  "mp_sys_stderr_obj": 1300476,
+  "mp_module_sys_globals": 1146912,
+  "errorcode_dict": 1147120,
+  "errorcode_table": 1146944,
+  "mp_module_uerrno_globals_table": 1147136,
+  "mp_module_uerrno_globals": 1147328,
+  "mp_frozen_str_names": 1151495,
+  "mp_frozen_str_sizes": 1151500,
+  "mp_frozen_str_content": 1151500,
+  "mp_frozen_mpy_names": 1298880,
+  "mp_frozen_mpy_content": 1299744,
+  "uctypes_struct_type": 1148416,
+  "uctypes_struct_sizeof_obj": 1148224,
+  "uctypes_struct_addressof_obj": 1148392,
+  "uctypes_struct_bytearray_at_obj": 1148400,
+  "uctypes_struct_bytes_at_obj": 1148408,
+  "mp_module_uctypes_globals_table": 1148480,
+  "mp_module_uctypes_globals": 1148784,
+  "mod_ujson_dump_obj": 1148884,
+  "mod_ujson_dumps_obj": 1148892,
+  "mod_ujson_load_obj": 1148924,
+  "mod_ujson_loads_obj": 1148932,
+  "mp_module_ujson_globals_table": 1148944,
+  "mp_module_ujson_globals": 1148984,
+  "match_type": 1149056,
+  "re_type": 1149248,
+  "match_group_obj": 1149024,
+  "match_locals_dict_table": 1149032,
+  "match_locals_dict": 1149040,
+  "re_match_obj": 1149124,
+  "re_search_obj": 1149136,
+  "re_split_obj": 1149176,
+  "re_sub_obj": 1149188,
+  "re_locals_dict_table": 1149200,
+  "re_locals_dict": 1149232,
+  "mod_re_compile_obj": 1149324,
+  "mod_re_match_obj": 1149336,
+  "mod_re_search_obj": 1149348,
+  "mod_re_sub_obj": 1149360,
+  "mp_module_re_globals_table": 1149376,
+  "mp_module_re_globals": 1149416,
+  "clcidx": 1150048,
+  "length_bits": 1149856,
+  "length_base": 1149888,
+  "dist_bits": 1149952,
+  "dist_base": 1149984,
+  "decompio_locals_dict_table": 1149680,
+  "decompio_locals_dict": 1149704,
+  "decompio_stream_p": 1149720,
+  "decompio_type": 1149736,
+  "mod_uzlib_decompress_obj": 1149796,
+  "mp_module_uzlib_globals_table": 1149808,
+  "mp_module_uzlib_globals": 1149832,
+  "mod_uheapq_heappush_obj": 1150164,
+  "mod_uheapq_heappop_obj": 1150184,
+  "mod_uheapq_heapify_obj": 1150192,
+  "mp_module_uheapq_globals_table": 1150208,
+  "mp_module_uheapq_globals": 1150240,
+  "utimeq_id": 1150280,
+  "mod_utimeq_heappush_obj": 1150284,
+  "mod_utimeq_heappop_obj": 1150308,
+  "mod_utimeq_peektime_obj": 1150316,
+  "utimeq_locals_dict_table": 1150336,
+  "utimeq_locals_dict": 1150360,
+  "utimeq_type": 1150376,
+  "mp_module_utimeq_globals_table": 1150448,
+  "mp_module_utimeq_globals": 1150464,
+  "uhashlib_sha256_update_obj": 1150488,
+  "uhashlib_sha256_digest_obj": 1150496,
+  "uhashlib_sha256_locals_dict_table": 1150512,
+  "uhashlib_sha256_locals_dict": 1150528,
+  "uhashlib_sha256_type": 1150544,
+  "mp_module_uhashlib_globals_table": 1150608,
+  "mp_module_uhashlib_globals": 1150624,
+  "mod_binascii_hexlify_obj": 1150912,
+  "mod_binascii_unhexlify_obj": 1150964,
+  "mod_binascii_a2b_base64_obj": 1150992,
+  "mod_binascii_b2a_base64_obj": 1151000,
+  "mp_module_binascii_globals_table": 1151008,
+  "mp_module_binascii_globals": 1151048,
+  "yasmarang_dat": 1151084,
+  "yasmarang_d": 1151080,
+  "yasmarang_n": 1151076,
+  "yasmarang_pad": 1151072,
+  "mod_urandom_getrandbits_obj": 1151088,
+  "mod_urandom_seed_obj": 1151096,
+  "mod_urandom_randrange_obj": 1151104,
+  "mod_urandom_randint_obj": 1151116,
+  "mod_urandom_choice_obj": 1151124,
+  "mod_urandom_random_obj": 1151132,
+  "mod_urandom_uniform_obj": 1151140,
+  "mp_module_urandom_globals_table": 1151152,
+  "mp_module_urandom_globals": 1151216,
+  "mp_utime_sleep_obj": 1151240,
+  "mp_utime_sleep_ms_obj": 1151248,
+  "mp_utime_sleep_us_obj": 1151256,
+  "mp_utime_ticks_ms_obj": 1151264,
+  "mp_utime_ticks_us_obj": 1151272,
+  "mp_utime_ticks_cpu_obj": 1151280,
+  "mp_utime_ticks_diff_obj": 1151288,
+  "mp_utime_ticks_add_obj": 1151296,
+  "__THREW__": 2115696,
+  "__threwValue": 2115700,
+  "mp_interrupt_char": 1306436,
+  "mp_uos_dupterm_obj": 1151468,
+  "fun_data_aio_aio_cpy__lt_module_gt__aio_main": 1198560,
+  "const_obj_aio_aio_cpy__lt_module_gt__aio_main_0": 1198868,
+  "const_obj_aio_aio_cpy__lt_module_gt__aio_main_1": 1198888,
+  "const_table_data_aio_aio_cpy__lt_module_gt__aio_main": 1198912,
+  "raw_code_aio_aio_cpy__lt_module_gt__aio_main": 1198936,
+  "fun_data_aio_aio_cpy__lt_module_gt__aio__run": 1198960,
+  "const_obj_aio_aio_cpy__lt_module_gt__aio__run_0": 1199124,
+  "const_table_data_aio_aio_cpy__lt_module_gt__aio__run": 1199140,
+  "raw_code_aio_aio_cpy__lt_module_gt__aio__run": 1199152,
+  "fun_data_aio_aio_cpy__lt_module_gt__aio": 1199184,
+  "const_table_data_aio_aio_cpy__lt_module_gt__aio": 1199248,
+  "raw_code_aio_aio_cpy__lt_module_gt__aio": 1199256,
+  "fun_data_aio_aio_cpy__lt_module_gt__End": 1199280,
+  "const_obj_aio_aio_cpy__lt_module_gt__End_0": 1199404,
+  "const_table_data_aio_aio_cpy__lt_module_gt__End": 1199420,
+  "raw_code_aio_aio_cpy__lt_module_gt__End": 1199424,
+  "fun_data_aio_aio_cpy__lt_module_gt_": 1199456,
+  "const_obj_aio_aio_cpy__lt_module_gt__0": 1199636,
+  "const_table_data_aio_aio_cpy__lt_module_gt_": 1199652,
+  "raw_code_aio_aio_cpy__lt_module_gt_": 1199664,
+  "fun_data_aio___init____lt_module_gt_": 1199696,
+  "raw_code_aio___init____lt_module_gt_": 1199820,
+  "fun_data_aio_input_upy__lt_module_gt__ainput_switch": 1199840,
+  "const_table_data_aio_input_upy__lt_module_gt__ainput_switch": 1199892,
+  "raw_code_aio_input_upy__lt_module_gt__ainput_switch": 1199896,
+  "fun_data_aio_input_upy__lt_module_gt__ainput": 1199920,
+  "const_obj_aio_input_upy__lt_module_gt__ainput_0": 1200260,
+  "const_table_data_aio_input_upy__lt_module_gt__ainput": 1200288,
+  "raw_code_aio_input_upy__lt_module_gt__ainput": 1200304,
+  "fun_data_aio_input_upy__lt_module_gt__test": 1200336,
+  "const_obj_aio_input_upy__lt_module_gt__test_0": 1200428,
+  "const_table_data_aio_input_upy__lt_module_gt__test": 1200444,
+  "raw_code_aio_input_upy__lt_module_gt__test": 1200448,
+  "fun_data_aio_input_upy__lt_module_gt_": 1200480,
+  "const_table_data_aio_input_upy__lt_module_gt_": 1200620,
+  "raw_code_aio_input_upy__lt_module_gt_": 1200628,
+  "fun_data_aio_input___init____lt_module_gt_": 1200656,
+  "raw_code_aio_input___init____lt_module_gt_": 1200700,
+  "fun_data_aio_input_cpy__lt_module_gt_": 1200720,
+  "raw_code_aio_input_cpy__lt_module_gt_": 1200732,
+  "fun_data_aio_core__lt_module_gt__use_gc": 1200752,
+  "const_table_data_aio_core__lt_module_gt__use_gc": 1200776,
+  "raw_code_aio_core__lt_module_gt__use_gc": 1200780,
+  "fun_data_aio_core__lt_module_gt__use": 1200800,
+  "const_table_data_aio_core__lt_module_gt__use": 1200848,
+  "raw_code_aio_core__lt_module_gt__use": 1200852,
+  "fun_data_aio_core__lt_module_gt__task": 1200880,
+  "const_obj_aio_core__lt_module_gt__task_0": 1201044,
+  "const_table_data_aio_core__lt_module_gt__task": 1201060,
+  "raw_code_aio_core__lt_module_gt__task": 1201068,
+  "fun_data_aio_core__lt_module_gt__tasks": 1201088,
+  "raw_code_aio_core__lt_module_gt__tasks": 1201128,
+  "fun_data_aio_core__lt_module_gt__idle": 1201152,
+  "raw_code_aio_core__lt_module_gt__idle": 1201176,
+  "fun_data_aio_core__lt_module_gt__load": 1201200,
+  "const_table_data_aio_core__lt_module_gt__load": 1201292,
+  "raw_code_aio_core__lt_module_gt__load": 1201296,
+  "fun_data_aio_core__lt_module_gt__step": 1201328,
+  "const_obj_aio_core__lt_module_gt__step_0": 1201584,
+  "const_obj_aio_core__lt_module_gt__step_1": 1201612,
+  "const_obj_aio_core__lt_module_gt__step_2": 1201644,
+  "const_obj_aio_core__lt_module_gt__step_3": 1201676,
+  "const_table_data_aio_core__lt_module_gt__step": 1201696,
+  "raw_code_aio_core__lt_module_gt__step": 1201712,
+  "fun_data_aio_core__lt_module_gt__run": 1201744,
+  "const_table_data_aio_core__lt_module_gt__run": 1201796,
+  "raw_code_aio_core__lt_module_gt__run": 1201800,
+  "fun_data_aio_core__lt_module_gt__step2": 1201824,
+  "const_obj_aio_core__lt_module_gt__step2_0": 1202044,
+  "const_obj_aio_core__lt_module_gt__step2_1": 1202060,
+  "const_obj_aio_core__lt_module_gt__step2_2": 1202096,
+  "const_table_data_aio_core__lt_module_gt__step2": 1202112,
+  "raw_code_aio_core__lt_module_gt__step2": 1202124,
+  "fun_data_aio_core__lt_module_gt__asleep_ms": 1202144,
+  "const_table_data_aio_core__lt_module_gt__asleep_ms": 1202180,
+  "raw_code_aio_core__lt_module_gt__asleep_ms": 1202184,
+  "fun_data_aio_core__lt_module_gt_": 1202208,
+  "const_obj_aio_core__lt_module_gt__0": 1202796,
+  "const_obj_aio_core__lt_module_gt__1": 1202852,
+  "const_obj_aio_core__lt_module_gt__2": 1202912,
+  "const_obj_aio_core__lt_module_gt__3": 1202944,
+  "const_obj_aio_core__lt_module_gt__4": 1202980,
+  "const_table_data_aio_core__lt_module_gt_": 1203008,
+  "raw_code_aio_core__lt_module_gt_": 1203064,
+  "fun_data_aio_aio_upy__lt_module_gt_": 1203084,
+  "raw_code_aio_aio_upy__lt_module_gt_": 1203096,
+  "fun_data_aio_io__lt_module_gt__finalize": 1203120,
+  "raw_code_aio_io__lt_module_gt__finalize": 1203204,
+  "fun_data_aio_io__lt_module_gt__step": 1203232,
+  "const_obj_aio_io__lt_module_gt__step_0": 1203544,
+  "const_table_data_aio_io__lt_module_gt__step": 1203560,
+  "raw_code_aio_io__lt_module_gt__step": 1203564,
+  "fun_data_aio_io__lt_module_gt__ctl": 1203584,
+  "const_obj_aio_io__lt_module_gt__ctl_0": 1203696,
+  "const_table_data_aio_io__lt_module_gt__ctl": 1203712,
+  "raw_code_aio_io__lt_module_gt__ctl": 1203728,
+  "fun_data_aio_io__lt_module_gt__network": 1203760,
+  "raw_code_aio_io__lt_module_gt__network": 1203832,
+  "fun_data_aio_io__lt_module_gt_": 1203856,
+  "const_table_data_aio_io__lt_module_gt_": 1203984,
+  "raw_code_aio_io__lt_module_gt_": 1204000,
+  "fun_data_aio_synchro__lt_module_gt__Lock___init__": 1204032,
+  "const_table_data_aio_synchro__lt_module_gt__Lock___init__": 1204060,
+  "raw_code_aio_synchro__lt_module_gt__Lock___init__": 1204064,
+  "fun_data_aio_synchro__lt_module_gt__Lock_release": 1204096,
+  "const_table_data_aio_synchro__lt_module_gt__Lock_release": 1204172,
+  "raw_code_aio_synchro__lt_module_gt__Lock_release": 1204176,
+  "fun_data_aio_synchro__lt_module_gt__Lock_acquire": 1204208,
+  "const_table_data_aio_synchro__lt_module_gt__Lock_acquire": 1204280,
+  "raw_code_aio_synchro__lt_module_gt__Lock_acquire": 1204284,
+  "fun_data_aio_synchro__lt_module_gt__Lock": 1204304,
+  "const_table_data_aio_synchro__lt_module_gt__Lock": 1204348,
+  "raw_code_aio_synchro__lt_module_gt__Lock": 1204360,
+  "fun_data_aio_synchro__lt_module_gt_": 1204384,
+  "const_table_data_aio_synchro__lt_module_gt_": 1204408,
+  "raw_code_aio_synchro__lt_module_gt_": 1204412,
+  "fun_data_aio_network__lt_module_gt__StreamReader___init__": 1204432,
+  "const_table_data_aio_network__lt_module_gt__StreamReader___init__": 1204468,
+  "raw_code_aio_network__lt_module_gt__StreamReader___init__": 1204480,
+  "fun_data_aio_network__lt_module_gt__StreamReader_read": 1204512,
+  "const_table_data_aio_network__lt_module_gt__StreamReader_read": 1204588,
+  "raw_code_aio_network__lt_module_gt__StreamReader_read": 1204596,
+  "fun_data_aio_network__lt_module_gt__StreamReader_readexactly": 1204624,
+  "const_obj_aio_network__lt_module_gt__StreamReader_readexactly_0": 1204728,
+  "const_table_data_aio_network__lt_module_gt__StreamReader_readexactly": 1204744,
+  "raw_code_aio_network__lt_module_gt__StreamReader_readexactly": 1204756,
+  "fun_data_aio_network__lt_module_gt__StreamReader_readline": 1204784,
+  "const_obj_aio_network__lt_module_gt__StreamReader_readline_0": 1204952,
+  "const_obj_aio_network__lt_module_gt__StreamReader_readline_1": 1204968,
+  "const_obj_aio_network__lt_module_gt__StreamReader_readline_2": 1205012,
+  "const_table_data_aio_network__lt_module_gt__StreamReader_readline": 1205040,
+  "raw_code_aio_network__lt_module_gt__StreamReader_readline": 1205056,
+  "fun_data_aio_network__lt_module_gt__StreamReader_aclose": 1205088,
+  "const_table_data_aio_network__lt_module_gt__StreamReader_aclose": 1205128,
+  "raw_code_aio_network__lt_module_gt__StreamReader_aclose": 1205132,
+  "fun_data_aio_network__lt_module_gt__StreamReader___repr__": 1205152,
+  "const_obj_aio_network__lt_module_gt__StreamReader___repr___0": 1205200,
+  "const_table_data_aio_network__lt_module_gt__StreamReader___repr__": 1205216,
+  "raw_code_aio_network__lt_module_gt__StreamReader___repr__": 1205224,
+  "fun_data_aio_network__lt_module_gt__StreamReader": 1205248,
+  "const_table_data_aio_network__lt_module_gt__StreamReader": 1205328,
+  "raw_code_aio_network__lt_module_gt__StreamReader": 1205352,
+  "fun_data_aio_network__lt_module_gt__StreamWriter___init__": 1205376,
+  "const_table_data_aio_network__lt_module_gt__StreamWriter___init__": 1205400,
+  "raw_code_aio_network__lt_module_gt__StreamWriter___init__": 1205412,
+  "fun_data_aio_network__lt_module_gt__StreamWriter_awrite": 1205440,
+  "const_obj_aio_network__lt_module_gt__StreamWriter_awrite_0": 1205676,
+  "const_obj_aio_network__lt_module_gt__StreamWriter_awrite_1": 1205744,
+  "const_obj_aio_network__lt_module_gt__StreamWriter_awrite_2": 1205808,
+  "const_obj_aio_network__lt_module_gt__StreamWriter_awrite_3": 1205864,
+  "const_table_data_aio_network__lt_module_gt__StreamWriter_awrite": 1205888,
+  "raw_code_aio_network__lt_module_gt__StreamWriter_awrite": 1205920,
+  "fun_data_aio_network__lt_module_gt__StreamWriter_awritestr": 1205952,
+  "const_table_data_aio_network__lt_module_gt__StreamWriter_awritestr": 1205980,
+  "raw_code_aio_network__lt_module_gt__StreamWriter_awritestr": 1205988,
+  "fun_data_aio_network__lt_module_gt__StreamWriter_awriteiter": 1206016,
+  "const_table_data_aio_network__lt_module_gt__StreamWriter_awriteiter": 1206052,
+  "raw_code_aio_network__lt_module_gt__StreamWriter_awriteiter": 1206060,
+  "fun_data_aio_network__lt_module_gt__StreamWriter_aclose": 1206080,
+  "const_table_data_aio_network__lt_module_gt__StreamWriter_aclose": 1206120,
+  "raw_code_aio_network__lt_module_gt__StreamWriter_aclose": 1206124,
+  "fun_data_aio_network__lt_module_gt__StreamWriter_get_extra_info": 1206144,
+  "const_table_data_aio_network__lt_module_gt__StreamWriter_get_extra_info": 1206168,
+  "raw_code_aio_network__lt_module_gt__StreamWriter_get_extra_info": 1206180,
+  "fun_data_aio_network__lt_module_gt__StreamWriter___repr__": 1206208,
+  "const_obj_aio_network__lt_module_gt__StreamWriter___repr___0": 1206244,
+  "const_table_data_aio_network__lt_module_gt__StreamWriter___repr__": 1206260,
+  "raw_code_aio_network__lt_module_gt__StreamWriter___repr__": 1206268,
+  "fun_data_aio_network__lt_module_gt__StreamWriter": 1206288,
+  "const_table_data_aio_network__lt_module_gt__StreamWriter": 1206368,
+  "raw_code_aio_network__lt_module_gt__StreamWriter": 1206396,
+  "fun_data_aio_network__lt_module_gt__open_connection": 1206416,
+  "const_obj_aio_network__lt_module_gt__open_connection_0": 1206736,
+  "const_obj_aio_network__lt_module_gt__open_connection_1": 1206784,
+  "const_obj_aio_network__lt_module_gt__open_connection_2": 1206836,
+  "const_obj_aio_network__lt_module_gt__open_connection_3": 1206892,
+  "const_table_data_aio_network__lt_module_gt__open_connection": 1206912,
+  "raw_code_aio_network__lt_module_gt__open_connection": 1206940,
+  "fun_data_aio_network__lt_module_gt__start_server": 1206960,
+  "const_obj_aio_network__lt_module_gt__start_server_0": 1207280,
+  "const_obj_aio_network__lt_module_gt__start_server_1": 1207324,
+  "const_obj_aio_network__lt_module_gt__start_server_2": 1207368,
+  "const_obj_aio_network__lt_module_gt__start_server_3": 1207416,
+  "const_table_data_aio_network__lt_module_gt__start_server": 1207440,
+  "raw_code_aio_network__lt_module_gt__start_server": 1207472,
+  "fun_data_aio_network__lt_module_gt_": 1207504,
+  "const_table_data_aio_network__lt_module_gt_": 1207600,
+  "raw_code_aio_network__lt_module_gt_": 1207616,
+  "fun_data_imp__lt_module_gt__new_module": 1207648,
+  "const_table_data_imp__lt_module_gt__new_module": 1207668,
+  "raw_code_imp__lt_module_gt__new_module": 1207672,
+  "fun_data_imp__lt_module_gt__importer": 1207696,
+  "const_obj_imp__lt_module_gt__importer_0": 1208296,
+  "const_obj_imp__lt_module_gt__importer_1": 1208356,
+  "const_obj_imp__lt_module_gt__importer_2": 1208392,
+  "const_obj_imp__lt_module_gt__importer_3": 1208460,
+  "const_table_data_imp__lt_module_gt__importer": 1208480,
+  "raw_code_imp__lt_module_gt__importer": 1208500,
+  "fun_data_imp__lt_module_gt__restore": 1208528,
+  "const_obj_imp__lt_module_gt__restore_0": 1208604,
+  "const_table_data_imp__lt_module_gt__restore": 1208620,
+  "raw_code_imp__lt_module_gt__restore": 1208624,
+  "fun_data_imp__lt_module_gt_": 1208656,
+  "const_obj_imp__lt_module_gt__0": 1208788,
+  "const_table_data_imp__lt_module_gt_": 1208816,
+  "raw_code_imp__lt_module_gt_": 1208832,
+  "fun_data_typing__lt_module_gt___Subscriptable___getitem__": 1208852,
+  "const_table_data_typing__lt_module_gt___Subscriptable___getitem__": 1208864,
+  "raw_code_typing__lt_module_gt___Subscriptable___getitem__": 1208872,
+  "fun_data_typing__lt_module_gt___Subscriptable": 1208896,
+  "const_table_data_typing__lt_module_gt___Subscriptable": 1208924,
+  "raw_code_typing__lt_module_gt___Subscriptable": 1208928,
+  "fun_data_typing__lt_module_gt__TypeVar": 1208948,
+  "const_table_data_typing__lt_module_gt__TypeVar": 1208964,
+  "raw_code_typing__lt_module_gt__TypeVar": 1208968,
+  "fun_data_typing__lt_module_gt__Any": 1208992,
+  "raw_code_typing__lt_module_gt__Any": 1209016,
+  "fun_data_typing__lt_module_gt__NoReturn": 1209040,
+  "raw_code_typing__lt_module_gt__NoReturn": 1209064,
+  "fun_data_typing__lt_module_gt__ClassVar": 1209088,
+  "raw_code_typing__lt_module_gt__ClassVar": 1209112,
+  "fun_data_typing__lt_module_gt__Hashable": 1209136,
+  "raw_code_typing__lt_module_gt__Hashable": 1209160,
+  "fun_data_typing__lt_module_gt__Awaitable": 1209184,
+  "raw_code_typing__lt_module_gt__Awaitable": 1209208,
+  "fun_data_typing__lt_module_gt__Coroutine": 1209232,
+  "raw_code_typing__lt_module_gt__Coroutine": 1209256,
+  "fun_data_typing__lt_module_gt__AsyncIterable": 1209280,
+  "raw_code_typing__lt_module_gt__AsyncIterable": 1209304,
+  "fun_data_typing__lt_module_gt__AsyncIterator": 1209328,
+  "raw_code_typing__lt_module_gt__AsyncIterator": 1209352,
+  "fun_data_typing__lt_module_gt__Iterable": 1209376,
+  "raw_code_typing__lt_module_gt__Iterable": 1209400,
+  "fun_data_typing__lt_module_gt__Iterator": 1209424,
+  "raw_code_typing__lt_module_gt__Iterator": 1209448,
+  "fun_data_typing__lt_module_gt__Reversible": 1209472,
+  "raw_code_typing__lt_module_gt__Reversible": 1209496,
+  "fun_data_typing__lt_module_gt__Sized": 1209520,
+  "raw_code_typing__lt_module_gt__Sized": 1209544,
+  "fun_data_typing__lt_module_gt__Container": 1209568,
+  "raw_code_typing__lt_module_gt__Container": 1209592,
+  "fun_data_typing__lt_module_gt__Collection": 1209616,
+  "raw_code_typing__lt_module_gt__Collection": 1209640,
+  "fun_data_typing__lt_module_gt__ByteString": 1209664,
+  "raw_code_typing__lt_module_gt__ByteString": 1209688,
+  "fun_data_typing__lt_module_gt__Deque": 1209712,
+  "raw_code_typing__lt_module_gt__Deque": 1209736,
+  "fun_data_typing__lt_module_gt__MappingView": 1209760,
+  "raw_code_typing__lt_module_gt__MappingView": 1209784,
+  "fun_data_typing__lt_module_gt__KeysView": 1209808,
+  "raw_code_typing__lt_module_gt__KeysView": 1209832,
+  "fun_data_typing__lt_module_gt__ItemsView": 1209856,
+  "raw_code_typing__lt_module_gt__ItemsView": 1209880,
+  "fun_data_typing__lt_module_gt__ValuesView": 1209904,
+  "raw_code_typing__lt_module_gt__ValuesView": 1209928,
+  "fun_data_typing__lt_module_gt__ContextManager": 1209952,
+  "raw_code_typing__lt_module_gt__ContextManager": 1209976,
+  "fun_data_typing__lt_module_gt__AsyncContextManager": 1210000,
+  "raw_code_typing__lt_module_gt__AsyncContextManager": 1210024,
+  "fun_data_typing__lt_module_gt__Counter": 1210048,
+  "raw_code_typing__lt_module_gt__Counter": 1210072,
+  "fun_data_typing__lt_module_gt__ChainMap": 1210096,
+  "raw_code_typing__lt_module_gt__ChainMap": 1210120,
+  "fun_data_typing__lt_module_gt__Generator": 1210144,
+  "raw_code_typing__lt_module_gt__Generator": 1210168,
+  "fun_data_typing__lt_module_gt__AsyncGenerator": 1210192,
+  "raw_code_typing__lt_module_gt__AsyncGenerator": 1210216,
+  "fun_data_typing__lt_module_gt__Type": 1210240,
+  "raw_code_typing__lt_module_gt__Type": 1210264,
+  "fun_data_typing__lt_module_gt__cast": 1210284,
+  "const_table_data_typing__lt_module_gt__cast": 1210296,
+  "raw_code_typing__lt_module_gt__cast": 1210304,
+  "fun_data_typing__lt_module_gt___overload_dummy": 1210336,
+  "const_obj_typing__lt_module_gt___overload_dummy_0": 1210544,
+  "const_table_data_typing__lt_module_gt___overload_dummy": 1210560,
+  "raw_code_typing__lt_module_gt___overload_dummy": 1210564,
+  "fun_data_typing__lt_module_gt__overload": 1210584,
+  "const_table_data_typing__lt_module_gt__overload": 1210600,
+  "raw_code_typing__lt_module_gt__overload": 1210604,
+  "fun_data_typing__lt_module_gt_": 1210624,
+  "const_table_data_typing__lt_module_gt_": 1211216,
+  "raw_code_typing__lt_module_gt_": 1211344,
+  "fun_data___future____lt_module_gt_": 1211376,
+  "raw_code___future____lt_module_gt_": 1211392,
+  "fun_data_uwebsockets__lt_module_gt__urlparse": 1211424,
+  "const_table_data_uwebsockets__lt_module_gt__urlparse": 1211488,
+  "raw_code_uwebsockets__lt_module_gt__urlparse": 1211492,
+  "fun_data_uwebsockets__lt_module_gt__Websocket___init__": 1211520,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket___init__": 1211552,
+  "raw_code_uwebsockets__lt_module_gt__Websocket___init__": 1211564,
+  "fun_data_uwebsockets__lt_module_gt__Websocket___enter__": 1211584,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket___enter__": 1211596,
+  "raw_code_uwebsockets__lt_module_gt__Websocket___enter__": 1211600,
+  "fun_data_uwebsockets__lt_module_gt__Websocket___exit__": 1211632,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket___exit__": 1211664,
+  "raw_code_uwebsockets__lt_module_gt__Websocket___exit__": 1211680,
+  "fun_data_uwebsockets__lt_module_gt__Websocket_settimeout": 1211712,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket_settimeout": 1211744,
+  "raw_code_uwebsockets__lt_module_gt__Websocket_settimeout": 1211752,
+  "fun_data_uwebsockets__lt_module_gt__Websocket_read_frame__lt_genexpr_gt_": 1211776,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket_read_frame__lt_genexpr_gt_": 1211812,
+  "raw_code_uwebsockets__lt_module_gt__Websocket_read_frame__lt_genexpr_gt_": 1211820,
+  "fun_data_uwebsockets__lt_module_gt__Websocket_read_frame": 1211840,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket_read_frame": 1212104,
+  "raw_code_uwebsockets__lt_module_gt__Websocket_read_frame": 1212116,
+  "fun_data_uwebsockets__lt_module_gt__Websocket_write_frame__lt_genexpr_gt_": 1212144,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket_write_frame__lt_genexpr_gt_": 1212180,
+  "raw_code_uwebsockets__lt_module_gt__Websocket_write_frame__lt_genexpr_gt_": 1212188,
+  "fun_data_uwebsockets__lt_module_gt__Websocket_write_frame": 1212208,
+  "const_obj_uwebsockets__lt_module_gt__Websocket_write_frame_0": 1212504,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket_write_frame": 1212528,
+  "raw_code_uwebsockets__lt_module_gt__Websocket_write_frame": 1212548,
+  "fun_data_uwebsockets__lt_module_gt__Websocket_recv": 1212576,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket_recv": 1212800,
+  "raw_code_uwebsockets__lt_module_gt__Websocket_recv": 1212804,
+  "fun_data_uwebsockets__lt_module_gt__Websocket_send": 1212832,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket_send": 1212928,
+  "raw_code_uwebsockets__lt_module_gt__Websocket_send": 1212936,
+  "fun_data_uwebsockets__lt_module_gt__Websocket_close": 1212960,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket_close": 1213028,
+  "raw_code_uwebsockets__lt_module_gt__Websocket_close": 1213040,
+  "fun_data_uwebsockets__lt_module_gt__Websocket__close": 1213072,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket__close": 1213104,
+  "raw_code_uwebsockets__lt_module_gt__Websocket__close": 1213108,
+  "fun_data_uwebsockets__lt_module_gt__Websocket": 1213136,
+  "const_obj_uwebsockets__lt_module_gt__Websocket_0": 1213248,
+  "const_table_data_uwebsockets__lt_module_gt__Websocket": 1213264,
+  "raw_code_uwebsockets__lt_module_gt__Websocket": 1213308,
+  "fun_data_uwebsockets__lt_module_gt__client_connect_send_header": 1213328,
+  "const_table_data_uwebsockets__lt_module_gt__client_connect_send_header": 1213360,
+  "raw_code_uwebsockets__lt_module_gt__client_connect_send_header": 1213368,
+  "fun_data_uwebsockets__lt_module_gt__client_connect__lt_genexpr_gt_": 1213392,
+  "const_table_data_uwebsockets__lt_module_gt__client_connect__lt_genexpr_gt_": 1213428,
+  "raw_code_uwebsockets__lt_module_gt__client_connect__lt_genexpr_gt_": 1213432,
+  "fun_data_uwebsockets__lt_module_gt__client_connect": 1213456,
+  "const_obj_uwebsockets__lt_module_gt__client_connect_0": 1213732,
+  "const_obj_uwebsockets__lt_module_gt__client_connect_1": 1213760,
+  "const_obj_uwebsockets__lt_module_gt__client_connect_2": 1213796,
+  "const_obj_uwebsockets__lt_module_gt__client_connect_3": 1213832,
+  "const_obj_uwebsockets__lt_module_gt__client_connect_4": 1213872,
+  "const_obj_uwebsockets__lt_module_gt__client_connect_5": 1213916,
+  "const_obj_uwebsockets__lt_module_gt__client_connect_6": 1213960,
+  "const_obj_uwebsockets__lt_module_gt__client_connect_7": 1213976,
+  "const_obj_uwebsockets__lt_module_gt__client_connect_8": 1214028,
+  "const_table_data_uwebsockets__lt_module_gt__client_connect": 1214048,
+  "raw_code_uwebsockets__lt_module_gt__client_connect": 1214100,
+  "fun_data_uwebsockets__lt_module_gt__client": 1214128,
+  "const_table_data_uwebsockets__lt_module_gt__client": 1214164,
+  "raw_code_uwebsockets__lt_module_gt__client": 1214168,
+  "fun_data_uwebsockets__lt_module_gt_": 1214192,
+  "const_obj_uwebsockets__lt_module_gt__0": 1214492,
+  "const_table_data_uwebsockets__lt_module_gt_": 1214512,
+  "raw_code_uwebsockets__lt_module_gt_": 1214528,
+  "fun_data_imp_pivot__lt_module_gt_": 1214560,
+  "raw_code_imp_pivot__lt_module_gt_": 1214640,
+  "fun_data_pystone__lt_module_gt__Record___init__": 1214672,
+  "const_table_data_pystone__lt_module_gt__Record___init__": 1214720,
+  "raw_code_pystone__lt_module_gt__Record___init__": 1214744,
+  "fun_data_pystone__lt_module_gt__Record_copy": 1214768,
+  "const_table_data_pystone__lt_module_gt__Record_copy": 1214812,
+  "raw_code_pystone__lt_module_gt__Record_copy": 1214816,
+  "fun_data_pystone__lt_module_gt__Record": 1214848,
+  "const_table_data_pystone__lt_module_gt__Record": 1214892,
+  "raw_code_pystone__lt_module_gt__Record": 1214900,
+  "fun_data_pystone__lt_module_gt__main": 1214928,
+  "const_obj_pystone__lt_module_gt__main_0": 1215020,
+  "const_obj_pystone__lt_module_gt__main_1": 1215084,
+  "const_table_data_pystone__lt_module_gt__main": 1215100,
+  "raw_code_pystone__lt_module_gt__main": 1215112,
+  "fun_data_pystone__lt_module_gt__pystones": 1215136,
+  "const_table_data_pystone__lt_module_gt__pystones": 1215156,
+  "raw_code_pystone__lt_module_gt__pystones": 1215160,
+  "fun_data_pystone__lt_module_gt___lt_listcomp_gt_": 1215184,
+  "const_table_data_pystone__lt_module_gt___lt_listcomp_gt_": 1215216,
+  "raw_code_pystone__lt_module_gt___lt_listcomp_gt_": 1215220,
+  "fun_data_pystone__lt_module_gt__Proc0": 1215248,
+  "const_obj_pystone__lt_module_gt__Proc0_0": 1215744,
+  "const_obj_pystone__lt_module_gt__Proc0_1": 1215792,
+  "const_obj_pystone__lt_module_gt__Proc0_2": 1215840,
+  "const_obj_pystone__lt_module_gt__Proc0_3": 1215856,
+  "const_obj_pystone__lt_module_gt__Proc0_4": 1215872,
+  "const_obj_pystone__lt_module_gt__Proc0_5": 1215900,
+  "const_table_data_pystone__lt_module_gt__Proc0": 1215920,
+  "raw_code_pystone__lt_module_gt__Proc0": 1215948,
+  "fun_data_pystone__lt_module_gt__Proc1": 1215968,
+  "const_table_data_pystone__lt_module_gt__Proc1": 1216132,
+  "raw_code_pystone__lt_module_gt__Proc1": 1216136,
+  "fun_data_pystone__lt_module_gt__Proc2": 1216160,
+  "const_table_data_pystone__lt_module_gt__Proc2": 1216228,
+  "raw_code_pystone__lt_module_gt__Proc2": 1216232,
+  "fun_data_pystone__lt_module_gt__Proc3": 1216256,
+  "const_table_data_pystone__lt_module_gt__Proc3": 1216320,
+  "raw_code_pystone__lt_module_gt__Proc3": 1216324,
+  "fun_data_pystone__lt_module_gt__Proc4": 1216352,
+  "raw_code_pystone__lt_module_gt__Proc4": 1216392,
+  "fun_data_pystone__lt_module_gt__Proc5": 1216416,
+  "raw_code_pystone__lt_module_gt__Proc5": 1216444,
+  "fun_data_pystone__lt_module_gt__Proc6": 1216464,
+  "const_table_data_pystone__lt_module_gt__Proc6": 1216608,
+  "raw_code_pystone__lt_module_gt__Proc6": 1216612,
+  "fun_data_pystone__lt_module_gt__Proc7": 1216640,
+  "const_table_data_pystone__lt_module_gt__Proc7": 1216664,
+  "raw_code_pystone__lt_module_gt__Proc7": 1216672,
+  "fun_data_pystone__lt_module_gt__Proc8": 1216704,
+  "const_table_data_pystone__lt_module_gt__Proc8": 1216816,
+  "raw_code_pystone__lt_module_gt__Proc8": 1216832,
+  "fun_data_pystone__lt_module_gt__Func1": 1216864,
+  "const_table_data_pystone__lt_module_gt__Func1": 1216900,
+  "raw_code_pystone__lt_module_gt__Func1": 1216908,
+  "fun_data_pystone__lt_module_gt__Func2": 1216928,
+  "const_table_data_pystone__lt_module_gt__Func2": 1217044,
+  "raw_code_pystone__lt_module_gt__Func2": 1217052,
+  "fun_data_pystone__lt_module_gt__Func3": 1217072,
+  "const_table_data_pystone__lt_module_gt__Func3": 1217104,
+  "raw_code_pystone__lt_module_gt__Func3": 1217108,
+  "fun_data_pystone__lt_module_gt__error": 1217136,
+  "const_obj_pystone__lt_module_gt__error_0": 1217252,
+  "const_table_data_pystone__lt_module_gt__error": 1217268,
+  "raw_code_pystone__lt_module_gt__error": 1217276,
+  "fun_data_pystone__lt_module_gt_": 1217296,
+  "const_obj_pystone__lt_module_gt__0": 1217860,
+  "const_obj_pystone__lt_module_gt__1": 1217900,
+  "const_table_data_pystone__lt_module_gt_": 1217920,
+  "raw_code_pystone__lt_module_gt_": 1217996,
+  "fun_data_types__lt_module_gt__ModuleType": 1218016,
+  "const_obj_types__lt_module_gt__ModuleType_0": 1218156,
+  "const_obj_types__lt_module_gt__ModuleType_1": 1218196,
+  "const_obj_types__lt_module_gt__ModuleType_2": 1218212,
+  "const_table_data_types__lt_module_gt__ModuleType": 1218240,
+  "raw_code_types__lt_module_gt__ModuleType": 1218256,
+  "fun_data_types__lt_module_gt_": 1218288,
+  "const_table_data_types__lt_module_gt_": 1218324,
+  "raw_code_types__lt_module_gt_": 1218328,
+  "fun_data_m2__lt_module_gt_": 1218352,
+  "raw_code_m2__lt_module_gt_": 1218372,
+  "fun_data_crt_ld__lt_module_gt__base_setup": 1218400,
+  "const_obj_crt_ld__lt_module_gt__base_setup_0": 1218612,
+  "const_table_data_crt_ld__lt_module_gt__base_setup": 1218640,
+  "raw_code_crt_ld__lt_module_gt__base_setup": 1218660,
+  "fun_data_crt_ld__lt_module_gt__stamp_child": 1218688,
+  "const_table_data_crt_ld__lt_module_gt__stamp_child": 1218736,
+  "raw_code_crt_ld__lt_module_gt__stamp_child": 1218748,
+  "fun_data_crt_ld__lt_module_gt__Node_set_tag": 1218768,
+  "const_table_data_crt_ld__lt_module_gt__Node_set_tag": 1218820,
+  "raw_code_crt_ld__lt_module_gt__Node_set_tag": 1218832,
+  "fun_data_crt_ld__lt_module_gt__Node_setup": 1218864,
+  "const_table_data_crt_ld__lt_module_gt__Node_setup": 1218920,
+  "raw_code_crt_ld__lt_module_gt__Node_setup": 1218928,
+  "fun_data_crt_ld__lt_module_gt_": 1218960,
+  "const_table_data_crt_ld__lt_module_gt_": 1219008,
+  "raw_code_crt_ld__lt_module_gt_": 1219024,
+  "fun_data_machine__lt_module_gt_": 1219044,
+  "raw_code_machine__lt_module_gt_": 1219056,
+  "fun_data_readline__lt_module_gt_": 1219076,
+  "raw_code_readline__lt_module_gt_": 1219088,
+  "fun_data_picoweb___init____lt_module_gt__resource_stream": 1219120,
+  "const_table_data_picoweb___init____lt_module_gt__resource_stream": 1219300,
+  "raw_code_picoweb___init____lt_module_gt__resource_stream": 1219308,
+  "fun_data_picoweb___init____lt_module_gt__get_mime_type": 1219328,
+  "const_table_data_picoweb___init____lt_module_gt__get_mime_type": 1219408,
+  "raw_code_picoweb___init____lt_module_gt__get_mime_type": 1219412,
+  "fun_data_picoweb___init____lt_module_gt__sendstream": 1219440,
+  "const_table_data_picoweb___init____lt_module_gt__sendstream": 1219500,
+  "raw_code_picoweb___init____lt_module_gt__sendstream": 1219508,
+  "fun_data_picoweb___init____lt_module_gt__jsonify": 1219536,
+  "const_obj_picoweb___init____lt_module_gt__jsonify_0": 1219604,
+  "const_table_data_picoweb___init____lt_module_gt__jsonify": 1219620,
+  "raw_code_picoweb___init____lt_module_gt__jsonify": 1219632,
+  "fun_data_picoweb___init____lt_module_gt__start_response": 1219664,
+  "const_obj_picoweb___init____lt_module_gt__start_response_0": 1219900,
+  "const_obj_picoweb___init____lt_module_gt__start_response_1": 1219932,
+  "const_table_data_picoweb___init____lt_module_gt__start_response": 1219952,
+  "raw_code_picoweb___init____lt_module_gt__start_response": 1219976,
+  "fun_data_picoweb___init____lt_module_gt__http_error": 1220000,
+  "const_table_data_picoweb___init____lt_module_gt__http_error": 1220040,
+  "raw_code_picoweb___init____lt_module_gt__http_error": 1220048,
+  "fun_data_picoweb___init____lt_module_gt__HTTPRequest___init__": 1220068,
+  "const_table_data_picoweb___init____lt_module_gt__HTTPRequest___init__": 1220080,
+  "raw_code_picoweb___init____lt_module_gt__HTTPRequest___init__": 1220084,
+  "fun_data_picoweb___init____lt_module_gt__HTTPRequest_read_form_data": 1220112,
+  "const_obj_picoweb___init____lt_module_gt__HTTPRequest_read_form_data_0": 1220192,
+  "const_table_data_picoweb___init____lt_module_gt__HTTPRequest_read_form_data": 1220208,
+  "raw_code_picoweb___init____lt_module_gt__HTTPRequest_read_form_data": 1220216,
+  "fun_data_picoweb___init____lt_module_gt__HTTPRequest_parse_qs": 1220240,
+  "const_table_data_picoweb___init____lt_module_gt__HTTPRequest_parse_qs": 1220272,
+  "raw_code_picoweb___init____lt_module_gt__HTTPRequest_parse_qs": 1220276,
+  "fun_data_picoweb___init____lt_module_gt__HTTPRequest": 1220304,
+  "const_table_data_picoweb___init____lt_module_gt__HTTPRequest": 1220348,
+  "raw_code_picoweb___init____lt_module_gt__HTTPRequest": 1220360,
+  "fun_data_picoweb___init____lt_module_gt__WebApp___init__": 1220384,
+  "const_obj_picoweb___init____lt_module_gt__WebApp___init___0": 1220540,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp___init__": 1220560,
+  "raw_code_picoweb___init____lt_module_gt__WebApp___init__": 1220580,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_parse_headers": 1220608,
+  "const_obj_picoweb___init____lt_module_gt__WebApp_parse_headers_0": 1220680,
+  "const_obj_picoweb___init____lt_module_gt__WebApp_parse_headers_1": 1220700,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_parse_headers": 1220720,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_parse_headers": 1220736,
+  "fun_data_picoweb___init____lt_module_gt__WebApp__handle": 1220768,
+  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_0": 1221572,
+  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_1": 1221588,
+  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_2": 1221632,
+  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_3": 1221668,
+  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_4": 1221684,
+  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_5": 1221716,
+  "const_obj_picoweb___init____lt_module_gt__WebApp__handle_6": 1221768,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp__handle": 1221792,
+  "raw_code_picoweb___init____lt_module_gt__WebApp__handle": 1221832,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_mount": 1221856,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_mount": 1221888,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_mount": 1221900,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_route__route": 1221920,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_route__route": 1221952,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_route__route": 1221968,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_route": 1222000,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_route": 1222028,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_route": 1222040,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_add_url_rule": 1222064,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_add_url_rule": 1222096,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_add_url_rule": 1222108,
+  "fun_data_picoweb___init____lt_module_gt__WebApp__load_template": 1222128,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp__load_template": 1222192,
+  "raw_code_picoweb___init____lt_module_gt__WebApp__load_template": 1222200,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_render_template": 1222224,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_render_template": 1222272,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_render_template": 1222288,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_render_str": 1222320,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_render_str": 1222356,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_render_str": 1222368,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_sendfile": 1222400,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_sendfile": 1222560,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_sendfile": 1222580,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_handle_static": 1222608,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_handle_static": 1222684,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_handle_static": 1222696,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_init": 1222720,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_init": 1222740,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_init": 1222744,
+  "fun_data_picoweb___init____lt_module_gt__WebApp_run": 1222768,
+  "const_obj_picoweb___init____lt_module_gt__WebApp_run_0": 1223000,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp_run": 1223024,
+  "raw_code_picoweb___init____lt_module_gt__WebApp_run": 1223052,
+  "fun_data_picoweb___init____lt_module_gt__WebApp": 1223072,
+  "const_table_data_picoweb___init____lt_module_gt__WebApp": 1223232,
+  "raw_code_picoweb___init____lt_module_gt__WebApp": 1223284,
+  "fun_data_picoweb___init____lt_module_gt_": 1223312,
+  "const_table_data_picoweb___init____lt_module_gt_": 1223504,
+  "raw_code_picoweb___init____lt_module_gt_": 1223536,
+  "fun_data_picoweb_utils__lt_module_gt__unquote_plus__lt_listcomp_gt_": 1223568,
+  "const_table_data_picoweb_utils__lt_module_gt__unquote_plus__lt_listcomp_gt_": 1223620,
+  "raw_code_picoweb_utils__lt_module_gt__unquote_plus__lt_listcomp_gt_": 1223624,
+  "fun_data_picoweb_utils__lt_module_gt__unquote_plus": 1223648,
+  "const_table_data_picoweb_utils__lt_module_gt__unquote_plus": 1223708,
+  "raw_code_picoweb_utils__lt_module_gt__unquote_plus": 1223716,
+  "fun_data_picoweb_utils__lt_module_gt__parse_qs__lt_listcomp_gt_": 1223744,
+  "const_table_data_picoweb_utils__lt_module_gt__parse_qs__lt_listcomp_gt_": 1223776,
+  "raw_code_picoweb_utils__lt_module_gt__parse_qs__lt_listcomp_gt_": 1223780,
+  "fun_data_picoweb_utils__lt_module_gt__parse_qs": 1223808,
+  "const_table_data_picoweb_utils__lt_module_gt__parse_qs": 1223956,
+  "raw_code_picoweb_utils__lt_module_gt__parse_qs": 1223964,
+  "fun_data_picoweb_utils__lt_module_gt_": 1223984,
+  "const_table_data_picoweb_utils__lt_module_gt_": 1224008,
+  "raw_code_picoweb_utils__lt_module_gt_": 1224016,
+  "fun_data_crt__lt_module_gt___lt_lambda_gt_": 1224048,
+  "const_table_data_crt__lt_module_gt___lt_lambda_gt_": 1224068,
+  "raw_code_crt__lt_module_gt___lt_lambda_gt_": 1224076,
+  "fun_data_crt__lt_module_gt__base_setup": 1224096,
+  "const_table_data_crt__lt_module_gt__base_setup": 1224112,
+  "raw_code_crt__lt_module_gt__base_setup": 1224116,
+  "fun_data_crt__lt_module_gt__base": 1224144,
+  "const_table_data_crt__lt_module_gt__base": 1224192,
+  "raw_code_crt__lt_module_gt__base": 1224196,
+  "fun_data_crt__lt_module_gt__NodePath": 1224224,
+  "raw_code_crt__lt_module_gt__NodePath": 1224256,
+  "fun_data_crt__lt_module_gt__Node_setup": 1224276,
+  "const_table_data_crt__lt_module_gt__Node_setup": 1224292,
+  "raw_code_crt__lt_module_gt__Node_setup": 1224296,
+  "fun_data_crt__lt_module_gt__Node_set_tag": 1224316,
+  "const_table_data_crt__lt_module_gt__Node_set_tag": 1224332,
+  "raw_code_crt__lt_module_gt__Node_set_tag": 1224336,
+  "fun_data_crt__lt_module_gt__Node": 1224368,
+  "const_table_data_crt__lt_module_gt__Node": 1224416,
+  "raw_code_crt__lt_module_gt__Node": 1224424,
+  "fun_data_crt__lt_module_gt__root": 1224448,
+  "raw_code_crt__lt_module_gt__root": 1224476,
+  "fun_data_crt__lt_module_gt__blit": 1224496,
+  "raw_code_crt__lt_module_gt__blit": 1224676,
+  "fun_data_crt__lt_module_gt__taskMgr": 1224704,
+  "const_table_data_crt__lt_module_gt__taskMgr": 1224744,
+  "raw_code_crt__lt_module_gt__taskMgr": 1224748,
+  "fun_data_crt__lt_module_gt__render___enter__": 1224768,
+  "const_table_data_crt__lt_module_gt__render___enter__": 1224792,
+  "raw_code_crt__lt_module_gt__render___enter__": 1224796,
+  "fun_data_crt__lt_module_gt__render___exit__": 1224816,
+  "const_table_data_crt__lt_module_gt__render___exit__": 1224848,
+  "raw_code_crt__lt_module_gt__render___exit__": 1224852,
+  "fun_data_crt__lt_module_gt__render_draw_child": 1224880,
+  "const_table_data_crt__lt_module_gt__render_draw_child": 1225008,
+  "raw_code_crt__lt_module_gt__render_draw_child": 1225024,
+  "fun_data_crt__lt_module_gt__render": 1225056,
+  "const_table_data_crt__lt_module_gt__render": 1225148,
+  "raw_code_crt__lt_module_gt__render": 1225160,
+  "fun_data_crt__lt_module_gt__set_fps": 1225184,
+  "const_obj_crt__lt_module_gt__set_fps_0": 1225264,
+  "const_table_data_crt__lt_module_gt__set_fps": 1225280,
+  "raw_code_crt__lt_module_gt__set_fps": 1225288,
+  "fun_data_crt__lt_module_gt__npos": 1225312,
+  "const_table_data_crt__lt_module_gt__npos": 1225348,
+  "raw_code_crt__lt_module_gt__npos": 1225352,
+  "fun_data_crt__lt_module_gt__get_x": 1225376,
+  "const_table_data_crt__lt_module_gt__get_x": 1225396,
+  "raw_code_crt__lt_module_gt__get_x": 1225400,
+  "fun_data_crt__lt_module_gt__get_z": 1225424,
+  "const_table_data_crt__lt_module_gt__get_z": 1225444,
+  "raw_code_crt__lt_module_gt__get_z": 1225448,
+  "fun_data_crt__lt_module_gt__set_any": 1225472,
+  "const_table_data_crt__lt_module_gt__set_any": 1225552,
+  "raw_code_crt__lt_module_gt__set_any": 1225564,
+  "fun_data_crt__lt_module_gt__set_x": 1225584,
+  "const_table_data_crt__lt_module_gt__set_x": 1225608,
+  "raw_code_crt__lt_module_gt__set_x": 1225616,
+  "fun_data_crt__lt_module_gt__set_z": 1225648,
+  "const_table_data_crt__lt_module_gt__set_z": 1225672,
+  "raw_code_crt__lt_module_gt__set_z": 1225680,
+  "fun_data_crt__lt_module_gt__set_text": 1225712,
+  "const_table_data_crt__lt_module_gt__set_text": 1225776,
+  "raw_code_crt__lt_module_gt__set_text": 1225784,
+  "fun_data_crt__lt_module_gt_": 1225808,
+  "const_obj_crt__lt_module_gt__0": 1226272,
+  "const_table_data_crt__lt_module_gt_": 1226288,
+  "raw_code_crt__lt_module_gt_": 1226356,
+  "fun_data_pystone2__lt_module_gt__Record___init__": 1226384,
+  "const_table_data_pystone2__lt_module_gt__Record___init__": 1226432,
+  "raw_code_pystone2__lt_module_gt__Record___init__": 1226456,
+  "fun_data_pystone2__lt_module_gt__Record_copy": 1226480,
+  "const_table_data_pystone2__lt_module_gt__Record_copy": 1226524,
+  "raw_code_pystone2__lt_module_gt__Record_copy": 1226528,
+  "fun_data_pystone2__lt_module_gt__Record": 1226560,
+  "const_table_data_pystone2__lt_module_gt__Record": 1226604,
+  "raw_code_pystone2__lt_module_gt__Record": 1226612,
+  "fun_data_pystone2__lt_module_gt__main": 1226640,
+  "const_obj_pystone2__lt_module_gt__main_0": 1226696,
+  "const_obj_pystone2__lt_module_gt__main_1": 1226712,
+  "const_table_data_pystone2__lt_module_gt__main": 1226728,
+  "raw_code_pystone2__lt_module_gt__main": 1226740,
+  "fun_data_pystone2__lt_module_gt__pystones": 1226768,
+  "const_table_data_pystone2__lt_module_gt__pystones": 1226788,
+  "raw_code_pystone2__lt_module_gt__pystones": 1226792,
+  "fun_data_pystone2__lt_module_gt___lt_listcomp_gt_": 1226816,
+  "const_table_data_pystone2__lt_module_gt___lt_listcomp_gt_": 1226848,
+  "raw_code_pystone2__lt_module_gt___lt_listcomp_gt_": 1226852,
+  "fun_data_pystone2__lt_module_gt__Proc0": 1226880,
+  "const_obj_pystone2__lt_module_gt__Proc0_0": 1227292,
+  "const_obj_pystone2__lt_module_gt__Proc0_1": 1227308,
+  "const_obj_pystone2__lt_module_gt__Proc0_2": 1227324,
+  "const_obj_pystone2__lt_module_gt__Proc0_3": 1227344,
+  "const_obj_pystone2__lt_module_gt__Proc0_4": 1227360,
+  "const_table_data_pystone2__lt_module_gt__Proc0": 1227376,
+  "raw_code_pystone2__lt_module_gt__Proc0": 1227400,
+  "fun_data_pystone2__lt_module_gt__Proc1": 1227424,
+  "const_table_data_pystone2__lt_module_gt__Proc1": 1227588,
+  "raw_code_pystone2__lt_module_gt__Proc1": 1227592,
+  "fun_data_pystone2__lt_module_gt__Proc2": 1227616,
+  "const_table_data_pystone2__lt_module_gt__Proc2": 1227684,
+  "raw_code_pystone2__lt_module_gt__Proc2": 1227688,
+  "fun_data_pystone2__lt_module_gt__Proc3": 1227712,
+  "const_table_data_pystone2__lt_module_gt__Proc3": 1227776,
+  "raw_code_pystone2__lt_module_gt__Proc3": 1227780,
+  "fun_data_pystone2__lt_module_gt__Proc4": 1227808,
+  "raw_code_pystone2__lt_module_gt__Proc4": 1227848,
+  "fun_data_pystone2__lt_module_gt__Proc5": 1227872,
+  "raw_code_pystone2__lt_module_gt__Proc5": 1227900,
+  "fun_data_pystone2__lt_module_gt__Proc6": 1227920,
+  "const_table_data_pystone2__lt_module_gt__Proc6": 1228064,
+  "raw_code_pystone2__lt_module_gt__Proc6": 1228068,
+  "fun_data_pystone2__lt_module_gt__Proc7": 1228096,
+  "const_table_data_pystone2__lt_module_gt__Proc7": 1228120,
+  "raw_code_pystone2__lt_module_gt__Proc7": 1228128,
+  "fun_data_pystone2__lt_module_gt__Proc8": 1228160,
+  "const_table_data_pystone2__lt_module_gt__Proc8": 1228272,
+  "raw_code_pystone2__lt_module_gt__Proc8": 1228288,
+  "fun_data_pystone2__lt_module_gt__Func1": 1228320,
+  "const_table_data_pystone2__lt_module_gt__Func1": 1228356,
+  "raw_code_pystone2__lt_module_gt__Func1": 1228364,
+  "fun_data_pystone2__lt_module_gt__Func2": 1228384,
+  "const_table_data_pystone2__lt_module_gt__Func2": 1228500,
+  "raw_code_pystone2__lt_module_gt__Func2": 1228508,
+  "fun_data_pystone2__lt_module_gt__Func3": 1228528,
+  "const_table_data_pystone2__lt_module_gt__Func3": 1228560,
+  "raw_code_pystone2__lt_module_gt__Func3": 1228564,
+  "fun_data_pystone2__lt_module_gt__error": 1228592,
+  "const_obj_pystone2__lt_module_gt__error_0": 1228680,
+  "const_table_data_pystone2__lt_module_gt__error": 1228696,
+  "raw_code_pystone2__lt_module_gt__error": 1228704,
+  "fun_data_pystone2__lt_module_gt_": 1228736,
+  "const_obj_pystone2__lt_module_gt__0": 1229244,
+  "const_obj_pystone2__lt_module_gt__1": 1229260,
+  "const_table_data_pystone2__lt_module_gt_": 1229280,
+  "raw_code_pystone2__lt_module_gt_": 1229356,
+  "fun_data_stupyde___init____lt_module_gt_": 1229376,
+  "const_obj_stupyde___init____lt_module_gt__0": 1229440,
+  "const_table_data_stupyde___init____lt_module_gt_": 1229456,
+  "raw_code_stupyde___init____lt_module_gt_": 1229460,
+  "fun_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout___init__": 1229488,
+  "const_table_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout___init__": 1229524,
+  "raw_code_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout___init__": 1229532,
+  "fun_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout_print": 1229552,
+  "const_table_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout_print": 1229596,
+  "raw_code_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout_print": 1229600,
+  "fun_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout___enter__": 1229632,
+  "const_table_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout___enter__": 1229668,
+  "raw_code_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout___enter__": 1229672,
+  "fun_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout_getvalue": 1229696,
+  "const_table_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout_getvalue": 1229744,
+  "raw_code_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout_getvalue": 1229748,
+  "fun_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout___exit__": 1229776,
+  "const_table_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout___exit__": 1229804,
+  "raw_code_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout___exit__": 1229808,
+  "fun_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout": 1229840,
+  "const_table_data_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout": 1229920,
+  "raw_code_stupyde_fixes_contextlib__lt_module_gt__redirect_stdout": 1229940,
+  "fun_data_stupyde_fixes_contextlib__lt_module_gt_": 1229968,
+  "const_table_data_stupyde_fixes_contextlib__lt_module_gt_": 1230000,
+  "raw_code_stupyde_fixes_contextlib__lt_module_gt_": 1230004,
+  "fun_data_stupyde_fixes_contextvars__lt_module_gt__LookupError": 1230032,
+  "raw_code_stupyde_fixes_contextvars__lt_module_gt__LookupError": 1230056,
+  "fun_data_stupyde_fixes_contextvars__lt_module_gt__ContextVar___init__": 1230080,
+  "const_obj_stupyde_fixes_contextvars__lt_module_gt__ContextVar___init___0": 1230208,
+  "const_obj_stupyde_fixes_contextvars__lt_module_gt__ContextVar___init___1": 1230252,
+  "const_table_data_stupyde_fixes_contextvars__lt_module_gt__ContextVar___init__": 1230272,
+  "raw_code_stupyde_fixes_contextvars__lt_module_gt__ContextVar___init__": 1230292,
+  "fun_data_stupyde_fixes_contextvars__lt_module_gt__ContextVar_set": 1230320,
+  "const_table_data_stupyde_fixes_contextvars__lt_module_gt__ContextVar_set": 1230348,
+  "raw_code_stupyde_fixes_contextvars__lt_module_gt__ContextVar_set": 1230356,
+  "fun_data_stupyde_fixes_contextvars__lt_module_gt__ContextVar_get": 1230384,
+  "const_table_data_stupyde_fixes_contextvars__lt_module_gt__ContextVar_get": 1230472,
+  "raw_code_stupyde_fixes_contextvars__lt_module_gt__ContextVar_get": 1230480,
+  "fun_data_stupyde_fixes_contextvars__lt_module_gt__ContextVar": 1230512,
+  "const_table_data_stupyde_fixes_contextvars__lt_module_gt__ContextVar": 1230572,
+  "raw_code_stupyde_fixes_contextvars__lt_module_gt__ContextVar": 1230584,
+  "fun_data_stupyde_fixes_contextvars__lt_module_gt_": 1230608,
+  "const_table_data_stupyde_fixes_contextvars__lt_module_gt_": 1230660,
+  "raw_code_stupyde_fixes_contextvars__lt_module_gt_": 1230668,
+  "fun_data_stupyde_fixes_micropython__lt_module_gt____getattr__": 1230688,
+  "const_table_data_stupyde_fixes_micropython__lt_module_gt____getattr__": 1230712,
+  "raw_code_stupyde_fixes_micropython__lt_module_gt____getattr__": 1230716,
+  "fun_data_stupyde_fixes_micropython__lt_module_gt__scheduler": 1230736,
+  "raw_code_stupyde_fixes_micropython__lt_module_gt__scheduler": 1230796,
+  "fun_data_stupyde_fixes_micropython__lt_module_gt__schedule": 1230816,
+  "const_table_data_stupyde_fixes_micropython__lt_module_gt__schedule": 1230880,
+  "raw_code_stupyde_fixes_micropython__lt_module_gt__schedule": 1230888,
+  "fun_data_stupyde_fixes_micropython__lt_module_gt__mem_info": 1230908,
+  "const_obj_stupyde_fixes_micropython__lt_module_gt__mem_info_0": 1231068,
+  "const_table_data_stupyde_fixes_micropython__lt_module_gt__mem_info": 1231084,
+  "raw_code_stupyde_fixes_micropython__lt_module_gt__mem_info": 1231088,
+  "fun_data_stupyde_fixes_micropython__lt_module_gt_": 1231120,
+  "const_obj_stupyde_fixes_micropython__lt_module_gt__0": 1231228,
+  "const_obj_stupyde_fixes_micropython__lt_module_gt__1": 1231312,
+  "const_table_data_stupyde_fixes_micropython__lt_module_gt_": 1231328,
+  "raw_code_stupyde_fixes_micropython__lt_module_gt_": 1231352,
+  "fun_data_stupyde_fixes_machine__lt_module_gt_": 1231376,
+  "const_obj_stupyde_fixes_machine__lt_module_gt__0": 1231416,
+  "const_obj_stupyde_fixes_machine__lt_module_gt__1": 1231468,
+  "const_table_data_stupyde_fixes_machine__lt_module_gt_": 1231484,
+  "raw_code_stupyde_fixes_machine__lt_module_gt_": 1231492,
+  "fun_data_stupyde_fixes___init____lt_module_gt__fixme": 1231520,
+  "const_table_data_stupyde_fixes___init____lt_module_gt__fixme": 1231612,
+  "raw_code_stupyde_fixes___init____lt_module_gt__fixme": 1231616,
+  "fun_data_stupyde_fixes___init____lt_module_gt__print_exception": 1231648,
+  "const_table_data_stupyde_fixes___init____lt_module_gt__print_exception": 1231680,
+  "raw_code_stupyde_fixes___init____lt_module_gt__print_exception": 1231688,
+  "fun_data_stupyde_fixes___init____lt_module_gt_": 1231712,
+  "const_obj_stupyde_fixes___init____lt_module_gt__0": 1232148,
+  "const_obj_stupyde_fixes___init____lt_module_gt__1": 1232164,
+  "const_obj_stupyde_fixes___init____lt_module_gt__2": 1232204,
+  "const_obj_stupyde_fixes___init____lt_module_gt__3": 1232236,
+  "const_table_data_stupyde_fixes___init____lt_module_gt_": 1232256,
+  "raw_code_stupyde_fixes___init____lt_module_gt_": 1232280,
+  "fun_data_stupyde_fixes_utime__lt_module_gt__clock": 1232304,
+  "raw_code_stupyde_fixes_utime__lt_module_gt__clock": 1232324,
+  "fun_data_stupyde_fixes_utime__lt_module_gt__sleep_ms": 1232352,
+  "const_table_data_stupyde_fixes_utime__lt_module_gt__sleep_ms": 1232380,
+  "raw_code_stupyde_fixes_utime__lt_module_gt__sleep_ms": 1232384,
+  "fun_data_stupyde_fixes_utime__lt_module_gt__sleep_us": 1232416,
+  "const_table_data_stupyde_fixes_utime__lt_module_gt__sleep_us": 1232444,
+  "raw_code_stupyde_fixes_utime__lt_module_gt__sleep_us": 1232448,
+  "fun_data_stupyde_fixes_utime__lt_module_gt__ticks_ms": 1232480,
+  "raw_code_stupyde_fixes_utime__lt_module_gt__ticks_ms": 1232516,
+  "fun_data_stupyde_fixes_utime__lt_module_gt__ticks_us": 1232544,
+  "raw_code_stupyde_fixes_utime__lt_module_gt__ticks_us": 1232584,
+  "fun_data_stupyde_fixes_utime__lt_module_gt__ticks_add": 1232608,
+  "const_table_data_stupyde_fixes_utime__lt_module_gt__ticks_add": 1232628,
+  "raw_code_stupyde_fixes_utime__lt_module_gt__ticks_add": 1232636,
+  "fun_data_stupyde_fixes_utime__lt_module_gt__ticks_diff": 1232656,
+  "const_table_data_stupyde_fixes_utime__lt_module_gt__ticks_diff": 1232692,
+  "raw_code_stupyde_fixes_utime__lt_module_gt__ticks_diff": 1232700,
+  "fun_data_stupyde_fixes_utime__lt_module_gt_": 1232720,
+  "const_obj_stupyde_fixes_utime__lt_module_gt__0": 1232912,
+  "const_table_data_stupyde_fixes_utime__lt_module_gt_": 1232928,
+  "raw_code_stupyde_fixes_utime__lt_module_gt_": 1232960,
+  "fun_data_stupyde_fixes_struct__lt_module_gt____getattr__": 1232992,
+  "const_table_data_stupyde_fixes_struct__lt_module_gt____getattr__": 1233012,
+  "raw_code_stupyde_fixes_struct__lt_module_gt____getattr__": 1233016,
+  "fun_data_stupyde_fixes_struct__lt_module_gt_": 1233040,
+  "const_table_data_stupyde_fixes_struct__lt_module_gt_": 1233064,
+  "raw_code_stupyde_fixes_struct__lt_module_gt_": 1233068,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt____getattr__": 1233088,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt____getattr__": 1233112,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt____getattr__": 1233116,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__pointer": 1233136,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__pointer": 1233160,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__pointer": 1233164,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__PTYPE": 1233184,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__PTYPE": 1233208,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__sizeof": 1233232,
+  "const_obj_stupyde_fixes_ctypes__lt_module_gt__sizeof_0": 1233524,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__sizeof": 1233552,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__sizeof": 1233568,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__struct_size_get": 1233600,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__struct_size_get": 1233780,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__struct_size_get": 1233788,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__struct_field_get": 1233808,
+  "const_obj_stupyde_fixes_ctypes__lt_module_gt__struct_field_get_0": 1234072,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__struct_field_get": 1234096,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__struct_field_get": 1234112,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__CSpace___init__": 1234144,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__CSpace___init__": 1234192,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__CSpace___init__": 1234204,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__CSpace": 1234224,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__CSpace": 1234256,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__CSpace": 1234260,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__PT_sizeof": 1234288,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__PT_sizeof": 1234316,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__PT_sizeof": 1234320,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__PT___init__": 1234352,
+  "const_obj_stupyde_fixes_ctypes__lt_module_gt__PT___init___0": 1234504,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__PT___init__": 1234528,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__PT___init__": 1234544,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__PT___int__": 1234576,
+  "const_obj_stupyde_fixes_ctypes__lt_module_gt__PT___int___0": 1234704,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__PT___int__": 1234720,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__PT___int__": 1234728,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__PT___add__": 1234752,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__PT___add__": 1234784,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__PT___add__": 1234792,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__PT_byref": 1234816,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__PT_byref": 1234960,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__PT_byref": 1234964,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__PT___getattr__": 1234992,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__PT___getattr__": 1235100,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__PT___getattr__": 1235108,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__PT___repr__": 1235136,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__PT___repr__": 1235160,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__PT___repr__": 1235164,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__PT": 1235184,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__PT": 1235296,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__PT": 1235324,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__POINTER": 1235344,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__POINTER": 1235500,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__POINTER": 1235504,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__c_void_p": 1235536,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__c_void_p": 1235560,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__c_char_p": 1235584,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__c_char_p": 1235608,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__Structure": 1235632,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__Structure": 1235668,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__CFUNCTYPE___init__": 1235696,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__CFUNCTYPE___init__": 1235716,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__CFUNCTYPE___init__": 1235720,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__CFUNCTYPE": 1235744,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__CFUNCTYPE": 1235780,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__CFUNCTYPE": 1235784,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__memmove": 1235808,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__memmove": 1235848,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__string_at": 1235872,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__string_at": 1235912,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__Union": 1235936,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__Union": 1235968,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt___Pointer": 1236000,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt___Pointer": 1236040,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__convstack": 1236064,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__convstack": 1236136,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__convstack": 1236148,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___init__": 1236176,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___init__": 1236240,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___init__": 1236248,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call____lt_listcomp_gt_": 1236272,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call____lt_listcomp_gt_": 1236308,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call____lt_listcomp_gt_": 1236312,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___func": 1236336,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___func": 1236380,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___func": 1236392,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___func2": 1236416,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___func2": 1236452,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___func2": 1236460,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call__": 1236480,
+  "const_obj_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___0": 1236868,
+  "const_obj_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___1": 1236916,
+  "const_obj_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___2": 1236960,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call__": 1236976,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call__": 1237008,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder": 1237040,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder": 1237076,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder": 1237084,
+  "fun_data_stupyde_fixes_ctypes__lt_module_gt_": 1237104,
+  "const_table_data_stupyde_fixes_ctypes__lt_module_gt_": 1237792,
+  "raw_code_stupyde_fixes_ctypes__lt_module_gt_": 1237868,
+  "fun_data_warnings__lt_module_gt__warn": 1237888,
+  "const_table_data_warnings__lt_module_gt__warn": 1237932,
+  "raw_code_warnings__lt_module_gt__warn": 1237944,
+  "fun_data_warnings__lt_module_gt_": 1237968,
+  "const_table_data_warnings__lt_module_gt_": 1237988,
+  "raw_code_warnings__lt_module_gt_": 1237992,
+  "fun_data_usdl2__lt_module_gt__SDL_version": 1238016,
+  "raw_code_usdl2__lt_module_gt__SDL_version": 1238076,
+  "fun_data_usdl2__lt_module_gt___hidden": 1238096,
+  "raw_code_usdl2__lt_module_gt___hidden": 1238120,
+  "fun_data_usdl2__lt_module_gt__SDL_RWopsBase": 1238144,
+  "raw_code_usdl2__lt_module_gt__SDL_RWopsBase": 1238168,
+  "fun_data_usdl2__lt_module_gt__SDL_RWops": 1238192,
+  "raw_code_usdl2__lt_module_gt__SDL_RWops": 1238292,
+  "fun_data_usdl2__lt_module_gt__SDL_Window": 1238320,
+  "raw_code_usdl2__lt_module_gt__SDL_Window": 1238344,
+  "fun_data_usdl2__lt_module_gt__SDL_Rect___init__": 1238368,
+  "const_table_data_usdl2__lt_module_gt__SDL_Rect___init__": 1238432,
+  "raw_code_usdl2__lt_module_gt__SDL_Rect___init__": 1238452,
+  "fun_data_usdl2__lt_module_gt__SDL_Rect___repr__": 1238480,
+  "const_obj_usdl2__lt_module_gt__SDL_Rect___repr___0": 1238548,
+  "const_table_data_usdl2__lt_module_gt__SDL_Rect___repr__": 1238564,
+  "raw_code_usdl2__lt_module_gt__SDL_Rect___repr__": 1238572,
+  "fun_data_usdl2__lt_module_gt__SDL_Rect___copy__": 1238592,
+  "const_table_data_usdl2__lt_module_gt__SDL_Rect___copy__": 1238628,
+  "raw_code_usdl2__lt_module_gt__SDL_Rect___copy__": 1238632,
+  "fun_data_usdl2__lt_module_gt__SDL_Rect___deepcopy__": 1238656,
+  "const_table_data_usdl2__lt_module_gt__SDL_Rect___deepcopy__": 1238692,
+  "raw_code_usdl2__lt_module_gt__SDL_Rect___deepcopy__": 1238700,
+  "fun_data_usdl2__lt_module_gt__SDL_Rect___eq__": 1238720,
+  "const_table_data_usdl2__lt_module_gt__SDL_Rect___eq__": 1238792,
+  "raw_code_usdl2__lt_module_gt__SDL_Rect___eq__": 1238800,
+  "fun_data_usdl2__lt_module_gt__SDL_Rect___ne__": 1238832,
+  "const_table_data_usdl2__lt_module_gt__SDL_Rect___ne__": 1238904,
+  "raw_code_usdl2__lt_module_gt__SDL_Rect___ne__": 1238912,
+  "fun_data_usdl2__lt_module_gt__SDL_Rect": 1238944,
+  "const_table_data_usdl2__lt_module_gt__SDL_Rect": 1239056,
+  "raw_code_usdl2__lt_module_gt__SDL_Rect": 1239080,
+  "fun_data_usdl2__lt_module_gt__get_dll_file": 1239104,
+  "raw_code_usdl2__lt_module_gt__get_dll_file": 1239132,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_": 1239152,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_": 1239168,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_": 1239172,
+  "fun_data_usdl2__lt_module_gt__SDL_Keysym": 1239200,
+  "raw_code_usdl2__lt_module_gt__SDL_Keysym": 1239268,
+  "fun_data_usdl2__lt_module_gt__SDL_Joystick": 1239296,
+  "raw_code_usdl2__lt_module_gt__SDL_Joystick": 1239320,
+  "fun_data_usdl2__lt_module_gt__SDL_JoystickGUID": 1239344,
+  "raw_code_usdl2__lt_module_gt__SDL_JoystickGUID": 1239388,
+  "fun_data_usdl2__lt_module_gt__SDL_Finger": 1239408,
+  "raw_code_usdl2__lt_module_gt__SDL_Finger": 1239476,
+  "fun_data_usdl2__lt_module_gt___winmsg": 1239504,
+  "raw_code_usdl2__lt_module_gt___winmsg": 1239576,
+  "fun_data_usdl2__lt_module_gt___x11msg": 1239600,
+  "raw_code_usdl2__lt_module_gt___x11msg": 1239640,
+  "fun_data_usdl2__lt_module_gt___dfbmsg": 1239664,
+  "raw_code_usdl2__lt_module_gt___dfbmsg": 1239704,
+  "fun_data_usdl2__lt_module_gt___cocoamsg": 1239728,
+  "raw_code_usdl2__lt_module_gt___cocoamsg": 1239768,
+  "fun_data_usdl2__lt_module_gt___uikitmsg": 1239792,
+  "raw_code_usdl2__lt_module_gt___uikitmsg": 1239832,
+  "fun_data_usdl2__lt_module_gt___vivantemsg": 1239856,
+  "raw_code_usdl2__lt_module_gt___vivantemsg": 1239896,
+  "fun_data_usdl2__lt_module_gt___msg": 1239920,
+  "raw_code_usdl2__lt_module_gt___msg": 1240020,
+  "fun_data_usdl2__lt_module_gt__SDL_SysWMmsg": 1240048,
+  "raw_code_usdl2__lt_module_gt__SDL_SysWMmsg": 1240104,
+  "fun_data_usdl2__lt_module_gt___wininfo": 1240128,
+  "raw_code_usdl2__lt_module_gt___wininfo": 1240184,
+  "fun_data_usdl2__lt_module_gt___winrtinfo": 1240208,
+  "raw_code_usdl2__lt_module_gt___winrtinfo": 1240248,
+  "fun_data_usdl2__lt_module_gt___x11info": 1240272,
+  "raw_code_usdl2__lt_module_gt___x11info": 1240320,
+  "fun_data_usdl2__lt_module_gt___dfbinfo": 1240352,
+  "raw_code_usdl2__lt_module_gt___dfbinfo": 1240412,
+  "fun_data_usdl2__lt_module_gt___cocoainfo": 1240432,
+  "raw_code_usdl2__lt_module_gt___cocoainfo": 1240472,
+  "fun_data_usdl2__lt_module_gt___uikitinfo": 1240496,
+  "const_obj_usdl2__lt_module_gt___uikitinfo_0": 1240572,
+  "const_obj_usdl2__lt_module_gt___uikitinfo_1": 1240600,
+  "const_obj_usdl2__lt_module_gt___uikitinfo_2": 1240636,
+  "const_table_data_usdl2__lt_module_gt___uikitinfo": 1240652,
+  "raw_code_usdl2__lt_module_gt___uikitinfo": 1240664,
+  "fun_data_usdl2__lt_module_gt___wl": 1240688,
+  "const_obj_usdl2__lt_module_gt___wl_0": 1240760,
+  "const_table_data_usdl2__lt_module_gt___wl": 1240776,
+  "raw_code_usdl2__lt_module_gt___wl": 1240780,
+  "fun_data_usdl2__lt_module_gt___mir": 1240800,
+  "raw_code_usdl2__lt_module_gt___mir": 1240848,
+  "fun_data_usdl2__lt_module_gt___android": 1240880,
+  "raw_code_usdl2__lt_module_gt___android": 1240928,
+  "fun_data_usdl2__lt_module_gt___vivante": 1240960,
+  "raw_code_usdl2__lt_module_gt___vivante": 1241008,
+  "fun_data_usdl2__lt_module_gt___info": 1241040,
+  "raw_code_usdl2__lt_module_gt___info": 1241188,
+  "fun_data_usdl2__lt_module_gt__SDL_SysWMinfo": 1241216,
+  "raw_code_usdl2__lt_module_gt__SDL_SysWMinfo": 1241276,
+  "fun_data_usdl2__lt_module_gt__SDL_CommonEvent": 1241296,
+  "raw_code_usdl2__lt_module_gt__SDL_CommonEvent": 1241344,
+  "fun_data_usdl2__lt_module_gt__SDL_DisplayEvent": 1241376,
+  "raw_code_usdl2__lt_module_gt__SDL_DisplayEvent": 1241488,
+  "fun_data_usdl2__lt_module_gt__SDL_WindowEvent": 1241520,
+  "raw_code_usdl2__lt_module_gt__SDL_WindowEvent": 1241640,
+  "fun_data_usdl2__lt_module_gt__SDL_KeyboardEvent": 1241664,
+  "raw_code_usdl2__lt_module_gt__SDL_KeyboardEvent": 1241776,
+  "fun_data_usdl2__lt_module_gt__SDL_TextEditingEvent": 1241808,
+  "raw_code_usdl2__lt_module_gt__SDL_TextEditingEvent": 1241904,
+  "fun_data_usdl2__lt_module_gt__SDL_TextInputEvent": 1241936,
+  "raw_code_usdl2__lt_module_gt__SDL_TextInputEvent": 1242008,
+  "fun_data_usdl2__lt_module_gt__SDL_MouseMotionEvent": 1242032,
+  "raw_code_usdl2__lt_module_gt__SDL_MouseMotionEvent": 1242152,
+  "fun_data_usdl2__lt_module_gt__SDL_MouseButtonEvent": 1242176,
+  "raw_code_usdl2__lt_module_gt__SDL_MouseButtonEvent": 1242308,
+  "fun_data_usdl2__lt_module_gt__SDL_MouseWheelEvent": 1242336,
+  "raw_code_usdl2__lt_module_gt__SDL_MouseWheelEvent": 1242436,
+  "fun_data_usdl2__lt_module_gt__SDL_JoyAxisEvent": 1242464,
+  "raw_code_usdl2__lt_module_gt__SDL_JoyAxisEvent": 1242584,
+  "fun_data_usdl2__lt_module_gt__SDL_JoyBallEvent": 1242608,
+  "raw_code_usdl2__lt_module_gt__SDL_JoyBallEvent": 1242728,
+  "fun_data_usdl2__lt_module_gt__SDL_JoyHatEvent": 1242752,
+  "raw_code_usdl2__lt_module_gt__SDL_JoyHatEvent": 1242852,
+  "fun_data_usdl2__lt_module_gt__SDL_JoyButtonEvent": 1242880,
+  "raw_code_usdl2__lt_module_gt__SDL_JoyButtonEvent": 1242980,
+  "fun_data_usdl2__lt_module_gt__SDL_JoyDeviceEvent": 1243008,
+  "raw_code_usdl2__lt_module_gt__SDL_JoyDeviceEvent": 1243064,
+  "fun_data_usdl2__lt_module_gt__SDL_ControllerAxisEvent": 1243088,
+  "raw_code_usdl2__lt_module_gt__SDL_ControllerAxisEvent": 1243208,
+  "fun_data_usdl2__lt_module_gt__SDL_ControllerButtonEvent": 1243232,
+  "raw_code_usdl2__lt_module_gt__SDL_ControllerButtonEvent": 1243332,
+  "fun_data_usdl2__lt_module_gt__SDL_ControllerDeviceEvent": 1243360,
+  "raw_code_usdl2__lt_module_gt__SDL_ControllerDeviceEvent": 1243416,
+  "fun_data_usdl2__lt_module_gt__SDL_AudioDeviceEvent": 1243440,
+  "raw_code_usdl2__lt_module_gt__SDL_AudioDeviceEvent": 1243540,
+  "fun_data_usdl2__lt_module_gt__SDL_TouchFingerEvent": 1243568,
+  "raw_code_usdl2__lt_module_gt__SDL_TouchFingerEvent": 1243688,
+  "fun_data_usdl2__lt_module_gt__SDL_MultiGestureEvent": 1243712,
+  "raw_code_usdl2__lt_module_gt__SDL_MultiGestureEvent": 1243832,
+  "fun_data_usdl2__lt_module_gt__SDL_DollarGestureEvent": 1243856,
+  "raw_code_usdl2__lt_module_gt__SDL_DollarGestureEvent": 1243968,
+  "fun_data_usdl2__lt_module_gt__SDL_DropEvent": 1244000,
+  "raw_code_usdl2__lt_module_gt__SDL_DropEvent": 1244068,
+  "fun_data_usdl2__lt_module_gt__SDL_SensorEvent": 1244096,
+  "raw_code_usdl2__lt_module_gt__SDL_SensorEvent": 1244168,
+  "fun_data_usdl2__lt_module_gt__SDL_QuitEvent": 1244192,
+  "raw_code_usdl2__lt_module_gt__SDL_QuitEvent": 1244240,
+  "fun_data_usdl2__lt_module_gt__SDL_OSEvent": 1244272,
+  "raw_code_usdl2__lt_module_gt__SDL_OSEvent": 1244320,
+  "fun_data_usdl2__lt_module_gt__SDL_UserEvent": 1244352,
+  "raw_code_usdl2__lt_module_gt__SDL_UserEvent": 1244444,
+  "fun_data_usdl2__lt_module_gt__SDL_SysWMEvent": 1244464,
+  "raw_code_usdl2__lt_module_gt__SDL_SysWMEvent": 1244528,
+  "fun_data_usdl2__lt_module_gt__SDL_Event": 1244560,
+  "raw_code_usdl2__lt_module_gt__SDL_Event": 1244876,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_2": 1244896,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_2": 1244920,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_2": 1244924,
+  "fun_data_usdl2__lt_module_gt__SDL_QuitRequested": 1244944,
+  "raw_code_usdl2__lt_module_gt__SDL_QuitRequested": 1244984,
+  "fun_data_usdl2__lt_module_gt__SDL_TICKS_PASSED": 1245004,
+  "const_table_data_usdl2__lt_module_gt__SDL_TICKS_PASSED": 1245020,
+  "raw_code_usdl2__lt_module_gt__SDL_TICKS_PASSED": 1245028,
+  "fun_data_usdl2__lt_module_gt__SDL_VERSION": 1245056,
+  "const_table_data_usdl2__lt_module_gt__SDL_VERSION": 1245096,
+  "raw_code_usdl2__lt_module_gt__SDL_VERSION": 1245100,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_3": 1245120,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_3": 1245144,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_3": 1245156,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_4": 1245184,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_4": 1245208,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_4": 1245220,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_5": 1245248,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_5": 1245276,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_5": 1245280,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_6": 1245312,
+  "const_obj_usdl2__lt_module_gt___lt_lambda_gt_6_0": 1245360,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_6": 1245376,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_6": 1245384,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_7": 1245408,
+  "const_obj_usdl2__lt_module_gt___lt_lambda_gt_7_0": 1245448,
+  "const_obj_usdl2__lt_module_gt___lt_lambda_gt_7_1": 1245468,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_7": 1245484,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_7": 1245496,
+  "fun_data_usdl2__lt_module_gt__SDL_SwapFloat": 1245520,
+  "const_table_data_usdl2__lt_module_gt__SDL_SwapFloat": 1245560,
+  "raw_code_usdl2__lt_module_gt__SDL_SwapFloat": 1245564,
+  "fun_data_usdl2__lt_module_gt___nop": 1245584,
+  "const_table_data_usdl2__lt_module_gt___nop": 1245596,
+  "raw_code_usdl2__lt_module_gt___nop": 1245600,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_8": 1245632,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_8": 1245696,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_8": 1245712,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_9": 1245744,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_9": 1245792,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_9": 1245812,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_10": 1245832,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_10": 1245848,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_10": 1245852,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_11": 1245872,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_11": 1245888,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_11": 1245892,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_12": 1245912,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_12": 1245928,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_12": 1245932,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_13": 1245952,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_13": 1245968,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_13": 1245972,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_14": 1246000,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_14": 1246020,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_14": 1246024,
+  "fun_data_usdl2__lt_module_gt__SDL_BYTESPERPIXEL": 1246048,
+  "const_table_data_usdl2__lt_module_gt__SDL_BYTESPERPIXEL": 1246112,
+  "raw_code_usdl2__lt_module_gt__SDL_BYTESPERPIXEL": 1246116,
+  "fun_data_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_INDEXED": 1246144,
+  "const_table_data_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_INDEXED": 1246212,
+  "raw_code_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_INDEXED": 1246216,
+  "fun_data_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_PACKED": 1246240,
+  "const_table_data_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_PACKED": 1246308,
+  "raw_code_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_PACKED": 1246312,
+  "fun_data_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_ARRAY": 1246336,
+  "const_table_data_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_ARRAY": 1246436,
+  "raw_code_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_ARRAY": 1246440,
+  "fun_data_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_ALPHA": 1246464,
+  "const_table_data_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_ALPHA": 1246624,
+  "raw_code_usdl2__lt_module_gt__SDL_ISPIXELFORMAT_ALPHA": 1246628,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_15": 1246656,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_15": 1246680,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_15": 1246684,
+  "fun_data_usdl2__lt_module_gt__SDL_Color___init__": 1246704,
+  "const_table_data_usdl2__lt_module_gt__SDL_Color___init__": 1246768,
+  "raw_code_usdl2__lt_module_gt__SDL_Color___init__": 1246788,
+  "fun_data_usdl2__lt_module_gt__SDL_Color___repr__": 1246816,
+  "const_obj_usdl2__lt_module_gt__SDL_Color___repr___0": 1246888,
+  "const_table_data_usdl2__lt_module_gt__SDL_Color___repr__": 1246904,
+  "raw_code_usdl2__lt_module_gt__SDL_Color___repr__": 1246912,
+  "fun_data_usdl2__lt_module_gt__SDL_Color___copy__": 1246944,
+  "const_table_data_usdl2__lt_module_gt__SDL_Color___copy__": 1246980,
+  "raw_code_usdl2__lt_module_gt__SDL_Color___copy__": 1246984,
+  "fun_data_usdl2__lt_module_gt__SDL_Color___deepcopy__": 1247008,
+  "const_table_data_usdl2__lt_module_gt__SDL_Color___deepcopy__": 1247044,
+  "raw_code_usdl2__lt_module_gt__SDL_Color___deepcopy__": 1247052,
+  "fun_data_usdl2__lt_module_gt__SDL_Color___eq__": 1247072,
+  "const_table_data_usdl2__lt_module_gt__SDL_Color___eq__": 1247136,
+  "raw_code_usdl2__lt_module_gt__SDL_Color___eq__": 1247144,
+  "fun_data_usdl2__lt_module_gt__SDL_Color___ne__": 1247168,
+  "const_table_data_usdl2__lt_module_gt__SDL_Color___ne__": 1247232,
+  "raw_code_usdl2__lt_module_gt__SDL_Color___ne__": 1247240,
+  "fun_data_usdl2__lt_module_gt__SDL_Color": 1247264,
+  "const_table_data_usdl2__lt_module_gt__SDL_Color": 1247392,
+  "raw_code_usdl2__lt_module_gt__SDL_Color": 1247416,
+  "fun_data_usdl2__lt_module_gt__SDL_Palette": 1247440,
+  "raw_code_usdl2__lt_module_gt__SDL_Palette": 1247512,
+  "fun_data_usdl2__lt_module_gt__SDL_PixelFormat": 1247536,
+  "raw_code_usdl2__lt_module_gt__SDL_PixelFormat": 1247560,
+  "fun_data_usdl2__lt_module_gt__SDL_Point___init__": 1247584,
+  "const_table_data_usdl2__lt_module_gt__SDL_Point___init__": 1247628,
+  "raw_code_usdl2__lt_module_gt__SDL_Point___init__": 1247640,
+  "fun_data_usdl2__lt_module_gt__SDL_Point___repr__": 1247664,
+  "const_obj_usdl2__lt_module_gt__SDL_Point___repr___0": 1247712,
+  "const_table_data_usdl2__lt_module_gt__SDL_Point___repr__": 1247728,
+  "raw_code_usdl2__lt_module_gt__SDL_Point___repr__": 1247736,
+  "fun_data_usdl2__lt_module_gt__SDL_Point___copy__": 1247760,
+  "const_table_data_usdl2__lt_module_gt__SDL_Point___copy__": 1247788,
+  "raw_code_usdl2__lt_module_gt__SDL_Point___copy__": 1247792,
+  "fun_data_usdl2__lt_module_gt__SDL_Point___deepcopy__": 1247824,
+  "const_table_data_usdl2__lt_module_gt__SDL_Point___deepcopy__": 1247852,
+  "raw_code_usdl2__lt_module_gt__SDL_Point___deepcopy__": 1247860,
+  "fun_data_usdl2__lt_module_gt__SDL_Point___eq__": 1247888,
+  "const_table_data_usdl2__lt_module_gt__SDL_Point___eq__": 1247924,
+  "raw_code_usdl2__lt_module_gt__SDL_Point___eq__": 1247932,
+  "fun_data_usdl2__lt_module_gt__SDL_Point___ne__": 1247952,
+  "const_table_data_usdl2__lt_module_gt__SDL_Point___ne__": 1247988,
+  "raw_code_usdl2__lt_module_gt__SDL_Point___ne__": 1247996,
+  "fun_data_usdl2__lt_module_gt__SDL_Point": 1248016,
+  "const_table_data_usdl2__lt_module_gt__SDL_Point": 1248112,
+  "raw_code_usdl2__lt_module_gt__SDL_Point": 1248136,
+  "fun_data_usdl2__lt_module_gt__SDL_FPoint___init__": 1248160,
+  "const_table_data_usdl2__lt_module_gt__SDL_FPoint___init__": 1248204,
+  "raw_code_usdl2__lt_module_gt__SDL_FPoint___init__": 1248216,
+  "fun_data_usdl2__lt_module_gt__SDL_FPoint___repr__": 1248240,
+  "const_obj_usdl2__lt_module_gt__SDL_FPoint___repr___0": 1248292,
+  "const_table_data_usdl2__lt_module_gt__SDL_FPoint___repr__": 1248308,
+  "raw_code_usdl2__lt_module_gt__SDL_FPoint___repr__": 1248316,
+  "fun_data_usdl2__lt_module_gt__SDL_FPoint___copy__": 1248336,
+  "const_table_data_usdl2__lt_module_gt__SDL_FPoint___copy__": 1248364,
+  "raw_code_usdl2__lt_module_gt__SDL_FPoint___copy__": 1248368,
+  "fun_data_usdl2__lt_module_gt__SDL_FPoint___deepcopy__": 1248400,
+  "const_table_data_usdl2__lt_module_gt__SDL_FPoint___deepcopy__": 1248428,
+  "raw_code_usdl2__lt_module_gt__SDL_FPoint___deepcopy__": 1248436,
+  "fun_data_usdl2__lt_module_gt__SDL_FPoint___eq__": 1248464,
+  "const_table_data_usdl2__lt_module_gt__SDL_FPoint___eq__": 1248500,
+  "raw_code_usdl2__lt_module_gt__SDL_FPoint___eq__": 1248508,
+  "fun_data_usdl2__lt_module_gt__SDL_FPoint___ne__": 1248528,
+  "const_table_data_usdl2__lt_module_gt__SDL_FPoint___ne__": 1248564,
+  "raw_code_usdl2__lt_module_gt__SDL_FPoint___ne__": 1248572,
+  "fun_data_usdl2__lt_module_gt__SDL_FPoint": 1248592,
+  "const_obj_usdl2__lt_module_gt__SDL_FPoint_0": 1248688,
+  "const_obj_usdl2__lt_module_gt__SDL_FPoint_1": 1248704,
+  "const_table_data_usdl2__lt_module_gt__SDL_FPoint": 1248720,
+  "raw_code_usdl2__lt_module_gt__SDL_FPoint": 1248752,
+  "fun_data_usdl2__lt_module_gt__SDL_FRect___init__": 1248784,
+  "const_table_data_usdl2__lt_module_gt__SDL_FRect___init__": 1248848,
+  "raw_code_usdl2__lt_module_gt__SDL_FRect___init__": 1248868,
+  "fun_data_usdl2__lt_module_gt__SDL_FRect___repr__": 1248896,
+  "const_obj_usdl2__lt_module_gt__SDL_FRect___repr___0": 1248976,
+  "const_table_data_usdl2__lt_module_gt__SDL_FRect___repr__": 1248992,
+  "raw_code_usdl2__lt_module_gt__SDL_FRect___repr__": 1249000,
+  "fun_data_usdl2__lt_module_gt__SDL_FRect___copy__": 1249024,
+  "const_table_data_usdl2__lt_module_gt__SDL_FRect___copy__": 1249060,
+  "raw_code_usdl2__lt_module_gt__SDL_FRect___copy__": 1249064,
+  "fun_data_usdl2__lt_module_gt__SDL_FRect___deepcopy__": 1249088,
+  "const_table_data_usdl2__lt_module_gt__SDL_FRect___deepcopy__": 1249124,
+  "raw_code_usdl2__lt_module_gt__SDL_FRect___deepcopy__": 1249132,
+  "fun_data_usdl2__lt_module_gt__SDL_FRect___eq__": 1249152,
+  "const_table_data_usdl2__lt_module_gt__SDL_FRect___eq__": 1249224,
+  "raw_code_usdl2__lt_module_gt__SDL_FRect___eq__": 1249232,
+  "fun_data_usdl2__lt_module_gt__SDL_FRect___ne__": 1249264,
+  "const_table_data_usdl2__lt_module_gt__SDL_FRect___ne__": 1249336,
+  "raw_code_usdl2__lt_module_gt__SDL_FRect___ne__": 1249344,
+  "fun_data_usdl2__lt_module_gt__SDL_FRect": 1249376,
+  "const_obj_usdl2__lt_module_gt__SDL_FRect_0": 1249496,
+  "const_obj_usdl2__lt_module_gt__SDL_FRect_1": 1249512,
+  "const_obj_usdl2__lt_module_gt__SDL_FRect_2": 1249528,
+  "const_obj_usdl2__lt_module_gt__SDL_FRect_3": 1249544,
+  "const_table_data_usdl2__lt_module_gt__SDL_FRect": 1249568,
+  "raw_code_usdl2__lt_module_gt__SDL_FRect": 1249608,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_16": 1249632,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_16": 1249664,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_16": 1249668,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_17": 1249696,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_17": 1249760,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_17": 1249768,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_18": 1249792,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_18": 1249868,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_18": 1249876,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_19": 1249904,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_19": 1249928,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_19": 1249932,
+  "fun_data_usdl2__lt_module_gt__SDL_BlitMap": 1249952,
+  "raw_code_usdl2__lt_module_gt__SDL_BlitMap": 1249976,
+  "fun_data_usdl2__lt_module_gt__SDL_Surface": 1250000,
+  "raw_code_usdl2__lt_module_gt__SDL_Surface": 1250164,
+  "fun_data_usdl2__lt_module_gt__SDL_DisplayMode___init__": 1250192,
+  "const_table_data_usdl2__lt_module_gt__SDL_DisplayMode___init__": 1250256,
+  "raw_code_usdl2__lt_module_gt__SDL_DisplayMode___init__": 1250276,
+  "fun_data_usdl2__lt_module_gt__SDL_DisplayMode___repr__": 1250304,
+  "const_obj_usdl2__lt_module_gt__SDL_DisplayMode___repr___0": 1250396,
+  "const_table_data_usdl2__lt_module_gt__SDL_DisplayMode___repr__": 1250412,
+  "raw_code_usdl2__lt_module_gt__SDL_DisplayMode___repr__": 1250420,
+  "fun_data_usdl2__lt_module_gt__SDL_DisplayMode___eq__": 1250448,
+  "const_table_data_usdl2__lt_module_gt__SDL_DisplayMode___eq__": 1250512,
+  "raw_code_usdl2__lt_module_gt__SDL_DisplayMode___eq__": 1250520,
+  "fun_data_usdl2__lt_module_gt__SDL_DisplayMode___ne__": 1250544,
+  "const_table_data_usdl2__lt_module_gt__SDL_DisplayMode___ne__": 1250608,
+  "raw_code_usdl2__lt_module_gt__SDL_DisplayMode___ne__": 1250616,
+  "fun_data_usdl2__lt_module_gt__SDL_DisplayMode": 1250640,
+  "const_obj_usdl2__lt_module_gt__SDL_DisplayMode_0": 1250760,
+  "const_table_data_usdl2__lt_module_gt__SDL_DisplayMode": 1250784,
+  "raw_code_usdl2__lt_module_gt__SDL_DisplayMode": 1250804,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_20": 1250832,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_20": 1250848,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_20": 1250852,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_21": 1250880,
+  "const_obj_usdl2__lt_module_gt___lt_lambda_gt_21_0": 1250904,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_21": 1250920,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_21": 1250928,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_22": 1250960,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_22": 1250976,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_22": 1250980,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_23": 1251008,
+  "const_obj_usdl2__lt_module_gt___lt_lambda_gt_23_0": 1251032,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_23": 1251048,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_23": 1251056,
+  "fun_data_usdl2__lt_module_gt__SDL_RendererInfo": 1251088,
+  "const_obj_usdl2__lt_module_gt__SDL_RendererInfo_0": 1251200,
+  "const_obj_usdl2__lt_module_gt__SDL_RendererInfo_1": 1251232,
+  "const_obj_usdl2__lt_module_gt__SDL_RendererInfo_2": 1251268,
+  "const_obj_usdl2__lt_module_gt__SDL_RendererInfo_3": 1251304,
+  "const_table_data_usdl2__lt_module_gt__SDL_RendererInfo": 1251328,
+  "raw_code_usdl2__lt_module_gt__SDL_RendererInfo": 1251344,
+  "fun_data_usdl2__lt_module_gt__SDL_Renderer": 1251376,
+  "raw_code_usdl2__lt_module_gt__SDL_Renderer": 1251404,
+  "fun_data_usdl2__lt_module_gt__SDL_Texture": 1251424,
+  "raw_code_usdl2__lt_module_gt__SDL_Texture": 1251452,
+  "fun_data_usdl2__lt_module_gt___lt_lambda_gt_24": 1251472,
+  "const_table_data_usdl2__lt_module_gt___lt_lambda_gt_24": 1251496,
+  "raw_code_usdl2__lt_module_gt___lt_lambda_gt_24": 1251500,
+  "fun_data_usdl2__lt_module_gt__rw_from_object__rwsize": 1251520,
+  "const_table_data_usdl2__lt_module_gt__rw_from_object__rwsize": 1251652,
+  "raw_code_usdl2__lt_module_gt__rw_from_object__rwsize": 1251660,
+  "fun_data_usdl2__lt_module_gt__rw_from_object__rwseek": 1251680,
+  "const_table_data_usdl2__lt_module_gt__rw_from_object__rwseek": 1251760,
+  "raw_code_usdl2__lt_module_gt__rw_from_object__rwseek": 1251776,
+  "fun_data_usdl2__lt_module_gt__rw_from_object__rwread": 1251808,
+  "const_table_data_usdl2__lt_module_gt__rw_from_object__rwread": 1251904,
+  "raw_code_usdl2__lt_module_gt__rw_from_object__rwread": 1251924,
+  "fun_data_usdl2__lt_module_gt__rw_from_object__rwclose": 1251952,
+  "const_table_data_usdl2__lt_module_gt__rw_from_object__rwclose": 1252012,
+  "raw_code_usdl2__lt_module_gt__rw_from_object__rwclose": 1252020,
+  "fun_data_usdl2__lt_module_gt__rw_from_object__rwwrite": 1252048,
+  "const_table_data_usdl2__lt_module_gt__rw_from_object__rwwrite": 1252192,
+  "raw_code_usdl2__lt_module_gt__rw_from_object__rwwrite": 1252212,
+  "fun_data_usdl2__lt_module_gt__rw_from_object": 1252240,
+  "const_obj_usdl2__lt_module_gt__rw_from_object_0": 1252556,
+  "const_obj_usdl2__lt_module_gt__rw_from_object_1": 1252616,
+  "const_obj_usdl2__lt_module_gt__rw_from_object_2": 1252672,
+  "const_table_data_usdl2__lt_module_gt__rw_from_object": 1252688,
+  "raw_code_usdl2__lt_module_gt__rw_from_object": 1252724,
+  "fun_data_usdl2__lt_module_gt___ptr2obj": 1252752,
+  "const_table_data_usdl2__lt_module_gt___ptr2obj": 1252788,
+  "raw_code_usdl2__lt_module_gt___ptr2obj": 1252792,
+  "fun_data_usdl2__lt_module_gt__SDL_LoadBMP": 1252816,
+  "const_obj_usdl2__lt_module_gt__SDL_LoadBMP_0": 1252848,
+  "const_table_data_usdl2__lt_module_gt__SDL_LoadBMP": 1252864,
+  "raw_code_usdl2__lt_module_gt__SDL_LoadBMP": 1252872,
+  "fun_data_usdl2__lt_module_gt__SDL_SaveBMP": 1252896,
+  "const_obj_usdl2__lt_module_gt__SDL_SaveBMP_0": 1252932,
+  "const_table_data_usdl2__lt_module_gt__SDL_SaveBMP": 1252948,
+  "raw_code_usdl2__lt_module_gt__SDL_SaveBMP": 1252956,
+  "fun_data_usdl2__lt_module_gt__SDL_CreateWindow": 1252976,
+  "const_obj_usdl2__lt_module_gt__SDL_CreateWindow_0": 1253096,
+  "const_table_data_usdl2__lt_module_gt__SDL_CreateWindow": 1253120,
+  "raw_code_usdl2__lt_module_gt__SDL_CreateWindow": 1253148,
+  "fun_data_usdl2__lt_module_gt_": 1253168,
+  "const_obj_usdl2__lt_module_gt__0": 1275220,
+  "const_obj_usdl2__lt_module_gt__1": 1275240,
+  "const_obj_usdl2__lt_module_gt__2": 1275272,
+  "const_obj_usdl2__lt_module_gt__3": 1275304,
+  "const_obj_usdl2__lt_module_gt__4": 1275324,
+  "const_obj_usdl2__lt_module_gt__5": 1275384,
+  "const_obj_usdl2__lt_module_gt__6": 1275436,
+  "const_table_data_usdl2__lt_module_gt_": 1275456,
+  "raw_code_usdl2__lt_module_gt_": 1275924,
+  "fun_data_imp_empty_pivot_module__lt_module_gt_": 1275952,
+  "raw_code_imp_empty_pivot_module__lt_module_gt_": 1275972,
+  "fun_data_pystone1__lt_module_gt__Record___init__": 1276000,
+  "const_table_data_pystone1__lt_module_gt__Record___init__": 1276048,
+  "raw_code_pystone1__lt_module_gt__Record___init__": 1276072,
+  "fun_data_pystone1__lt_module_gt__Record_copy": 1276096,
+  "const_table_data_pystone1__lt_module_gt__Record_copy": 1276140,
+  "raw_code_pystone1__lt_module_gt__Record_copy": 1276144,
+  "fun_data_pystone1__lt_module_gt__Record": 1276176,
+  "const_table_data_pystone1__lt_module_gt__Record": 1276220,
+  "raw_code_pystone1__lt_module_gt__Record": 1276228,
+  "fun_data_pystone1__lt_module_gt__main": 1276256,
+  "const_table_data_pystone1__lt_module_gt__main": 1276292,
+  "raw_code_pystone1__lt_module_gt__main": 1276296,
+  "fun_data_pystone1__lt_module_gt__pystones": 1276320,
+  "const_table_data_pystone1__lt_module_gt__pystones": 1276340,
+  "raw_code_pystone1__lt_module_gt__pystones": 1276344,
+  "fun_data_pystone1__lt_module_gt___lt_listcomp_gt_": 1276368,
+  "const_table_data_pystone1__lt_module_gt___lt_listcomp_gt_": 1276400,
+  "raw_code_pystone1__lt_module_gt___lt_listcomp_gt_": 1276404,
+  "fun_data_pystone1__lt_module_gt__Proc0": 1276432,
+  "const_obj_pystone1__lt_module_gt__Proc0_0": 1276844,
+  "const_obj_pystone1__lt_module_gt__Proc0_1": 1276860,
+  "const_obj_pystone1__lt_module_gt__Proc0_2": 1276876,
+  "const_obj_pystone1__lt_module_gt__Proc0_3": 1276896,
+  "const_obj_pystone1__lt_module_gt__Proc0_4": 1276912,
+  "const_table_data_pystone1__lt_module_gt__Proc0": 1276928,
+  "raw_code_pystone1__lt_module_gt__Proc0": 1276952,
+  "fun_data_pystone1__lt_module_gt__Proc1": 1276976,
+  "const_table_data_pystone1__lt_module_gt__Proc1": 1277140,
+  "raw_code_pystone1__lt_module_gt__Proc1": 1277144,
+  "fun_data_pystone1__lt_module_gt__Proc2": 1277168,
+  "const_table_data_pystone1__lt_module_gt__Proc2": 1277236,
+  "raw_code_pystone1__lt_module_gt__Proc2": 1277240,
+  "fun_data_pystone1__lt_module_gt__Proc3": 1277264,
+  "const_table_data_pystone1__lt_module_gt__Proc3": 1277328,
+  "raw_code_pystone1__lt_module_gt__Proc3": 1277332,
+  "fun_data_pystone1__lt_module_gt__Proc4": 1277360,
+  "raw_code_pystone1__lt_module_gt__Proc4": 1277400,
+  "fun_data_pystone1__lt_module_gt__Proc5": 1277424,
+  "raw_code_pystone1__lt_module_gt__Proc5": 1277452,
+  "fun_data_pystone1__lt_module_gt__Proc6": 1277472,
+  "const_table_data_pystone1__lt_module_gt__Proc6": 1277616,
+  "raw_code_pystone1__lt_module_gt__Proc6": 1277620,
+  "fun_data_pystone1__lt_module_gt__Proc7": 1277648,
+  "const_table_data_pystone1__lt_module_gt__Proc7": 1277672,
+  "raw_code_pystone1__lt_module_gt__Proc7": 1277680,
+  "fun_data_pystone1__lt_module_gt__Proc8": 1277712,
+  "const_table_data_pystone1__lt_module_gt__Proc8": 1277824,
+  "raw_code_pystone1__lt_module_gt__Proc8": 1277840,
+  "fun_data_pystone1__lt_module_gt__Func1": 1277872,
+  "const_table_data_pystone1__lt_module_gt__Func1": 1277908,
+  "raw_code_pystone1__lt_module_gt__Func1": 1277916,
+  "fun_data_pystone1__lt_module_gt__Func2": 1277936,
+  "const_table_data_pystone1__lt_module_gt__Func2": 1278052,
+  "raw_code_pystone1__lt_module_gt__Func2": 1278060,
+  "fun_data_pystone1__lt_module_gt__Func3": 1278080,
+  "const_table_data_pystone1__lt_module_gt__Func3": 1278112,
+  "raw_code_pystone1__lt_module_gt__Func3": 1278116,
+  "fun_data_pystone1__lt_module_gt__error": 1278144,
+  "const_obj_pystone1__lt_module_gt__error_0": 1278232,
+  "const_table_data_pystone1__lt_module_gt__error": 1278248,
+  "raw_code_pystone1__lt_module_gt__error": 1278256,
+  "fun_data_pystone1__lt_module_gt_": 1278288,
+  "const_obj_pystone1__lt_module_gt__0": 1278812,
+  "const_obj_pystone1__lt_module_gt__1": 1278828,
+  "const_table_data_pystone1__lt_module_gt_": 1278848,
+  "raw_code_pystone1__lt_module_gt_": 1278924,
+  "fun_data_uart_input__lt_module_gt__state": 1278944,
+  "raw_code_uart_input__lt_module_gt__state": 1278968,
+  "fun_data_uart_input__lt_module_gt__ainput": 1278992,
+  "const_obj_uart_input__lt_module_gt__ainput_0": 1279380,
+  "const_table_data_uart_input__lt_module_gt__ainput": 1279408,
+  "raw_code_uart_input__lt_module_gt__ainput": 1279432,
+  "fun_data_uart_input__lt_module_gt_": 1279456,
+  "const_table_data_uart_input__lt_module_gt_": 1279548,
+  "raw_code_uart_input__lt_module_gt_": 1279556,
+  "fun_data_uart___init____lt_module_gt__begin": 1279584,
+  "raw_code_uart___init____lt_module_gt__begin": 1279624,
+  "fun_data_uart___init____lt_module_gt__end": 1279648,
+  "raw_code_uart___init____lt_module_gt__end": 1279688,
+  "fun_data_uart___init____lt_module_gt__echo": 1279712,
+  "const_table_data_uart___init____lt_module_gt__echo": 1279764,
+  "raw_code_uart___init____lt_module_gt__echo": 1279768,
+  "fun_data_uart___init____lt_module_gt__begin2": 1279788,
+  "raw_code_uart___init____lt_module_gt__begin2": 1279800,
+  "fun_data_uart___init____lt_module_gt__end2": 1279820,
+  "raw_code_uart___init____lt_module_gt__end2": 1279832,
+  "fun_data_uart___init____lt_module_gt__echo2": 1279856,
+  "const_table_data_uart___init____lt_module_gt__echo2": 1279892,
+  "raw_code_uart___init____lt_module_gt__echo2": 1279896,
+  "fun_data_uart___init____lt_module_gt_": 1279920,
+  "const_obj_uart___init____lt_module_gt__0": 1280064,
+  "const_table_data_uart___init____lt_module_gt_": 1280080,
+  "raw_code_uart___init____lt_module_gt_": 1280108,
+  "fun_data_uart_output__lt_module_gt__NodePath__lt_lambda_gt_": 1280128,
+  "const_table_data_uart_output__lt_module_gt__NodePath__lt_lambda_gt_": 1280140,
+  "raw_code_uart_output__lt_module_gt__NodePath__lt_lambda_gt_": 1280144,
+  "fun_data_uart_output__lt_module_gt__NodePath___init__": 1280176,
+  "const_table_data_uart_output__lt_module_gt__NodePath___init__": 1280352,
+  "raw_code_uart_output__lt_module_gt__NodePath___init__": 1280368,
+  "fun_data_uart_output__lt_module_gt__NodePath": 1280400,
+  "const_table_data_uart_output__lt_module_gt__NodePath": 1280452,
+  "raw_code_uart_output__lt_module_gt__NodePath": 1280460,
+  "fun_data_uart_output__lt_module_gt__npos": 1280480,
+  "const_table_data_uart_output__lt_module_gt__npos": 1280516,
+  "raw_code_uart_output__lt_module_gt__npos": 1280520,
+  "fun_data_uart_output__lt_module_gt__get_x": 1280544,
+  "const_table_data_uart_output__lt_module_gt__get_x": 1280564,
+  "raw_code_uart_output__lt_module_gt__get_x": 1280568,
+  "fun_data_uart_output__lt_module_gt__get_z": 1280592,
+  "const_table_data_uart_output__lt_module_gt__get_z": 1280612,
+  "raw_code_uart_output__lt_module_gt__get_z": 1280616,
+  "fun_data_uart_output__lt_module_gt__set_any": 1280640,
+  "const_table_data_uart_output__lt_module_gt__set_any": 1280724,
+  "raw_code_uart_output__lt_module_gt__set_any": 1280736,
+  "fun_data_uart_output__lt_module_gt__set_x": 1280768,
+  "const_table_data_uart_output__lt_module_gt__set_x": 1280792,
+  "raw_code_uart_output__lt_module_gt__set_x": 1280800,
+  "fun_data_uart_output__lt_module_gt__set_z": 1280832,
+  "const_table_data_uart_output__lt_module_gt__set_z": 1280856,
+  "raw_code_uart_output__lt_module_gt__set_z": 1280864,
+  "fun_data_uart_output__lt_module_gt__set_text": 1280896,
+  "const_table_data_uart_output__lt_module_gt__set_text": 1280964,
+  "raw_code_uart_output__lt_module_gt__set_text": 1280972,
+  "fun_data_uart_output__lt_module_gt__Node___init__": 1280992,
+  "const_table_data_uart_output__lt_module_gt__Node___init__": 1281040,
+  "raw_code_uart_output__lt_module_gt__Node___init__": 1281048,
+  "fun_data_uart_output__lt_module_gt__Node": 1281072,
+  "const_table_data_uart_output__lt_module_gt__Node": 1281108,
+  "raw_code_uart_output__lt_module_gt__Node": 1281112,
+  "fun_data_uart_output__lt_module_gt__render___init__": 1281136,
+  "const_table_data_uart_output__lt_module_gt__render___init__": 1281180,
+  "raw_code_uart_output__lt_module_gt__render___init__": 1281184,
+  "fun_data_uart_output__lt_module_gt__render___enter__": 1281216,
+  "const_table_data_uart_output__lt_module_gt__render___enter__": 1281240,
+  "raw_code_uart_output__lt_module_gt__render___enter__": 1281244,
+  "fun_data_uart_output__lt_module_gt__render___exit__": 1281264,
+  "const_table_data_uart_output__lt_module_gt__render___exit__": 1281288,
+  "raw_code_uart_output__lt_module_gt__render___exit__": 1281292,
+  "fun_data_uart_output__lt_module_gt__render_draw_child": 1281312,
+  "const_table_data_uart_output__lt_module_gt__render_draw_child": 1281408,
+  "raw_code_uart_output__lt_module_gt__render_draw_child": 1281424,
+  "fun_data_uart_output__lt_module_gt__render___call__": 1281456,
+  "const_table_data_uart_output__lt_module_gt__render___call__": 1281616,
+  "raw_code_uart_output__lt_module_gt__render___call__": 1281636,
+  "fun_data_uart_output__lt_module_gt__render": 1281664,
+  "const_table_data_uart_output__lt_module_gt__render": 1281776,
+  "raw_code_uart_output__lt_module_gt__render": 1281796,
+  "fun_data_uart_output__lt_module_gt_": 1281824,
+  "const_table_data_uart_output__lt_module_gt_": 1281968,
+  "raw_code_uart_output__lt_module_gt_": 1282008,
+  "fun_data_imp_app__lt_module_gt__print": 1282032,
+  "raw_code_imp_app__lt_module_gt__print": 1282156,
+  "fun_data_imp_app__lt_module_gt__reload": 1282176,
+  "raw_code_imp_app__lt_module_gt__reload": 1282384,
+  "fun_data_imp_app__lt_module_gt_": 1282416,
+  "const_table_data_imp_app__lt_module_gt_": 1282516,
+  "raw_code_imp_app__lt_module_gt_": 1282524,
+  "fun_data_m1__lt_module_gt_": 1282544,
+  "raw_code_m1__lt_module_gt_": 1282572,
+  "fun_data_uasyncio_asyncify__lt_module_gt_": 1282592,
+  "const_obj_uasyncio_asyncify__lt_module_gt__0": 1282652,
+  "const_table_data_uasyncio_asyncify__lt_module_gt_": 1282668,
+  "raw_code_uasyncio_asyncify__lt_module_gt_": 1282672,
+  "fun_data_uasyncio___init____lt_module_gt___lt_lambda_gt_": 1282692,
+  "raw_code_uasyncio___init____lt_module_gt___lt_lambda_gt_": 1282708,
+  "fun_data_uasyncio___init____lt_module_gt__task": 1282736,
+  "const_obj_uasyncio___init____lt_module_gt__task_0": 1282836,
+  "const_table_data_uasyncio___init____lt_module_gt__task": 1282852,
+  "raw_code_uasyncio___init____lt_module_gt__task": 1282860,
+  "fun_data_uasyncio___init____lt_module_gt__start": 1282880,
+  "const_obj_uasyncio___init____lt_module_gt__start_0": 1283060,
+  "const_obj_uasyncio___init____lt_module_gt__start_1": 1283148,
+  "const_table_data_uasyncio___init____lt_module_gt__start": 1283164,
+  "raw_code_uasyncio___init____lt_module_gt__start": 1283172,
+  "fun_data_uasyncio___init____lt_module_gt____auto__": 1283200,
+  "const_obj_uasyncio___init____lt_module_gt____auto___0": 1283336,
+  "const_table_data_uasyncio___init____lt_module_gt____auto__": 1283352,
+  "raw_code_uasyncio___init____lt_module_gt____auto__": 1283356,
+  "fun_data_uasyncio___init____lt_module_gt__select_fake_poll_register": 1283376,
+  "const_table_data_uasyncio___init____lt_module_gt__select_fake_poll_register": 1283404,
+  "raw_code_uasyncio___init____lt_module_gt__select_fake_poll_register": 1283408,
+  "fun_data_uasyncio___init____lt_module_gt__select_fake_poll_unregister": 1283440,
+  "const_table_data_uasyncio___init____lt_module_gt__select_fake_poll_unregister": 1283468,
+  "raw_code_uasyncio___init____lt_module_gt__select_fake_poll_unregister": 1283472,
+  "fun_data_uasyncio___init____lt_module_gt__select_fake_poll_ipoll": 1283492,
+  "raw_code_uasyncio___init____lt_module_gt__select_fake_poll_ipoll": 1283508,
+  "fun_data_uasyncio___init____lt_module_gt__select_fake_poll": 1283536,
+  "const_table_data_uasyncio___init____lt_module_gt__select_fake_poll": 1283580,
+  "raw_code_uasyncio___init____lt_module_gt__select_fake_poll": 1283592,
+  "fun_data_uasyncio___init____lt_module_gt__select_poll": 1283612,
+  "const_table_data_uasyncio___init____lt_module_gt__select_poll": 1283628,
+  "raw_code_uasyncio___init____lt_module_gt__select_poll": 1283632,
+  "fun_data_uasyncio___init____lt_module_gt__select": 1283664,
+  "const_table_data_uasyncio___init____lt_module_gt__select": 1283724,
+  "raw_code_uasyncio___init____lt_module_gt__select": 1283732,
+  "fun_data_uasyncio___init____lt_module_gt__convert": 1283760,
+  "const_obj_uasyncio___init____lt_module_gt__convert_0": 1283948,
+  "const_table_data_uasyncio___init____lt_module_gt__convert": 1283964,
+  "raw_code_uasyncio___init____lt_module_gt__convert": 1283968,
+  "fun_data_uasyncio___init____lt_module_gt__iscoroutine": 1284000,
+  "const_table_data_uasyncio___init____lt_module_gt__iscoroutine": 1284024,
+  "raw_code_uasyncio___init____lt_module_gt__iscoroutine": 1284028,
+  "fun_data_uasyncio___init____lt_module_gt__CancelledError": 1284048,
+  "raw_code_uasyncio___init____lt_module_gt__CancelledError": 1284072,
+  "fun_data_uasyncio___init____lt_module_gt__TimeoutError": 1284096,
+  "raw_code_uasyncio___init____lt_module_gt__TimeoutError": 1284120,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop___init__": 1284144,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop___init__": 1284196,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop___init__": 1284208,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_time_ms": 1284240,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_time_ms": 1284260,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_time_ms": 1284264,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_create_task": 1284288,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_create_task": 1284336,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_create_task": 1284344,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_call_soon": 1284368,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_call_soon": 1284424,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_call_soon": 1284432,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_call_later": 1284464,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_call_later": 1284516,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_call_later": 1284528,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_call_later_ms": 1284560,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_call_later_ms": 1284624,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_call_later_ms": 1284636,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_call_at_": 1284656,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_call_at_": 1284688,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_call_at_": 1284704,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_wait": 1284736,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_wait": 1284768,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_wait": 1284776,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_run_once": 1284800,
+  "const_obj_uasyncio___init____lt_module_gt__EventLoop_run_once_0": 1285740,
+  "const_obj_uasyncio___init____lt_module_gt__EventLoop_run_once_1": 1285756,
+  "const_obj_uasyncio___init____lt_module_gt__EventLoop_run_once_2": 1285788,
+  "const_obj_uasyncio___init____lt_module_gt__EventLoop_run_once_3": 1285848,
+  "const_obj_uasyncio___init____lt_module_gt__EventLoop_run_once_4": 1285916,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_run_once": 1285936,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_run_once": 1285960,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_run_forever": 1285984,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_run_forever": 1286016,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_run_forever": 1286020,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_run_until_complete__run_and_stop": 1286048,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_run_until_complete__run_and_stop": 1286076,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_run_until_complete__run_and_stop": 1286080,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_run_until_complete": 1286112,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_run_until_complete": 1286152,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_run_until_complete": 1286164,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_stop__lt_lambda_gt_": 1286192,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_stop__lt_lambda_gt_": 1286216,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_stop": 1286240,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_stop": 1286264,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_stop": 1286272,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop_close": 1286292,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop_close": 1286304,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop_close": 1286308,
+  "fun_data_uasyncio___init____lt_module_gt__EventLoop": 1286336,
+  "const_table_data_uasyncio___init____lt_module_gt__EventLoop": 1286464,
+  "raw_code_uasyncio___init____lt_module_gt__EventLoop": 1286516,
+  "fun_data_uasyncio___init____lt_module_gt__SysCall___init__": 1286544,
+  "const_table_data_uasyncio___init____lt_module_gt__SysCall___init__": 1286564,
+  "raw_code_uasyncio___init____lt_module_gt__SysCall___init__": 1286568,
+  "fun_data_uasyncio___init____lt_module_gt__SysCall_handle": 1286592,
+  "const_table_data_uasyncio___init____lt_module_gt__SysCall_handle": 1286608,
+  "raw_code_uasyncio___init____lt_module_gt__SysCall_handle": 1286612,
+  "fun_data_uasyncio___init____lt_module_gt__SysCall": 1286640,
+  "const_table_data_uasyncio___init____lt_module_gt__SysCall": 1286676,
+  "raw_code_uasyncio___init____lt_module_gt__SysCall": 1286684,
+  "fun_data_uasyncio___init____lt_module_gt__SysCall1___init__": 1286704,
+  "const_table_data_uasyncio___init____lt_module_gt__SysCall1___init__": 1286724,
+  "raw_code_uasyncio___init____lt_module_gt__SysCall1___init__": 1286732,
+  "fun_data_uasyncio___init____lt_module_gt__SysCall1": 1286752,
+  "const_table_data_uasyncio___init____lt_module_gt__SysCall1": 1286784,
+  "raw_code_uasyncio___init____lt_module_gt__SysCall1": 1286788,
+  "fun_data_uasyncio___init____lt_module_gt__StopLoop": 1286816,
+  "raw_code_uasyncio___init____lt_module_gt__StopLoop": 1286840,
+  "fun_data_uasyncio___init____lt_module_gt__IORead": 1286864,
+  "raw_code_uasyncio___init____lt_module_gt__IORead": 1286888,
+  "fun_data_uasyncio___init____lt_module_gt__IOWrite": 1286912,
+  "raw_code_uasyncio___init____lt_module_gt__IOWrite": 1286936,
+  "fun_data_uasyncio___init____lt_module_gt__IOReadDone": 1286960,
+  "raw_code_uasyncio___init____lt_module_gt__IOReadDone": 1286984,
+  "fun_data_uasyncio___init____lt_module_gt__IOWriteDone": 1287008,
+  "raw_code_uasyncio___init____lt_module_gt__IOWriteDone": 1287032,
+  "fun_data_uasyncio___init____lt_module_gt__get_event_loop": 1287056,
+  "const_table_data_uasyncio___init____lt_module_gt__get_event_loop": 1287096,
+  "raw_code_uasyncio___init____lt_module_gt__get_event_loop": 1287104,
+  "fun_data_uasyncio___init____lt_module_gt__sleep": 1287136,
+  "const_table_data_uasyncio___init____lt_module_gt__sleep": 1287164,
+  "raw_code_uasyncio___init____lt_module_gt__sleep": 1287168,
+  "fun_data_uasyncio___init____lt_module_gt__SleepMs___init__": 1287200,
+  "const_table_data_uasyncio___init____lt_module_gt__SleepMs___init__": 1287224,
+  "raw_code_uasyncio___init____lt_module_gt__SleepMs___init__": 1287228,
+  "fun_data_uasyncio___init____lt_module_gt__SleepMs___call__": 1287248,
+  "const_table_data_uasyncio___init____lt_module_gt__SleepMs___call__": 1287268,
+  "raw_code_uasyncio___init____lt_module_gt__SleepMs___call__": 1287276,
+  "fun_data_uasyncio___init____lt_module_gt__SleepMs___iter__": 1287296,
+  "const_table_data_uasyncio___init____lt_module_gt__SleepMs___iter__": 1287308,
+  "raw_code_uasyncio___init____lt_module_gt__SleepMs___iter__": 1287312,
+  "fun_data_uasyncio___init____lt_module_gt__SleepMs___next__": 1287344,
+  "const_table_data_uasyncio___init____lt_module_gt__SleepMs___next__": 1287404,
+  "raw_code_uasyncio___init____lt_module_gt__SleepMs___next__": 1287408,
+  "fun_data_uasyncio___init____lt_module_gt__SleepMs": 1287440,
+  "const_table_data_uasyncio___init____lt_module_gt__SleepMs": 1287504,
+  "raw_code_uasyncio___init____lt_module_gt__SleepMs": 1287520,
+  "fun_data_uasyncio___init____lt_module_gt__cancel": 1287552,
+  "const_table_data_uasyncio___init____lt_module_gt__cancel": 1287592,
+  "raw_code_uasyncio___init____lt_module_gt__cancel": 1287596,
+  "fun_data_uasyncio___init____lt_module_gt__TimeoutObj___init__": 1287616,
+  "const_table_data_uasyncio___init____lt_module_gt__TimeoutObj___init__": 1287636,
+  "raw_code_uasyncio___init____lt_module_gt__TimeoutObj___init__": 1287644,
+  "fun_data_uasyncio___init____lt_module_gt__TimeoutObj": 1287664,
+  "const_table_data_uasyncio___init____lt_module_gt__TimeoutObj": 1287696,
+  "raw_code_uasyncio___init____lt_module_gt__TimeoutObj": 1287700,
+  "fun_data_uasyncio___init____lt_module_gt__wait_for_ms_waiter": 1287728,
+  "const_table_data_uasyncio___init____lt_module_gt__wait_for_ms_waiter": 1287756,
+  "raw_code_uasyncio___init____lt_module_gt__wait_for_ms_waiter": 1287764,
+  "fun_data_uasyncio___init____lt_module_gt__wait_for_ms_timeout_func": 1287792,
+  "const_table_data_uasyncio___init____lt_module_gt__wait_for_ms_timeout_func": 1287848,
+  "raw_code_uasyncio___init____lt_module_gt__wait_for_ms_timeout_func": 1287852,
+  "fun_data_uasyncio___init____lt_module_gt__wait_for_ms": 1287872,
+  "const_table_data_uasyncio___init____lt_module_gt__wait_for_ms": 1287936,
+  "raw_code_uasyncio___init____lt_module_gt__wait_for_ms": 1287952,
+  "fun_data_uasyncio___init____lt_module_gt__wait_for": 1287984,
+  "const_table_data_uasyncio___init____lt_module_gt__wait_for": 1288012,
+  "raw_code_uasyncio___init____lt_module_gt__wait_for": 1288020,
+  "fun_data_uasyncio___init____lt_module_gt__coroutine": 1288048,
+  "const_obj_uasyncio___init____lt_module_gt__coroutine_0": 1288128,
+  "const_table_data_uasyncio___init____lt_module_gt__coroutine": 1288144,
+  "raw_code_uasyncio___init____lt_module_gt__coroutine": 1288152,
+  "fun_data_uasyncio___init____lt_module_gt__Task": 1288176,
+  "const_table_data_uasyncio___init____lt_module_gt__Task": 1288200,
+  "raw_code_uasyncio___init____lt_module_gt__Task": 1288208,
+  "fun_data_uasyncio___init____lt_module_gt___event_loop_class___init__": 1288240,
+  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class___init__": 1288292,
+  "raw_code_uasyncio___init____lt_module_gt___event_loop_class___init__": 1288304,
+  "fun_data_uasyncio___init____lt_module_gt___event_loop_class_add_reader": 1288336,
+  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class_add_reader": 1288412,
+  "raw_code_uasyncio___init____lt_module_gt___event_loop_class_add_reader": 1288424,
+  "fun_data_uasyncio___init____lt_module_gt___event_loop_class_remove_reader": 1288448,
+  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class_remove_reader": 1288488,
+  "raw_code_uasyncio___init____lt_module_gt___event_loop_class_remove_reader": 1288496,
+  "fun_data_uasyncio___init____lt_module_gt___event_loop_class_add_writer": 1288528,
+  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class_add_writer": 1288604,
+  "raw_code_uasyncio___init____lt_module_gt___event_loop_class_add_writer": 1288616,
+  "fun_data_uasyncio___init____lt_module_gt___event_loop_class_remove_writer": 1288640,
+  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class_remove_writer": 1288732,
+  "raw_code_uasyncio___init____lt_module_gt___event_loop_class_remove_writer": 1288740,
+  "fun_data_uasyncio___init____lt_module_gt___event_loop_class_wait": 1288768,
+  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class_wait": 1288900,
+  "raw_code_uasyncio___init____lt_module_gt___event_loop_class_wait": 1288908,
+  "fun_data_uasyncio___init____lt_module_gt___event_loop_class": 1288928,
+  "const_table_data_uasyncio___init____lt_module_gt___event_loop_class": 1289008,
+  "raw_code_uasyncio___init____lt_module_gt___event_loop_class": 1289032,
+  "fun_data_uasyncio___init____lt_module_gt_": 1289056,
+  "const_obj_uasyncio___init____lt_module_gt__0": 1289728,
+  "const_obj_uasyncio___init____lt_module_gt__1": 1289792,
+  "const_obj_uasyncio___init____lt_module_gt__2": 1289840,
+  "const_table_data_uasyncio___init____lt_module_gt_": 1289856,
+  "raw_code_uasyncio___init____lt_module_gt_": 1289976,
+  "fun_data_uasyncio_queues__lt_module_gt__QueueEmpty": 1290000,
+  "raw_code_uasyncio_queues__lt_module_gt__QueueEmpty": 1290024,
+  "fun_data_uasyncio_queues__lt_module_gt__QueueFull": 1290048,
+  "raw_code_uasyncio_queues__lt_module_gt__QueueFull": 1290072,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue___init__": 1290096,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue___init__": 1290128,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue___init__": 1290136,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue__get": 1290160,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue__get": 1290180,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue__get": 1290184,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue_get": 1290208,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue_get": 1290256,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue_get": 1290260,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue_get_nowait": 1290288,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue_get_nowait": 1290324,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue_get_nowait": 1290328,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue__put": 1290352,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue__put": 1290376,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue__put": 1290384,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue_put": 1290416,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue_put": 1290484,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue_put": 1290492,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue_put_nowait": 1290512,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue_put_nowait": 1290568,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue_put_nowait": 1290576,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue_qsize": 1290608,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue_qsize": 1290632,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue_qsize": 1290636,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue_empty": 1290656,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue_empty": 1290676,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue_empty": 1290680,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue_full": 1290704,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue_full": 1290744,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue_full": 1290748,
+  "fun_data_uasyncio_queues__lt_module_gt__Queue": 1290768,
+  "const_obj_uasyncio_queues__lt_module_gt__Queue_0": 1290872,
+  "const_table_data_uasyncio_queues__lt_module_gt__Queue": 1290896,
+  "raw_code_uasyncio_queues__lt_module_gt__Queue": 1290940,
+  "fun_data_uasyncio_queues__lt_module_gt_": 1290960,
+  "const_table_data_uasyncio_queues__lt_module_gt_": 1291048,
+  "raw_code_uasyncio_queues__lt_module_gt_": 1291060,
+  "fun_data_uasyncio_ws_server__lt_module_gt__make_respkey": 1291088,
+  "const_obj_uasyncio_ws_server__lt_module_gt__make_respkey_0": 1291184,
+  "const_table_data_uasyncio_ws_server__lt_module_gt__make_respkey": 1291200,
+  "raw_code_uasyncio_ws_server__lt_module_gt__make_respkey": 1291208,
+  "fun_data_uasyncio_ws_server__lt_module_gt__WSWriter___init__": 1291232,
+  "const_table_data_uasyncio_ws_server__lt_module_gt__WSWriter___init__": 1291252,
+  "raw_code_uasyncio_ws_server__lt_module_gt__WSWriter___init__": 1291264,
+  "fun_data_uasyncio_ws_server__lt_module_gt__WSWriter_awrite": 1291296,
+  "const_obj_uasyncio_ws_server__lt_module_gt__WSWriter_awrite_0": 1291392,
+  "const_table_data_uasyncio_ws_server__lt_module_gt__WSWriter_awrite": 1291408,
+  "raw_code_uasyncio_ws_server__lt_module_gt__WSWriter_awrite": 1291420,
+  "fun_data_uasyncio_ws_server__lt_module_gt__WSWriter": 1291440,
+  "const_table_data_uasyncio_ws_server__lt_module_gt__WSWriter": 1291476,
+  "raw_code_uasyncio_ws_server__lt_module_gt__WSWriter": 1291484,
+  "fun_data_uasyncio_ws_server__lt_module_gt__WSReader": 1291504,
+  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_0": 1291708,
+  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_1": 1291744,
+  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_2": 1291760,
+  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_3": 1291800,
+  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_4": 1291916,
+  "const_obj_uasyncio_ws_server__lt_module_gt__WSReader_5": 1291960,
+  "const_table_data_uasyncio_ws_server__lt_module_gt__WSReader": 1291984,
+  "raw_code_uasyncio_ws_server__lt_module_gt__WSReader": 1292016,
+  "fun_data_uasyncio_ws_server__lt_module_gt_": 1292048,
+  "const_table_data_uasyncio_ws_server__lt_module_gt_": 1292120,
+  "raw_code_uasyncio_ws_server__lt_module_gt_": 1292132,
+  "fun_data_uasyncio_udp__lt_module_gt__set_debug": 1292160,
+  "const_obj_uasyncio_udp__lt_module_gt__set_debug_0": 1292212,
+  "const_table_data_uasyncio_udp__lt_module_gt__set_debug": 1292228,
+  "raw_code_uasyncio_udp__lt_module_gt__set_debug": 1292236,
+  "fun_data_uasyncio_udp__lt_module_gt__socket": 1292256,
+  "const_table_data_uasyncio_udp__lt_module_gt__socket": 1292300,
+  "raw_code_uasyncio_udp__lt_module_gt__socket": 1292304,
+  "fun_data_uasyncio_udp__lt_module_gt__recv": 1292336,
+  "const_table_data_uasyncio_udp__lt_module_gt__recv": 1292400,
+  "raw_code_uasyncio_udp__lt_module_gt__recv": 1292408,
+  "fun_data_uasyncio_udp__lt_module_gt__recvfrom": 1292432,
+  "const_table_data_uasyncio_udp__lt_module_gt__recvfrom": 1292496,
+  "raw_code_uasyncio_udp__lt_module_gt__recvfrom": 1292504,
+  "fun_data_uasyncio_udp__lt_module_gt__sendto": 1292528,
+  "const_obj_uasyncio_udp__lt_module_gt__sendto_0": 1292612,
+  "const_table_data_uasyncio_udp__lt_module_gt__sendto": 1292640,
+  "raw_code_uasyncio_udp__lt_module_gt__sendto": 1292656,
+  "fun_data_uasyncio_udp__lt_module_gt__close": 1292688,
+  "const_table_data_uasyncio_udp__lt_module_gt__close": 1292720,
+  "raw_code_uasyncio_udp__lt_module_gt__close": 1292724,
+  "fun_data_uasyncio_udp__lt_module_gt_": 1292752,
+  "const_table_data_uasyncio_udp__lt_module_gt_": 1292864,
+  "raw_code_uasyncio_udp__lt_module_gt_": 1292888,
+  "fun_data_time__lt_module_gt____getattr__": 1292912,
+  "const_table_data_time__lt_module_gt____getattr__": 1292952,
+  "raw_code_time__lt_module_gt____getattr__": 1292956,
+  "fun_data_time__lt_module_gt_": 1292976,
+  "const_table_data_time__lt_module_gt_": 1293008,
+  "raw_code_time__lt_module_gt_": 1293012,
+  "fun_data_m3__lt_module_gt_": 1293040,
+  "raw_code_m3__lt_module_gt_": 1293076,
+  "fun_data_ulogging__lt_module_gt__Logger___init__": 1293104,
+  "const_table_data_ulogging__lt_module_gt__Logger___init__": 1293124,
+  "raw_code_ulogging__lt_module_gt__Logger___init__": 1293132,
+  "fun_data_ulogging__lt_module_gt__Logger__level_str": 1293152,
+  "const_table_data_ulogging__lt_module_gt__Logger__level_str": 1293192,
+  "raw_code_ulogging__lt_module_gt__Logger__level_str": 1293200,
+  "fun_data_ulogging__lt_module_gt__Logger_setLevel": 1293232,
+  "const_table_data_ulogging__lt_module_gt__Logger_setLevel": 1293252,
+  "raw_code_ulogging__lt_module_gt__Logger_setLevel": 1293260,
+  "fun_data_ulogging__lt_module_gt__Logger_isEnabledFor": 1293280,
+  "const_table_data_ulogging__lt_module_gt__Logger_isEnabledFor": 1293304,
+  "raw_code_ulogging__lt_module_gt__Logger_isEnabledFor": 1293312,
+  "fun_data_ulogging__lt_module_gt__Logger_log": 1293344,
+  "const_table_data_ulogging__lt_module_gt__Logger_log": 1293448,
+  "raw_code_ulogging__lt_module_gt__Logger_log": 1293460,
+  "fun_data_ulogging__lt_module_gt__Logger_debug": 1293488,
+  "const_table_data_ulogging__lt_module_gt__Logger_debug": 1293516,
+  "raw_code_ulogging__lt_module_gt__Logger_debug": 1293524,
+  "fun_data_ulogging__lt_module_gt__Logger_info": 1293552,
+  "const_table_data_ulogging__lt_module_gt__Logger_info": 1293580,
+  "raw_code_ulogging__lt_module_gt__Logger_info": 1293588,
+  "fun_data_ulogging__lt_module_gt__Logger_warning": 1293616,
+  "const_table_data_ulogging__lt_module_gt__Logger_warning": 1293644,
+  "raw_code_ulogging__lt_module_gt__Logger_warning": 1293652,
+  "fun_data_ulogging__lt_module_gt__Logger_error": 1293680,
+  "const_table_data_ulogging__lt_module_gt__Logger_error": 1293708,
+  "raw_code_ulogging__lt_module_gt__Logger_error": 1293716,
+  "fun_data_ulogging__lt_module_gt__Logger_critical": 1293744,
+  "const_table_data_ulogging__lt_module_gt__Logger_critical": 1293772,
+  "raw_code_ulogging__lt_module_gt__Logger_critical": 1293780,
+  "fun_data_ulogging__lt_module_gt__Logger_exc": 1293808,
+  "const_table_data_ulogging__lt_module_gt__Logger_exc": 1293852,
+  "raw_code_ulogging__lt_module_gt__Logger_exc": 1293864,
+  "fun_data_ulogging__lt_module_gt__Logger_exception": 1293888,
+  "const_table_data_ulogging__lt_module_gt__Logger_exception": 1293924,
+  "raw_code_ulogging__lt_module_gt__Logger_exception": 1293932,
+  "fun_data_ulogging__lt_module_gt__Logger": 1293952,
+  "const_table_data_ulogging__lt_module_gt__Logger": 1294064,
+  "raw_code_ulogging__lt_module_gt__Logger": 1294112,
+  "fun_data_ulogging__lt_module_gt__getLogger": 1294144,
+  "const_table_data_ulogging__lt_module_gt__getLogger": 1294192,
+  "raw_code_ulogging__lt_module_gt__getLogger": 1294196,
+  "fun_data_ulogging__lt_module_gt__info": 1294224,
+  "const_table_data_ulogging__lt_module_gt__info": 1294256,
+  "raw_code_ulogging__lt_module_gt__info": 1294260,
+  "fun_data_ulogging__lt_module_gt__debug": 1294288,
+  "const_table_data_ulogging__lt_module_gt__debug": 1294320,
+  "raw_code_ulogging__lt_module_gt__debug": 1294324,
+  "fun_data_ulogging__lt_module_gt__basicConfig": 1294352,
+  "const_obj_ulogging__lt_module_gt__basicConfig_0": 1294468,
+  "const_obj_ulogging__lt_module_gt__basicConfig_1": 1294536,
+  "const_table_data_ulogging__lt_module_gt__basicConfig": 1294560,
+  "raw_code_ulogging__lt_module_gt__basicConfig": 1294584,
+  "fun_data_ulogging__lt_module_gt_": 1294608,
+  "const_table_data_ulogging__lt_module_gt_": 1294784,
+  "raw_code_ulogging__lt_module_gt_": 1294804,
+  "fun_data_frozen_mpy__lt_module_gt_": 1294832,
+  "const_obj_frozen_mpy__lt_module_gt__0": 1294956,
+  "const_obj_frozen_mpy__lt_module_gt__1": 1294984,
+  "const_table_data_frozen_mpy__lt_module_gt_": 1295000,
+  "raw_code_frozen_mpy__lt_module_gt_": 1295008,
+  "fun_data_urequests__lt_module_gt__Response___init__": 1295040,
+  "const_table_data_urequests__lt_module_gt__Response___init__": 1295076,
+  "raw_code_urequests__lt_module_gt__Response___init__": 1295084,
+  "fun_data_urequests__lt_module_gt__Response_close": 1295104,
+  "const_table_data_urequests__lt_module_gt__Response_close": 1295152,
+  "raw_code_urequests__lt_module_gt__Response_close": 1295156,
+  "fun_data_urequests__lt_module_gt__Response_content": 1295184,
+  "const_table_data_urequests__lt_module_gt__Response_content": 1295252,
+  "raw_code_urequests__lt_module_gt__Response_content": 1295256,
+  "fun_data_urequests__lt_module_gt__Response_text": 1295280,
+  "const_table_data_urequests__lt_module_gt__Response_text": 1295308,
+  "raw_code_urequests__lt_module_gt__Response_text": 1295312,
+  "fun_data_urequests__lt_module_gt__Response_json": 1295344,
+  "const_table_data_urequests__lt_module_gt__Response_json": 1295372,
+  "raw_code_urequests__lt_module_gt__Response_json": 1295376,
+  "fun_data_urequests__lt_module_gt__Response": 1295408,
+  "const_table_data_urequests__lt_module_gt__Response": 1295488,
+  "raw_code_urequests__lt_module_gt__Response": 1295508,
+  "fun_data_urequests__lt_module_gt__request": 1295536,
+  "const_obj_urequests__lt_module_gt__request_0": 1296224,
+  "const_obj_urequests__lt_module_gt__request_1": 1296260,
+  "const_obj_urequests__lt_module_gt__request_2": 1296288,
+  "const_obj_urequests__lt_module_gt__request_3": 1296308,
+  "const_obj_urequests__lt_module_gt__request_4": 1296324,
+  "const_obj_urequests__lt_module_gt__request_5": 1296376,
+  "const_obj_urequests__lt_module_gt__request_6": 1296416,
+  "const_obj_urequests__lt_module_gt__request_7": 1296432,
+  "const_obj_urequests__lt_module_gt__request_8": 1296448,
+  "const_obj_urequests__lt_module_gt__request_9": 1296484,
+  "const_obj_urequests__lt_module_gt__request_10": 1296508,
+  "const_obj_urequests__lt_module_gt__request_11": 1296540,
+  "const_obj_urequests__lt_module_gt__request_12": 1296568,
+  "const_obj_urequests__lt_module_gt__request_13": 1296612,
+  "const_table_data_urequests__lt_module_gt__request": 1296640,
+  "raw_code_urequests__lt_module_gt__request": 1296720,
+  "fun_data_urequests__lt_module_gt__head": 1296752,
+  "const_table_data_urequests__lt_module_gt__head": 1296776,
+  "raw_code_urequests__lt_module_gt__head": 1296780,
+  "fun_data_urequests__lt_module_gt__get": 1296800,
+  "const_table_data_urequests__lt_module_gt__get": 1296824,
+  "raw_code_urequests__lt_module_gt__get": 1296828,
+  "fun_data_urequests__lt_module_gt__post": 1296848,
+  "const_table_data_urequests__lt_module_gt__post": 1296872,
+  "raw_code_urequests__lt_module_gt__post": 1296876,
+  "fun_data_urequests__lt_module_gt__put": 1296896,
+  "const_table_data_urequests__lt_module_gt__put": 1296920,
+  "raw_code_urequests__lt_module_gt__put": 1296924,
+  "fun_data_urequests__lt_module_gt__patch": 1296944,
+  "const_table_data_urequests__lt_module_gt__patch": 1296968,
+  "raw_code_urequests__lt_module_gt__patch": 1296972,
+  "fun_data_urequests__lt_module_gt__delete": 1296992,
+  "const_table_data_urequests__lt_module_gt__delete": 1297016,
+  "raw_code_urequests__lt_module_gt__delete": 1297020,
+  "fun_data_urequests__lt_module_gt_": 1297040,
+  "const_table_data_urequests__lt_module_gt_": 1297136,
+  "raw_code_urequests__lt_module_gt_": 1297168,
+  "fun_data_site__lt_module_gt__vars": 1297200,
+  "const_obj_site__lt_module_gt__vars_0": 1297292,
+  "const_table_data_site__lt_module_gt__vars": 1297308,
+  "raw_code_site__lt_module_gt__vars": 1297316,
+  "fun_data_site__lt_module_gt__await_": 1297344,
+  "const_table_data_site__lt_module_gt__await_": 1297396,
+  "raw_code_site__lt_module_gt__await_": 1297400,
+  "fun_data_site__lt_module_gt__awaited_syscall": 1297424,
+  "const_table_data_site__lt_module_gt__awaited_syscall": 1297452,
+  "raw_code_site__lt_module_gt__awaited_syscall": 1297456,
+  "fun_data_site__lt_module_gt__awaited": 1297488,
+  "const_table_data_site__lt_module_gt__awaited": 1297512,
+  "raw_code_site__lt_module_gt__awaited": 1297520,
+  "fun_data_site__lt_module_gt__sleep": 1297552,
+  "const_table_data_site__lt_module_gt__sleep": 1297628,
+  "raw_code_site__lt_module_gt__sleep": 1297632,
+  "fun_data_site__lt_module_gt__late_repl": 1297664,
+  "const_obj_site__lt_module_gt__late_repl_0": 1297728,
+  "const_obj_site__lt_module_gt__late_repl_1": 1297764,
+  "const_table_data_site__lt_module_gt__late_repl": 1297780,
+  "raw_code_site__lt_module_gt__late_repl": 1297792,
+  "fun_data_site__lt_module_gt__noop": 1297812,
+  "raw_code_site__lt_module_gt__noop": 1297828,
+  "fun_data_site__lt_module_gt__interact": 1297856,
+  "raw_code_site__lt_module_gt__interact": 1297924,
+  "fun_data_site__lt_module_gt_": 1297952,
+  "const_obj_site__lt_module_gt__0": 1298704,
+  "const_table_data_site__lt_module_gt_": 1298720,
+  "raw_code_site__lt_module_gt_": 1298752,
+  "fun_data_hello__lt_module_gt_": 1298784,
+  "const_obj_hello__lt_module_gt__0": 1298832,
+  "const_table_data_hello__lt_module_gt_": 1298848,
+  "raw_code_hello__lt_module_gt_": 1298852,
+  "file_open_args": 1300144,
+  "fdfile___exit___obj": 1300124,
+  "fdfile_fileno_obj": 1300136,
+  "fileio_stream_p": 1300416,
+  "rawfile_locals_dict": 1300400,
+  "textio_stream_p": 1300432,
+  "rawfile_locals_dict_table": 1300304,
+  "mod_os_stat_obj": 1300484,
+  "mod_os_remove_obj": 1300492,
+  "mod_os_system_obj": 1300500,
+  "mod_os_getenv_obj": 1300508,
+  "mod_os_mkdir_obj": 1300516,
+  "mod_os_ilistdir_obj": 1300528,
+  "mod_os_errno_obj": 1300540,
+  "mp_module_os_globals_table": 1300560,
+  "mp_module_os_globals": 1300632,
+  "mod_time_clock_obj": 1300656,
+  "mod_time_time_obj": 1300664,
+  "mod_time_time_ns_obj": 1300672,
+  "mod_time_sleep_obj": 1300696,
+  "mod_time_sleep_ms_obj": 1300724,
+  "mod_time_sleep_us_obj": 1300752,
+  "mod_time_localtime_obj": 1300760,
+  "mp_module_time_globals_table": 1300784,
+  "mp_module_time_globals": 1300888,
+  "ffi_type_sint8": 1304592,
+  "ffi_type_uint8": 1304580,
+  "ffi_type_sint16": 1304616,
+  "ffi_type_uint16": 1304604,
+  "ffi_type_sint32": 1304640,
+  "ffi_type_uint32": 1304628,
+  "ffi_type_sint64": 1304664,
+  "ffi_type_uint64": 1304652,
+  "ffi_type_float": 1304688,
+  "ffi_type_double": 1304700,
+  "ffi_type_pointer": 1304676,
+  "ffi_type_void": 1304568,
+  "ffifunc_type": 1300948,
+  "fficallback_type": 1301052,
+  "ffivar_type": 1301144,
+  "ffimod_type": 1301280,
+  "ffimod_close_obj": 1300940,
+  "ffimod_func_obj": 1301032,
+  "mod_ffi_func_obj": 1301044,
+  "mod_ffi_callback_obj": 1301136,
+  "ffivar_locals_dict": 1301536,
+  "ffimod_var_obj": 1301204,
+  "ffimod_addr_obj": 1301212,
+  "ffimod_locals_dict_table": 1301232,
+  "ffimod_locals_dict": 1301264,
+  "ffivar_get_obj": 1301500,
+  "ffivar_set_obj": 1301508,
+  "ffivar_locals_dict_table": 1301520,
+  "mod_ffi_open_obj": 1301552,
+  "mod_ffi_as_bytearray_obj": 1301564,
+  "mp_module_ffi_globals_table": 1301584,
+  "mp_module_ffi_globals": 1301624,
+  "embed_hello_type": 1304892,
+  "mp_type_on_del": 1304952,
+  "on_del_del_obj": 1305012,
+  "embed_hello___del__": 1304848,
+  "embed_hello_locals_dict_table": 1304856,
+  "embed_hello_locals_dict": 1304864,
+  "embed_CLI_obj": 1305532,
+  "embed_STI_obj": 1305544,
+  "embed_builtins_vars_obj": 1305556,
+  "embed_callsome_obj": 1305568,
+  "embed_echosum1_obj": 1305580,
+  "embed_log_obj": 1305592,
+  "embed_os_compile_obj": 1305604,
+  "embed_os_hook_obj": 1305616,
+  "embed_os_print_obj": 1305628,
+  "embed_os_read_useless_obj": 1305640,
+  "embed_os_showloop_obj": 1305652,
+  "embed_os_stderr_obj": 1305664,
+  "embed_os_write_obj": 1305676,
+  "embed_sdl_obj": 1305688,
+  "embed_sleep_obj": 1305700,
+  "embed_sleep_ms_obj": 1305712,
+  "embed_somecall_obj": 1305724,
+  "embed_ticks_add_obj": 1305736,
+  "embed_ticks_period_obj": 1305748,
+  "embed_time_ms_obj": 1305760,
+  "embed_time_ns_obj": 1305772,
+  "embed_globals_table": 1305792,
+  "mp_module_embed_globals": 1305992,
+  "example_add_ints_obj": 1306068,
+  "example_module_globals_table": 1306080,
+  "example_module_globals": 1306096,
+  "mp_stderr_print": 1306136,
+  "pyexec_system_exit": 1306128,
+  "repl": 1306178,
+  "pyexec_mode_kind": 1306124,
+  "pyexec_repl_active": 1306398,
+  "repl_display_debugging_info": 1306132,
+  "pyb_set_repl_info_obj": 1306428,
+  "rl": 1306548,
+  "EMSCRIPTENAUDIO_bootstrap": 1374640,
+  "DISKAUDIO_bootstrap": 1380572,
+  "DUMMYAUDIO_bootstrap": 1380852,
+  "SDL_Convert_S8_to_F32": 1311460,
+  "SDL_Convert_U8_to_F32": 1311464,
+  "SDL_Convert_U16_to_F32": 1311472,
+  "SDL_Convert_S32_to_F32": 1311476,
+  "SDL_Convert_S16_to_F32": 1311468,
+  "SDL_Convert_F32_to_S8": 1311480,
+  "SDL_Convert_F32_to_U8": 1311484,
+  "SDL_Convert_F32_to_U16": 1311492,
+  "SDL_Convert_F32_to_S32": 1311496,
+  "SDL_Convert_F32_to_S16": 1311488,
+  "SDL_EMSCRIPTEN_JoystickDriver": 1380892,
+  "GLES2_RenderDriver": 1335816,
+  "SW_RenderDriver": 1348620,
+  "SDL_expand_byte": 1365536,
+  "SDL_GeneratedBlitFuncTable": 1359360,
+  "Emscripten_bootstrap": 1374288,
+  "_floor_P": 1913760,
+  "_residue_P": 1913768,
+  "mapping0_exportbundle": 1912560,
+  "residue0_exportbundle": 1912580,
+  "residue1_exportbundle": 1912612,
+  "residue2_exportbundle": 1912644,
+  "floor1_exportbundle": 1912676,
+  "_mapping_P": 1913780,
+  "floor0_exportbundle": 1938256,
+  "__progname": 1952648,
+  "__progname_full": 1952652,
+  "__libc": 1952656,
+  "__hwcap": 1952720,
+  "__sysinfo": 1952724,
+  "program_invocation_short_name": 1952648,
+  "program_invocation_name": 1952652,
+  "__optreset": 1954032,
+  "optind": 1954024,
+  "__optpos": 1954036,
+  "optarg": 1954040,
+  "optopt": 1954044,
+  "opterr": 1954028,
+  "optreset": 1954032,
+  "in6addr_loopback": 1954488,
+  "h_errno": 1954788,
+  "in6addr_any": 1954872,
+  "_ns_flagdata": 1955424,
+  "__fsmu8": 1969536,
+  "__pio2_hi": 1972400,
+  "__pio2_lo": 1972416,
+  "__signgam": 1980632,
+  "signgam": 1980632,
+  "__seed48": 1981200,
+  "__stdin_used": 1984244,
+  "__stdout_used": 1982332,
+  "__stderr_used": 1983516,
+  "__c_locale": 1986048,
+  "__c_dot_utf8_locale": 1986072,
+  "__c_dot_utf8": 1986020,
+  "__environ": 2111572,
+  "___environ": 2111572,
+  "_environ": 2111572,
+  "environ": 2111572,
+  "__env_map": 2111580,
+  "tzname": 2111584,
+  "daylight": 2111592,
+  "timezone": 2111596,
+  "atanlo": 2115872,
+  "atanhi": 2115808,
+  "aT": 2115936,
   "__dso_handle": 0,
-  "__data_end": 680746
+  "__data_end": 2120202
 };
 for (var named in NAMED_GLOBALS) {
   Module['_' + named] = gb + NAMED_GLOBALS[named];
@@ -59170,6 +62589,2582 @@ Module['_fp$eglQueryString$iii'] = function() {
   return fp;
 }
 
+
+Module['_fp$emscripten_glGenQueriesEXT$vii'] = function() {
+  
+  assert(Module["_emscripten_glGenQueriesEXT"] || typeof _emscripten_glGenQueriesEXT !== "undefined", "external function `emscripten_glGenQueriesEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGenQueriesEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGenQueriesEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGenQueriesEXT'];
+  if (!func) func = _emscripten_glGenQueriesEXT;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glGenQueriesEXT$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDeleteQueriesEXT$vii'] = function() {
+  
+  assert(Module["_emscripten_glDeleteQueriesEXT"] || typeof _emscripten_glDeleteQueriesEXT !== "undefined", "external function `emscripten_glDeleteQueriesEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDeleteQueriesEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDeleteQueriesEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDeleteQueriesEXT'];
+  if (!func) func = _emscripten_glDeleteQueriesEXT;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glDeleteQueriesEXT$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glIsQueryEXT$ii'] = function() {
+  
+  assert(Module["_emscripten_glIsQueryEXT"] || typeof _emscripten_glIsQueryEXT !== "undefined", "external function `emscripten_glIsQueryEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glIsQueryEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glIsQueryEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glIsQueryEXT'];
+  if (!func) func = _emscripten_glIsQueryEXT;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glIsQueryEXT$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBeginQueryEXT$vii'] = function() {
+  
+  assert(Module["_emscripten_glBeginQueryEXT"] || typeof _emscripten_glBeginQueryEXT !== "undefined", "external function `emscripten_glBeginQueryEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBeginQueryEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBeginQueryEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBeginQueryEXT'];
+  if (!func) func = _emscripten_glBeginQueryEXT;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glBeginQueryEXT$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glEndQueryEXT$vi'] = function() {
+  
+  assert(Module["_emscripten_glEndQueryEXT"] || typeof _emscripten_glEndQueryEXT !== "undefined", "external function `emscripten_glEndQueryEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glEndQueryEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glEndQueryEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glEndQueryEXT'];
+  if (!func) func = _emscripten_glEndQueryEXT;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glEndQueryEXT$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glQueryCounterEXT$vii'] = function() {
+  
+  assert(Module["_emscripten_glQueryCounterEXT"] || typeof _emscripten_glQueryCounterEXT !== "undefined", "external function `emscripten_glQueryCounterEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glQueryCounterEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glQueryCounterEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glQueryCounterEXT'];
+  if (!func) func = _emscripten_glQueryCounterEXT;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glQueryCounterEXT$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetQueryivEXT$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetQueryivEXT"] || typeof _emscripten_glGetQueryivEXT !== "undefined", "external function `emscripten_glGetQueryivEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetQueryivEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetQueryivEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetQueryivEXT'];
+  if (!func) func = _emscripten_glGetQueryivEXT;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetQueryivEXT$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetQueryObjectivEXT$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetQueryObjectivEXT"] || typeof _emscripten_glGetQueryObjectivEXT !== "undefined", "external function `emscripten_glGetQueryObjectivEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetQueryObjectivEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetQueryObjectivEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetQueryObjectivEXT'];
+  if (!func) func = _emscripten_glGetQueryObjectivEXT;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetQueryObjectivEXT$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetQueryObjectuivEXT$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetQueryObjectuivEXT"] || typeof _emscripten_glGetQueryObjectuivEXT !== "undefined", "external function `emscripten_glGetQueryObjectuivEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetQueryObjectuivEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetQueryObjectuivEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetQueryObjectuivEXT'];
+  if (!func) func = _emscripten_glGetQueryObjectuivEXT;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetQueryObjectuivEXT$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetQueryObjecti64vEXT$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetQueryObjecti64vEXT"] || typeof _emscripten_glGetQueryObjecti64vEXT !== "undefined", "external function `emscripten_glGetQueryObjecti64vEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetQueryObjecti64vEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetQueryObjecti64vEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetQueryObjecti64vEXT'];
+  if (!func) func = _emscripten_glGetQueryObjecti64vEXT;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetQueryObjecti64vEXT$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetQueryObjectui64vEXT$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetQueryObjectui64vEXT"] || typeof _emscripten_glGetQueryObjectui64vEXT !== "undefined", "external function `emscripten_glGetQueryObjectui64vEXT` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetQueryObjectui64vEXT'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetQueryObjectui64vEXT'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetQueryObjectui64vEXT'];
+  if (!func) func = _emscripten_glGetQueryObjectui64vEXT;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetQueryObjectui64vEXT$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBindVertexArrayOES$vi'] = function() {
+  
+  assert(Module["_emscripten_glBindVertexArrayOES"] || typeof _emscripten_glBindVertexArrayOES !== "undefined", "external function `emscripten_glBindVertexArrayOES` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBindVertexArrayOES'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBindVertexArrayOES'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBindVertexArrayOES'];
+  if (!func) func = _emscripten_glBindVertexArrayOES;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glBindVertexArrayOES$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDeleteVertexArraysOES$vii'] = function() {
+  
+  assert(Module["_emscripten_glDeleteVertexArraysOES"] || typeof _emscripten_glDeleteVertexArraysOES !== "undefined", "external function `emscripten_glDeleteVertexArraysOES` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDeleteVertexArraysOES'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDeleteVertexArraysOES'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDeleteVertexArraysOES'];
+  if (!func) func = _emscripten_glDeleteVertexArraysOES;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glDeleteVertexArraysOES$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGenVertexArraysOES$vii'] = function() {
+  
+  assert(Module["_emscripten_glGenVertexArraysOES"] || typeof _emscripten_glGenVertexArraysOES !== "undefined", "external function `emscripten_glGenVertexArraysOES` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGenVertexArraysOES'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGenVertexArraysOES'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGenVertexArraysOES'];
+  if (!func) func = _emscripten_glGenVertexArraysOES;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glGenVertexArraysOES$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glIsVertexArrayOES$ii'] = function() {
+  
+  assert(Module["_emscripten_glIsVertexArrayOES"] || typeof _emscripten_glIsVertexArrayOES !== "undefined", "external function `emscripten_glIsVertexArrayOES` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glIsVertexArrayOES'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glIsVertexArrayOES'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glIsVertexArrayOES'];
+  if (!func) func = _emscripten_glIsVertexArrayOES;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glIsVertexArrayOES$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDrawBuffersWEBGL$vii'] = function() {
+  
+  assert(Module["_emscripten_glDrawBuffersWEBGL"] || typeof _emscripten_glDrawBuffersWEBGL !== "undefined", "external function `emscripten_glDrawBuffersWEBGL` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDrawBuffersWEBGL'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDrawBuffersWEBGL'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDrawBuffersWEBGL'];
+  if (!func) func = _emscripten_glDrawBuffersWEBGL;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glDrawBuffersWEBGL$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDrawArraysInstancedANGLE$viiii'] = function() {
+  
+  assert(Module["_emscripten_glDrawArraysInstancedANGLE"] || typeof _emscripten_glDrawArraysInstancedANGLE !== "undefined", "external function `emscripten_glDrawArraysInstancedANGLE` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDrawArraysInstancedANGLE'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDrawArraysInstancedANGLE'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDrawArraysInstancedANGLE'];
+  if (!func) func = _emscripten_glDrawArraysInstancedANGLE;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glDrawArraysInstancedANGLE$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDrawElementsInstancedANGLE$viiiii'] = function() {
+  
+  assert(Module["_emscripten_glDrawElementsInstancedANGLE"] || typeof _emscripten_glDrawElementsInstancedANGLE !== "undefined", "external function `emscripten_glDrawElementsInstancedANGLE` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDrawElementsInstancedANGLE'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDrawElementsInstancedANGLE'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDrawElementsInstancedANGLE'];
+  if (!func) func = _emscripten_glDrawElementsInstancedANGLE;
+  var fp = addFunction(func, 'viiiii');
+  Module['_fp$emscripten_glDrawElementsInstancedANGLE$viiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glVertexAttribDivisorANGLE$vii'] = function() {
+  
+  assert(Module["_emscripten_glVertexAttribDivisorANGLE"] || typeof _emscripten_glVertexAttribDivisorANGLE !== "undefined", "external function `emscripten_glVertexAttribDivisorANGLE` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glVertexAttribDivisorANGLE'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glVertexAttribDivisorANGLE'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glVertexAttribDivisorANGLE'];
+  if (!func) func = _emscripten_glVertexAttribDivisorANGLE;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glVertexAttribDivisorANGLE$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glActiveTexture$vi'] = function() {
+  
+  assert(Module["_emscripten_glActiveTexture"] || typeof _emscripten_glActiveTexture !== "undefined", "external function `emscripten_glActiveTexture` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glActiveTexture'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glActiveTexture'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glActiveTexture'];
+  if (!func) func = _emscripten_glActiveTexture;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glActiveTexture$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glAttachShader$vii'] = function() {
+  
+  assert(Module["_emscripten_glAttachShader"] || typeof _emscripten_glAttachShader !== "undefined", "external function `emscripten_glAttachShader` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glAttachShader'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glAttachShader'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glAttachShader'];
+  if (!func) func = _emscripten_glAttachShader;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glAttachShader$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBindAttribLocation$viii'] = function() {
+  
+  assert(Module["_emscripten_glBindAttribLocation"] || typeof _emscripten_glBindAttribLocation !== "undefined", "external function `emscripten_glBindAttribLocation` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBindAttribLocation'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBindAttribLocation'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBindAttribLocation'];
+  if (!func) func = _emscripten_glBindAttribLocation;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glBindAttribLocation$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBindBuffer$vii'] = function() {
+  
+  assert(Module["_emscripten_glBindBuffer"] || typeof _emscripten_glBindBuffer !== "undefined", "external function `emscripten_glBindBuffer` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBindBuffer'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBindBuffer'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBindBuffer'];
+  if (!func) func = _emscripten_glBindBuffer;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glBindBuffer$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBindFramebuffer$vii'] = function() {
+  
+  assert(Module["_emscripten_glBindFramebuffer"] || typeof _emscripten_glBindFramebuffer !== "undefined", "external function `emscripten_glBindFramebuffer` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBindFramebuffer'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBindFramebuffer'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBindFramebuffer'];
+  if (!func) func = _emscripten_glBindFramebuffer;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glBindFramebuffer$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBindRenderbuffer$vii'] = function() {
+  
+  assert(Module["_emscripten_glBindRenderbuffer"] || typeof _emscripten_glBindRenderbuffer !== "undefined", "external function `emscripten_glBindRenderbuffer` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBindRenderbuffer'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBindRenderbuffer'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBindRenderbuffer'];
+  if (!func) func = _emscripten_glBindRenderbuffer;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glBindRenderbuffer$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBindTexture$vii'] = function() {
+  
+  assert(Module["_emscripten_glBindTexture"] || typeof _emscripten_glBindTexture !== "undefined", "external function `emscripten_glBindTexture` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBindTexture'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBindTexture'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBindTexture'];
+  if (!func) func = _emscripten_glBindTexture;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glBindTexture$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBlendColor$vffff'] = function() {
+  
+  assert(Module["_emscripten_glBlendColor"] || typeof _emscripten_glBlendColor !== "undefined", "external function `emscripten_glBlendColor` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBlendColor'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBlendColor'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBlendColor'];
+  if (!func) func = _emscripten_glBlendColor;
+  var fp = addFunction(func, 'vffff');
+  Module['_fp$emscripten_glBlendColor$vffff'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBlendEquation$vi'] = function() {
+  
+  assert(Module["_emscripten_glBlendEquation"] || typeof _emscripten_glBlendEquation !== "undefined", "external function `emscripten_glBlendEquation` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBlendEquation'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBlendEquation'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBlendEquation'];
+  if (!func) func = _emscripten_glBlendEquation;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glBlendEquation$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBlendEquationSeparate$vii'] = function() {
+  
+  assert(Module["_emscripten_glBlendEquationSeparate"] || typeof _emscripten_glBlendEquationSeparate !== "undefined", "external function `emscripten_glBlendEquationSeparate` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBlendEquationSeparate'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBlendEquationSeparate'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBlendEquationSeparate'];
+  if (!func) func = _emscripten_glBlendEquationSeparate;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glBlendEquationSeparate$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBlendFunc$vii'] = function() {
+  
+  assert(Module["_emscripten_glBlendFunc"] || typeof _emscripten_glBlendFunc !== "undefined", "external function `emscripten_glBlendFunc` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBlendFunc'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBlendFunc'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBlendFunc'];
+  if (!func) func = _emscripten_glBlendFunc;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glBlendFunc$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBlendFuncSeparate$viiii'] = function() {
+  
+  assert(Module["_emscripten_glBlendFuncSeparate"] || typeof _emscripten_glBlendFuncSeparate !== "undefined", "external function `emscripten_glBlendFuncSeparate` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBlendFuncSeparate'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBlendFuncSeparate'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBlendFuncSeparate'];
+  if (!func) func = _emscripten_glBlendFuncSeparate;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glBlendFuncSeparate$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBufferData$viiii'] = function() {
+  
+  assert(Module["_emscripten_glBufferData"] || typeof _emscripten_glBufferData !== "undefined", "external function `emscripten_glBufferData` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBufferData'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBufferData'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBufferData'];
+  if (!func) func = _emscripten_glBufferData;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glBufferData$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glBufferSubData$viiii'] = function() {
+  
+  assert(Module["_emscripten_glBufferSubData"] || typeof _emscripten_glBufferSubData !== "undefined", "external function `emscripten_glBufferSubData` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glBufferSubData'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glBufferSubData'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glBufferSubData'];
+  if (!func) func = _emscripten_glBufferSubData;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glBufferSubData$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glCheckFramebufferStatus$ii'] = function() {
+  
+  assert(Module["_emscripten_glCheckFramebufferStatus"] || typeof _emscripten_glCheckFramebufferStatus !== "undefined", "external function `emscripten_glCheckFramebufferStatus` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glCheckFramebufferStatus'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glCheckFramebufferStatus'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glCheckFramebufferStatus'];
+  if (!func) func = _emscripten_glCheckFramebufferStatus;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glCheckFramebufferStatus$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glClear$vi'] = function() {
+  
+  assert(Module["_emscripten_glClear"] || typeof _emscripten_glClear !== "undefined", "external function `emscripten_glClear` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glClear'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glClear'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glClear'];
+  if (!func) func = _emscripten_glClear;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glClear$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glClearColor$vffff'] = function() {
+  
+  assert(Module["_emscripten_glClearColor"] || typeof _emscripten_glClearColor !== "undefined", "external function `emscripten_glClearColor` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glClearColor'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glClearColor'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glClearColor'];
+  if (!func) func = _emscripten_glClearColor;
+  var fp = addFunction(func, 'vffff');
+  Module['_fp$emscripten_glClearColor$vffff'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glClearDepthf$vf'] = function() {
+  
+  assert(Module["_emscripten_glClearDepthf"] || typeof _emscripten_glClearDepthf !== "undefined", "external function `emscripten_glClearDepthf` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glClearDepthf'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glClearDepthf'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glClearDepthf'];
+  if (!func) func = _emscripten_glClearDepthf;
+  var fp = addFunction(func, 'vf');
+  Module['_fp$emscripten_glClearDepthf$vf'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glClearStencil$vi'] = function() {
+  
+  assert(Module["_emscripten_glClearStencil"] || typeof _emscripten_glClearStencil !== "undefined", "external function `emscripten_glClearStencil` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glClearStencil'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glClearStencil'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glClearStencil'];
+  if (!func) func = _emscripten_glClearStencil;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glClearStencil$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glColorMask$viiii'] = function() {
+  
+  assert(Module["_emscripten_glColorMask"] || typeof _emscripten_glColorMask !== "undefined", "external function `emscripten_glColorMask` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glColorMask'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glColorMask'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glColorMask'];
+  if (!func) func = _emscripten_glColorMask;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glColorMask$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glCompileShader$vi'] = function() {
+  
+  assert(Module["_emscripten_glCompileShader"] || typeof _emscripten_glCompileShader !== "undefined", "external function `emscripten_glCompileShader` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glCompileShader'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glCompileShader'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glCompileShader'];
+  if (!func) func = _emscripten_glCompileShader;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glCompileShader$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glCompressedTexImage2D$viiiiiiii'] = function() {
+  
+  assert(Module["_emscripten_glCompressedTexImage2D"] || typeof _emscripten_glCompressedTexImage2D !== "undefined", "external function `emscripten_glCompressedTexImage2D` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glCompressedTexImage2D'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glCompressedTexImage2D'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glCompressedTexImage2D'];
+  if (!func) func = _emscripten_glCompressedTexImage2D;
+  var fp = addFunction(func, 'viiiiiiii');
+  Module['_fp$emscripten_glCompressedTexImage2D$viiiiiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glCompressedTexSubImage2D$viiiiiiiii'] = function() {
+  
+  assert(Module["_emscripten_glCompressedTexSubImage2D"] || typeof _emscripten_glCompressedTexSubImage2D !== "undefined", "external function `emscripten_glCompressedTexSubImage2D` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glCompressedTexSubImage2D'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glCompressedTexSubImage2D'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glCompressedTexSubImage2D'];
+  if (!func) func = _emscripten_glCompressedTexSubImage2D;
+  var fp = addFunction(func, 'viiiiiiiii');
+  Module['_fp$emscripten_glCompressedTexSubImage2D$viiiiiiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glCopyTexImage2D$viiiiiiii'] = function() {
+  
+  assert(Module["_emscripten_glCopyTexImage2D"] || typeof _emscripten_glCopyTexImage2D !== "undefined", "external function `emscripten_glCopyTexImage2D` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glCopyTexImage2D'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glCopyTexImage2D'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glCopyTexImage2D'];
+  if (!func) func = _emscripten_glCopyTexImage2D;
+  var fp = addFunction(func, 'viiiiiiii');
+  Module['_fp$emscripten_glCopyTexImage2D$viiiiiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glCopyTexSubImage2D$viiiiiiii'] = function() {
+  
+  assert(Module["_emscripten_glCopyTexSubImage2D"] || typeof _emscripten_glCopyTexSubImage2D !== "undefined", "external function `emscripten_glCopyTexSubImage2D` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glCopyTexSubImage2D'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glCopyTexSubImage2D'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glCopyTexSubImage2D'];
+  if (!func) func = _emscripten_glCopyTexSubImage2D;
+  var fp = addFunction(func, 'viiiiiiii');
+  Module['_fp$emscripten_glCopyTexSubImage2D$viiiiiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glCreateProgram$i'] = function() {
+  
+  assert(Module["_emscripten_glCreateProgram"] || typeof _emscripten_glCreateProgram !== "undefined", "external function `emscripten_glCreateProgram` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glCreateProgram'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glCreateProgram'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glCreateProgram'];
+  if (!func) func = _emscripten_glCreateProgram;
+  var fp = addFunction(func, 'i');
+  Module['_fp$emscripten_glCreateProgram$i'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glCreateShader$ii'] = function() {
+  
+  assert(Module["_emscripten_glCreateShader"] || typeof _emscripten_glCreateShader !== "undefined", "external function `emscripten_glCreateShader` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glCreateShader'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glCreateShader'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glCreateShader'];
+  if (!func) func = _emscripten_glCreateShader;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glCreateShader$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glCullFace$vi'] = function() {
+  
+  assert(Module["_emscripten_glCullFace"] || typeof _emscripten_glCullFace !== "undefined", "external function `emscripten_glCullFace` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glCullFace'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glCullFace'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glCullFace'];
+  if (!func) func = _emscripten_glCullFace;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glCullFace$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDeleteBuffers$vii'] = function() {
+  
+  assert(Module["_emscripten_glDeleteBuffers"] || typeof _emscripten_glDeleteBuffers !== "undefined", "external function `emscripten_glDeleteBuffers` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDeleteBuffers'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDeleteBuffers'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDeleteBuffers'];
+  if (!func) func = _emscripten_glDeleteBuffers;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glDeleteBuffers$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDeleteFramebuffers$vii'] = function() {
+  
+  assert(Module["_emscripten_glDeleteFramebuffers"] || typeof _emscripten_glDeleteFramebuffers !== "undefined", "external function `emscripten_glDeleteFramebuffers` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDeleteFramebuffers'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDeleteFramebuffers'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDeleteFramebuffers'];
+  if (!func) func = _emscripten_glDeleteFramebuffers;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glDeleteFramebuffers$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDeleteProgram$vi'] = function() {
+  
+  assert(Module["_emscripten_glDeleteProgram"] || typeof _emscripten_glDeleteProgram !== "undefined", "external function `emscripten_glDeleteProgram` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDeleteProgram'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDeleteProgram'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDeleteProgram'];
+  if (!func) func = _emscripten_glDeleteProgram;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glDeleteProgram$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDeleteRenderbuffers$vii'] = function() {
+  
+  assert(Module["_emscripten_glDeleteRenderbuffers"] || typeof _emscripten_glDeleteRenderbuffers !== "undefined", "external function `emscripten_glDeleteRenderbuffers` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDeleteRenderbuffers'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDeleteRenderbuffers'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDeleteRenderbuffers'];
+  if (!func) func = _emscripten_glDeleteRenderbuffers;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glDeleteRenderbuffers$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDeleteShader$vi'] = function() {
+  
+  assert(Module["_emscripten_glDeleteShader"] || typeof _emscripten_glDeleteShader !== "undefined", "external function `emscripten_glDeleteShader` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDeleteShader'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDeleteShader'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDeleteShader'];
+  if (!func) func = _emscripten_glDeleteShader;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glDeleteShader$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDeleteTextures$vii'] = function() {
+  
+  assert(Module["_emscripten_glDeleteTextures"] || typeof _emscripten_glDeleteTextures !== "undefined", "external function `emscripten_glDeleteTextures` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDeleteTextures'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDeleteTextures'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDeleteTextures'];
+  if (!func) func = _emscripten_glDeleteTextures;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glDeleteTextures$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDepthFunc$vi'] = function() {
+  
+  assert(Module["_emscripten_glDepthFunc"] || typeof _emscripten_glDepthFunc !== "undefined", "external function `emscripten_glDepthFunc` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDepthFunc'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDepthFunc'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDepthFunc'];
+  if (!func) func = _emscripten_glDepthFunc;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glDepthFunc$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDepthMask$vi'] = function() {
+  
+  assert(Module["_emscripten_glDepthMask"] || typeof _emscripten_glDepthMask !== "undefined", "external function `emscripten_glDepthMask` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDepthMask'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDepthMask'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDepthMask'];
+  if (!func) func = _emscripten_glDepthMask;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glDepthMask$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDepthRangef$vff'] = function() {
+  
+  assert(Module["_emscripten_glDepthRangef"] || typeof _emscripten_glDepthRangef !== "undefined", "external function `emscripten_glDepthRangef` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDepthRangef'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDepthRangef'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDepthRangef'];
+  if (!func) func = _emscripten_glDepthRangef;
+  var fp = addFunction(func, 'vff');
+  Module['_fp$emscripten_glDepthRangef$vff'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDetachShader$vii'] = function() {
+  
+  assert(Module["_emscripten_glDetachShader"] || typeof _emscripten_glDetachShader !== "undefined", "external function `emscripten_glDetachShader` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDetachShader'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDetachShader'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDetachShader'];
+  if (!func) func = _emscripten_glDetachShader;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glDetachShader$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDisable$vi'] = function() {
+  
+  assert(Module["_emscripten_glDisable"] || typeof _emscripten_glDisable !== "undefined", "external function `emscripten_glDisable` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDisable'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDisable'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDisable'];
+  if (!func) func = _emscripten_glDisable;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glDisable$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDisableVertexAttribArray$vi'] = function() {
+  
+  assert(Module["_emscripten_glDisableVertexAttribArray"] || typeof _emscripten_glDisableVertexAttribArray !== "undefined", "external function `emscripten_glDisableVertexAttribArray` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDisableVertexAttribArray'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDisableVertexAttribArray'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDisableVertexAttribArray'];
+  if (!func) func = _emscripten_glDisableVertexAttribArray;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glDisableVertexAttribArray$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDrawArrays$viii'] = function() {
+  
+  assert(Module["_emscripten_glDrawArrays"] || typeof _emscripten_glDrawArrays !== "undefined", "external function `emscripten_glDrawArrays` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDrawArrays'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDrawArrays'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDrawArrays'];
+  if (!func) func = _emscripten_glDrawArrays;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glDrawArrays$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glDrawElements$viiii'] = function() {
+  
+  assert(Module["_emscripten_glDrawElements"] || typeof _emscripten_glDrawElements !== "undefined", "external function `emscripten_glDrawElements` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glDrawElements'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glDrawElements'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glDrawElements'];
+  if (!func) func = _emscripten_glDrawElements;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glDrawElements$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glEnable$vi'] = function() {
+  
+  assert(Module["_emscripten_glEnable"] || typeof _emscripten_glEnable !== "undefined", "external function `emscripten_glEnable` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glEnable'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glEnable'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glEnable'];
+  if (!func) func = _emscripten_glEnable;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glEnable$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glEnableVertexAttribArray$vi'] = function() {
+  
+  assert(Module["_emscripten_glEnableVertexAttribArray"] || typeof _emscripten_glEnableVertexAttribArray !== "undefined", "external function `emscripten_glEnableVertexAttribArray` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glEnableVertexAttribArray'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glEnableVertexAttribArray'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glEnableVertexAttribArray'];
+  if (!func) func = _emscripten_glEnableVertexAttribArray;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glEnableVertexAttribArray$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glFinish$v'] = function() {
+  
+  assert(Module["_emscripten_glFinish"] || typeof _emscripten_glFinish !== "undefined", "external function `emscripten_glFinish` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glFinish'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glFinish'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glFinish'];
+  if (!func) func = _emscripten_glFinish;
+  var fp = addFunction(func, 'v');
+  Module['_fp$emscripten_glFinish$v'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glFlush$v'] = function() {
+  
+  assert(Module["_emscripten_glFlush"] || typeof _emscripten_glFlush !== "undefined", "external function `emscripten_glFlush` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glFlush'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glFlush'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glFlush'];
+  if (!func) func = _emscripten_glFlush;
+  var fp = addFunction(func, 'v');
+  Module['_fp$emscripten_glFlush$v'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glFramebufferRenderbuffer$viiii'] = function() {
+  
+  assert(Module["_emscripten_glFramebufferRenderbuffer"] || typeof _emscripten_glFramebufferRenderbuffer !== "undefined", "external function `emscripten_glFramebufferRenderbuffer` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glFramebufferRenderbuffer'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glFramebufferRenderbuffer'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glFramebufferRenderbuffer'];
+  if (!func) func = _emscripten_glFramebufferRenderbuffer;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glFramebufferRenderbuffer$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glFramebufferTexture2D$viiiii'] = function() {
+  
+  assert(Module["_emscripten_glFramebufferTexture2D"] || typeof _emscripten_glFramebufferTexture2D !== "undefined", "external function `emscripten_glFramebufferTexture2D` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glFramebufferTexture2D'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glFramebufferTexture2D'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glFramebufferTexture2D'];
+  if (!func) func = _emscripten_glFramebufferTexture2D;
+  var fp = addFunction(func, 'viiiii');
+  Module['_fp$emscripten_glFramebufferTexture2D$viiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glFrontFace$vi'] = function() {
+  
+  assert(Module["_emscripten_glFrontFace"] || typeof _emscripten_glFrontFace !== "undefined", "external function `emscripten_glFrontFace` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glFrontFace'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glFrontFace'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glFrontFace'];
+  if (!func) func = _emscripten_glFrontFace;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glFrontFace$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGenBuffers$vii'] = function() {
+  
+  assert(Module["_emscripten_glGenBuffers"] || typeof _emscripten_glGenBuffers !== "undefined", "external function `emscripten_glGenBuffers` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGenBuffers'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGenBuffers'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGenBuffers'];
+  if (!func) func = _emscripten_glGenBuffers;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glGenBuffers$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGenerateMipmap$vi'] = function() {
+  
+  assert(Module["_emscripten_glGenerateMipmap"] || typeof _emscripten_glGenerateMipmap !== "undefined", "external function `emscripten_glGenerateMipmap` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGenerateMipmap'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGenerateMipmap'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGenerateMipmap'];
+  if (!func) func = _emscripten_glGenerateMipmap;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glGenerateMipmap$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGenFramebuffers$vii'] = function() {
+  
+  assert(Module["_emscripten_glGenFramebuffers"] || typeof _emscripten_glGenFramebuffers !== "undefined", "external function `emscripten_glGenFramebuffers` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGenFramebuffers'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGenFramebuffers'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGenFramebuffers'];
+  if (!func) func = _emscripten_glGenFramebuffers;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glGenFramebuffers$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGenRenderbuffers$vii'] = function() {
+  
+  assert(Module["_emscripten_glGenRenderbuffers"] || typeof _emscripten_glGenRenderbuffers !== "undefined", "external function `emscripten_glGenRenderbuffers` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGenRenderbuffers'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGenRenderbuffers'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGenRenderbuffers'];
+  if (!func) func = _emscripten_glGenRenderbuffers;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glGenRenderbuffers$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGenTextures$vii'] = function() {
+  
+  assert(Module["_emscripten_glGenTextures"] || typeof _emscripten_glGenTextures !== "undefined", "external function `emscripten_glGenTextures` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGenTextures'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGenTextures'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGenTextures'];
+  if (!func) func = _emscripten_glGenTextures;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glGenTextures$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetActiveAttrib$viiiiiii'] = function() {
+  
+  assert(Module["_emscripten_glGetActiveAttrib"] || typeof _emscripten_glGetActiveAttrib !== "undefined", "external function `emscripten_glGetActiveAttrib` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetActiveAttrib'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetActiveAttrib'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetActiveAttrib'];
+  if (!func) func = _emscripten_glGetActiveAttrib;
+  var fp = addFunction(func, 'viiiiiii');
+  Module['_fp$emscripten_glGetActiveAttrib$viiiiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetActiveUniform$viiiiiii'] = function() {
+  
+  assert(Module["_emscripten_glGetActiveUniform"] || typeof _emscripten_glGetActiveUniform !== "undefined", "external function `emscripten_glGetActiveUniform` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetActiveUniform'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetActiveUniform'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetActiveUniform'];
+  if (!func) func = _emscripten_glGetActiveUniform;
+  var fp = addFunction(func, 'viiiiiii');
+  Module['_fp$emscripten_glGetActiveUniform$viiiiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetAttachedShaders$viiii'] = function() {
+  
+  assert(Module["_emscripten_glGetAttachedShaders"] || typeof _emscripten_glGetAttachedShaders !== "undefined", "external function `emscripten_glGetAttachedShaders` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetAttachedShaders'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetAttachedShaders'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetAttachedShaders'];
+  if (!func) func = _emscripten_glGetAttachedShaders;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glGetAttachedShaders$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetAttribLocation$iii'] = function() {
+  
+  assert(Module["_emscripten_glGetAttribLocation"] || typeof _emscripten_glGetAttribLocation !== "undefined", "external function `emscripten_glGetAttribLocation` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetAttribLocation'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetAttribLocation'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetAttribLocation'];
+  if (!func) func = _emscripten_glGetAttribLocation;
+  var fp = addFunction(func, 'iii');
+  Module['_fp$emscripten_glGetAttribLocation$iii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetBooleanv$vii'] = function() {
+  
+  assert(Module["_emscripten_glGetBooleanv"] || typeof _emscripten_glGetBooleanv !== "undefined", "external function `emscripten_glGetBooleanv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetBooleanv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetBooleanv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetBooleanv'];
+  if (!func) func = _emscripten_glGetBooleanv;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glGetBooleanv$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetBufferParameteriv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetBufferParameteriv"] || typeof _emscripten_glGetBufferParameteriv !== "undefined", "external function `emscripten_glGetBufferParameteriv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetBufferParameteriv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetBufferParameteriv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetBufferParameteriv'];
+  if (!func) func = _emscripten_glGetBufferParameteriv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetBufferParameteriv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetError$i'] = function() {
+  
+  assert(Module["_emscripten_glGetError"] || typeof _emscripten_glGetError !== "undefined", "external function `emscripten_glGetError` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetError'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetError'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetError'];
+  if (!func) func = _emscripten_glGetError;
+  var fp = addFunction(func, 'i');
+  Module['_fp$emscripten_glGetError$i'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetFloatv$vii'] = function() {
+  
+  assert(Module["_emscripten_glGetFloatv"] || typeof _emscripten_glGetFloatv !== "undefined", "external function `emscripten_glGetFloatv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetFloatv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetFloatv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetFloatv'];
+  if (!func) func = _emscripten_glGetFloatv;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glGetFloatv$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetFramebufferAttachmentParameteriv$viiii'] = function() {
+  
+  assert(Module["_emscripten_glGetFramebufferAttachmentParameteriv"] || typeof _emscripten_glGetFramebufferAttachmentParameteriv !== "undefined", "external function `emscripten_glGetFramebufferAttachmentParameteriv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetFramebufferAttachmentParameteriv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetFramebufferAttachmentParameteriv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetFramebufferAttachmentParameteriv'];
+  if (!func) func = _emscripten_glGetFramebufferAttachmentParameteriv;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glGetFramebufferAttachmentParameteriv$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetIntegerv$vii'] = function() {
+  
+  assert(Module["_emscripten_glGetIntegerv"] || typeof _emscripten_glGetIntegerv !== "undefined", "external function `emscripten_glGetIntegerv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetIntegerv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetIntegerv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetIntegerv'];
+  if (!func) func = _emscripten_glGetIntegerv;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glGetIntegerv$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetProgramiv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetProgramiv"] || typeof _emscripten_glGetProgramiv !== "undefined", "external function `emscripten_glGetProgramiv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetProgramiv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetProgramiv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetProgramiv'];
+  if (!func) func = _emscripten_glGetProgramiv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetProgramiv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetProgramInfoLog$viiii'] = function() {
+  
+  assert(Module["_emscripten_glGetProgramInfoLog"] || typeof _emscripten_glGetProgramInfoLog !== "undefined", "external function `emscripten_glGetProgramInfoLog` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetProgramInfoLog'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetProgramInfoLog'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetProgramInfoLog'];
+  if (!func) func = _emscripten_glGetProgramInfoLog;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glGetProgramInfoLog$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetRenderbufferParameteriv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetRenderbufferParameteriv"] || typeof _emscripten_glGetRenderbufferParameteriv !== "undefined", "external function `emscripten_glGetRenderbufferParameteriv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetRenderbufferParameteriv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetRenderbufferParameteriv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetRenderbufferParameteriv'];
+  if (!func) func = _emscripten_glGetRenderbufferParameteriv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetRenderbufferParameteriv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetShaderiv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetShaderiv"] || typeof _emscripten_glGetShaderiv !== "undefined", "external function `emscripten_glGetShaderiv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetShaderiv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetShaderiv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetShaderiv'];
+  if (!func) func = _emscripten_glGetShaderiv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetShaderiv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetShaderInfoLog$viiii'] = function() {
+  
+  assert(Module["_emscripten_glGetShaderInfoLog"] || typeof _emscripten_glGetShaderInfoLog !== "undefined", "external function `emscripten_glGetShaderInfoLog` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetShaderInfoLog'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetShaderInfoLog'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetShaderInfoLog'];
+  if (!func) func = _emscripten_glGetShaderInfoLog;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glGetShaderInfoLog$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetShaderPrecisionFormat$viiii'] = function() {
+  
+  assert(Module["_emscripten_glGetShaderPrecisionFormat"] || typeof _emscripten_glGetShaderPrecisionFormat !== "undefined", "external function `emscripten_glGetShaderPrecisionFormat` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetShaderPrecisionFormat'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetShaderPrecisionFormat'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetShaderPrecisionFormat'];
+  if (!func) func = _emscripten_glGetShaderPrecisionFormat;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glGetShaderPrecisionFormat$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetShaderSource$viiii'] = function() {
+  
+  assert(Module["_emscripten_glGetShaderSource"] || typeof _emscripten_glGetShaderSource !== "undefined", "external function `emscripten_glGetShaderSource` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetShaderSource'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetShaderSource'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetShaderSource'];
+  if (!func) func = _emscripten_glGetShaderSource;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glGetShaderSource$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetString$ii'] = function() {
+  
+  assert(Module["_emscripten_glGetString"] || typeof _emscripten_glGetString !== "undefined", "external function `emscripten_glGetString` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetString'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetString'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetString'];
+  if (!func) func = _emscripten_glGetString;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glGetString$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetTexParameterfv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetTexParameterfv"] || typeof _emscripten_glGetTexParameterfv !== "undefined", "external function `emscripten_glGetTexParameterfv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetTexParameterfv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetTexParameterfv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetTexParameterfv'];
+  if (!func) func = _emscripten_glGetTexParameterfv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetTexParameterfv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetTexParameteriv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetTexParameteriv"] || typeof _emscripten_glGetTexParameteriv !== "undefined", "external function `emscripten_glGetTexParameteriv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetTexParameteriv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetTexParameteriv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetTexParameteriv'];
+  if (!func) func = _emscripten_glGetTexParameteriv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetTexParameteriv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetUniformfv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetUniformfv"] || typeof _emscripten_glGetUniformfv !== "undefined", "external function `emscripten_glGetUniformfv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetUniformfv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetUniformfv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetUniformfv'];
+  if (!func) func = _emscripten_glGetUniformfv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetUniformfv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetUniformiv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetUniformiv"] || typeof _emscripten_glGetUniformiv !== "undefined", "external function `emscripten_glGetUniformiv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetUniformiv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetUniformiv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetUniformiv'];
+  if (!func) func = _emscripten_glGetUniformiv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetUniformiv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetUniformLocation$iii'] = function() {
+  
+  assert(Module["_emscripten_glGetUniformLocation"] || typeof _emscripten_glGetUniformLocation !== "undefined", "external function `emscripten_glGetUniformLocation` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetUniformLocation'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetUniformLocation'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetUniformLocation'];
+  if (!func) func = _emscripten_glGetUniformLocation;
+  var fp = addFunction(func, 'iii');
+  Module['_fp$emscripten_glGetUniformLocation$iii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetVertexAttribfv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetVertexAttribfv"] || typeof _emscripten_glGetVertexAttribfv !== "undefined", "external function `emscripten_glGetVertexAttribfv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetVertexAttribfv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetVertexAttribfv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetVertexAttribfv'];
+  if (!func) func = _emscripten_glGetVertexAttribfv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetVertexAttribfv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetVertexAttribiv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetVertexAttribiv"] || typeof _emscripten_glGetVertexAttribiv !== "undefined", "external function `emscripten_glGetVertexAttribiv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetVertexAttribiv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetVertexAttribiv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetVertexAttribiv'];
+  if (!func) func = _emscripten_glGetVertexAttribiv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetVertexAttribiv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glGetVertexAttribPointerv$viii'] = function() {
+  
+  assert(Module["_emscripten_glGetVertexAttribPointerv"] || typeof _emscripten_glGetVertexAttribPointerv !== "undefined", "external function `emscripten_glGetVertexAttribPointerv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glGetVertexAttribPointerv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glGetVertexAttribPointerv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glGetVertexAttribPointerv'];
+  if (!func) func = _emscripten_glGetVertexAttribPointerv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glGetVertexAttribPointerv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glHint$vii'] = function() {
+  
+  assert(Module["_emscripten_glHint"] || typeof _emscripten_glHint !== "undefined", "external function `emscripten_glHint` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glHint'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glHint'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glHint'];
+  if (!func) func = _emscripten_glHint;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glHint$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glIsBuffer$ii'] = function() {
+  
+  assert(Module["_emscripten_glIsBuffer"] || typeof _emscripten_glIsBuffer !== "undefined", "external function `emscripten_glIsBuffer` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glIsBuffer'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glIsBuffer'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glIsBuffer'];
+  if (!func) func = _emscripten_glIsBuffer;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glIsBuffer$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glIsEnabled$ii'] = function() {
+  
+  assert(Module["_emscripten_glIsEnabled"] || typeof _emscripten_glIsEnabled !== "undefined", "external function `emscripten_glIsEnabled` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glIsEnabled'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glIsEnabled'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glIsEnabled'];
+  if (!func) func = _emscripten_glIsEnabled;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glIsEnabled$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glIsFramebuffer$ii'] = function() {
+  
+  assert(Module["_emscripten_glIsFramebuffer"] || typeof _emscripten_glIsFramebuffer !== "undefined", "external function `emscripten_glIsFramebuffer` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glIsFramebuffer'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glIsFramebuffer'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glIsFramebuffer'];
+  if (!func) func = _emscripten_glIsFramebuffer;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glIsFramebuffer$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glIsProgram$ii'] = function() {
+  
+  assert(Module["_emscripten_glIsProgram"] || typeof _emscripten_glIsProgram !== "undefined", "external function `emscripten_glIsProgram` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glIsProgram'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glIsProgram'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glIsProgram'];
+  if (!func) func = _emscripten_glIsProgram;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glIsProgram$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glIsRenderbuffer$ii'] = function() {
+  
+  assert(Module["_emscripten_glIsRenderbuffer"] || typeof _emscripten_glIsRenderbuffer !== "undefined", "external function `emscripten_glIsRenderbuffer` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glIsRenderbuffer'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glIsRenderbuffer'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glIsRenderbuffer'];
+  if (!func) func = _emscripten_glIsRenderbuffer;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glIsRenderbuffer$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glIsShader$ii'] = function() {
+  
+  assert(Module["_emscripten_glIsShader"] || typeof _emscripten_glIsShader !== "undefined", "external function `emscripten_glIsShader` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glIsShader'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glIsShader'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glIsShader'];
+  if (!func) func = _emscripten_glIsShader;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glIsShader$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glIsTexture$ii'] = function() {
+  
+  assert(Module["_emscripten_glIsTexture"] || typeof _emscripten_glIsTexture !== "undefined", "external function `emscripten_glIsTexture` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glIsTexture'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glIsTexture'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glIsTexture'];
+  if (!func) func = _emscripten_glIsTexture;
+  var fp = addFunction(func, 'ii');
+  Module['_fp$emscripten_glIsTexture$ii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glLineWidth$vf'] = function() {
+  
+  assert(Module["_emscripten_glLineWidth"] || typeof _emscripten_glLineWidth !== "undefined", "external function `emscripten_glLineWidth` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glLineWidth'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glLineWidth'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glLineWidth'];
+  if (!func) func = _emscripten_glLineWidth;
+  var fp = addFunction(func, 'vf');
+  Module['_fp$emscripten_glLineWidth$vf'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glLinkProgram$vi'] = function() {
+  
+  assert(Module["_emscripten_glLinkProgram"] || typeof _emscripten_glLinkProgram !== "undefined", "external function `emscripten_glLinkProgram` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glLinkProgram'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glLinkProgram'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glLinkProgram'];
+  if (!func) func = _emscripten_glLinkProgram;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glLinkProgram$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glPixelStorei$vii'] = function() {
+  
+  assert(Module["_emscripten_glPixelStorei"] || typeof _emscripten_glPixelStorei !== "undefined", "external function `emscripten_glPixelStorei` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glPixelStorei'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glPixelStorei'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glPixelStorei'];
+  if (!func) func = _emscripten_glPixelStorei;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glPixelStorei$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glPolygonOffset$vff'] = function() {
+  
+  assert(Module["_emscripten_glPolygonOffset"] || typeof _emscripten_glPolygonOffset !== "undefined", "external function `emscripten_glPolygonOffset` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glPolygonOffset'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glPolygonOffset'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glPolygonOffset'];
+  if (!func) func = _emscripten_glPolygonOffset;
+  var fp = addFunction(func, 'vff');
+  Module['_fp$emscripten_glPolygonOffset$vff'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glReadPixels$viiiiiii'] = function() {
+  
+  assert(Module["_emscripten_glReadPixels"] || typeof _emscripten_glReadPixels !== "undefined", "external function `emscripten_glReadPixels` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glReadPixels'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glReadPixels'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glReadPixels'];
+  if (!func) func = _emscripten_glReadPixels;
+  var fp = addFunction(func, 'viiiiiii');
+  Module['_fp$emscripten_glReadPixels$viiiiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glReleaseShaderCompiler$v'] = function() {
+  
+  assert(Module["_emscripten_glReleaseShaderCompiler"] || typeof _emscripten_glReleaseShaderCompiler !== "undefined", "external function `emscripten_glReleaseShaderCompiler` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glReleaseShaderCompiler'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glReleaseShaderCompiler'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glReleaseShaderCompiler'];
+  if (!func) func = _emscripten_glReleaseShaderCompiler;
+  var fp = addFunction(func, 'v');
+  Module['_fp$emscripten_glReleaseShaderCompiler$v'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glRenderbufferStorage$viiii'] = function() {
+  
+  assert(Module["_emscripten_glRenderbufferStorage"] || typeof _emscripten_glRenderbufferStorage !== "undefined", "external function `emscripten_glRenderbufferStorage` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glRenderbufferStorage'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glRenderbufferStorage'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glRenderbufferStorage'];
+  if (!func) func = _emscripten_glRenderbufferStorage;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glRenderbufferStorage$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glSampleCoverage$vfi'] = function() {
+  
+  assert(Module["_emscripten_glSampleCoverage"] || typeof _emscripten_glSampleCoverage !== "undefined", "external function `emscripten_glSampleCoverage` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glSampleCoverage'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glSampleCoverage'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glSampleCoverage'];
+  if (!func) func = _emscripten_glSampleCoverage;
+  var fp = addFunction(func, 'vfi');
+  Module['_fp$emscripten_glSampleCoverage$vfi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glScissor$viiii'] = function() {
+  
+  assert(Module["_emscripten_glScissor"] || typeof _emscripten_glScissor !== "undefined", "external function `emscripten_glScissor` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glScissor'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glScissor'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glScissor'];
+  if (!func) func = _emscripten_glScissor;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glScissor$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glShaderBinary$viiiii'] = function() {
+  
+  assert(Module["_emscripten_glShaderBinary"] || typeof _emscripten_glShaderBinary !== "undefined", "external function `emscripten_glShaderBinary` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glShaderBinary'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glShaderBinary'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glShaderBinary'];
+  if (!func) func = _emscripten_glShaderBinary;
+  var fp = addFunction(func, 'viiiii');
+  Module['_fp$emscripten_glShaderBinary$viiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glShaderSource$viiii'] = function() {
+  
+  assert(Module["_emscripten_glShaderSource"] || typeof _emscripten_glShaderSource !== "undefined", "external function `emscripten_glShaderSource` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glShaderSource'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glShaderSource'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glShaderSource'];
+  if (!func) func = _emscripten_glShaderSource;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glShaderSource$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glStencilFunc$viii'] = function() {
+  
+  assert(Module["_emscripten_glStencilFunc"] || typeof _emscripten_glStencilFunc !== "undefined", "external function `emscripten_glStencilFunc` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glStencilFunc'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glStencilFunc'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glStencilFunc'];
+  if (!func) func = _emscripten_glStencilFunc;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glStencilFunc$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glStencilFuncSeparate$viiii'] = function() {
+  
+  assert(Module["_emscripten_glStencilFuncSeparate"] || typeof _emscripten_glStencilFuncSeparate !== "undefined", "external function `emscripten_glStencilFuncSeparate` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glStencilFuncSeparate'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glStencilFuncSeparate'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glStencilFuncSeparate'];
+  if (!func) func = _emscripten_glStencilFuncSeparate;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glStencilFuncSeparate$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glStencilMask$vi'] = function() {
+  
+  assert(Module["_emscripten_glStencilMask"] || typeof _emscripten_glStencilMask !== "undefined", "external function `emscripten_glStencilMask` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glStencilMask'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glStencilMask'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glStencilMask'];
+  if (!func) func = _emscripten_glStencilMask;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glStencilMask$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glStencilMaskSeparate$vii'] = function() {
+  
+  assert(Module["_emscripten_glStencilMaskSeparate"] || typeof _emscripten_glStencilMaskSeparate !== "undefined", "external function `emscripten_glStencilMaskSeparate` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glStencilMaskSeparate'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glStencilMaskSeparate'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glStencilMaskSeparate'];
+  if (!func) func = _emscripten_glStencilMaskSeparate;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glStencilMaskSeparate$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glStencilOp$viii'] = function() {
+  
+  assert(Module["_emscripten_glStencilOp"] || typeof _emscripten_glStencilOp !== "undefined", "external function `emscripten_glStencilOp` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glStencilOp'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glStencilOp'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glStencilOp'];
+  if (!func) func = _emscripten_glStencilOp;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glStencilOp$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glStencilOpSeparate$viiii'] = function() {
+  
+  assert(Module["_emscripten_glStencilOpSeparate"] || typeof _emscripten_glStencilOpSeparate !== "undefined", "external function `emscripten_glStencilOpSeparate` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glStencilOpSeparate'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glStencilOpSeparate'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glStencilOpSeparate'];
+  if (!func) func = _emscripten_glStencilOpSeparate;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glStencilOpSeparate$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glTexImage2D$viiiiiiiii'] = function() {
+  
+  assert(Module["_emscripten_glTexImage2D"] || typeof _emscripten_glTexImage2D !== "undefined", "external function `emscripten_glTexImage2D` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glTexImage2D'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glTexImage2D'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glTexImage2D'];
+  if (!func) func = _emscripten_glTexImage2D;
+  var fp = addFunction(func, 'viiiiiiiii');
+  Module['_fp$emscripten_glTexImage2D$viiiiiiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glTexParameterf$viif'] = function() {
+  
+  assert(Module["_emscripten_glTexParameterf"] || typeof _emscripten_glTexParameterf !== "undefined", "external function `emscripten_glTexParameterf` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glTexParameterf'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glTexParameterf'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glTexParameterf'];
+  if (!func) func = _emscripten_glTexParameterf;
+  var fp = addFunction(func, 'viif');
+  Module['_fp$emscripten_glTexParameterf$viif'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glTexParameterfv$viii'] = function() {
+  
+  assert(Module["_emscripten_glTexParameterfv"] || typeof _emscripten_glTexParameterfv !== "undefined", "external function `emscripten_glTexParameterfv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glTexParameterfv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glTexParameterfv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glTexParameterfv'];
+  if (!func) func = _emscripten_glTexParameterfv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glTexParameterfv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glTexParameteri$viii'] = function() {
+  
+  assert(Module["_emscripten_glTexParameteri"] || typeof _emscripten_glTexParameteri !== "undefined", "external function `emscripten_glTexParameteri` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glTexParameteri'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glTexParameteri'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glTexParameteri'];
+  if (!func) func = _emscripten_glTexParameteri;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glTexParameteri$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glTexParameteriv$viii'] = function() {
+  
+  assert(Module["_emscripten_glTexParameteriv"] || typeof _emscripten_glTexParameteriv !== "undefined", "external function `emscripten_glTexParameteriv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glTexParameteriv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glTexParameteriv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glTexParameteriv'];
+  if (!func) func = _emscripten_glTexParameteriv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glTexParameteriv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glTexSubImage2D$viiiiiiiii'] = function() {
+  
+  assert(Module["_emscripten_glTexSubImage2D"] || typeof _emscripten_glTexSubImage2D !== "undefined", "external function `emscripten_glTexSubImage2D` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glTexSubImage2D'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glTexSubImage2D'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glTexSubImage2D'];
+  if (!func) func = _emscripten_glTexSubImage2D;
+  var fp = addFunction(func, 'viiiiiiiii');
+  Module['_fp$emscripten_glTexSubImage2D$viiiiiiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform1f$vif'] = function() {
+  
+  assert(Module["_emscripten_glUniform1f"] || typeof _emscripten_glUniform1f !== "undefined", "external function `emscripten_glUniform1f` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform1f'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform1f'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform1f'];
+  if (!func) func = _emscripten_glUniform1f;
+  var fp = addFunction(func, 'vif');
+  Module['_fp$emscripten_glUniform1f$vif'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform1fv$viii'] = function() {
+  
+  assert(Module["_emscripten_glUniform1fv"] || typeof _emscripten_glUniform1fv !== "undefined", "external function `emscripten_glUniform1fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform1fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform1fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform1fv'];
+  if (!func) func = _emscripten_glUniform1fv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glUniform1fv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform1i$vii'] = function() {
+  
+  assert(Module["_emscripten_glUniform1i"] || typeof _emscripten_glUniform1i !== "undefined", "external function `emscripten_glUniform1i` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform1i'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform1i'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform1i'];
+  if (!func) func = _emscripten_glUniform1i;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glUniform1i$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform1iv$viii'] = function() {
+  
+  assert(Module["_emscripten_glUniform1iv"] || typeof _emscripten_glUniform1iv !== "undefined", "external function `emscripten_glUniform1iv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform1iv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform1iv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform1iv'];
+  if (!func) func = _emscripten_glUniform1iv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glUniform1iv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform2f$viff'] = function() {
+  
+  assert(Module["_emscripten_glUniform2f"] || typeof _emscripten_glUniform2f !== "undefined", "external function `emscripten_glUniform2f` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform2f'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform2f'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform2f'];
+  if (!func) func = _emscripten_glUniform2f;
+  var fp = addFunction(func, 'viff');
+  Module['_fp$emscripten_glUniform2f$viff'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform2fv$viii'] = function() {
+  
+  assert(Module["_emscripten_glUniform2fv"] || typeof _emscripten_glUniform2fv !== "undefined", "external function `emscripten_glUniform2fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform2fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform2fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform2fv'];
+  if (!func) func = _emscripten_glUniform2fv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glUniform2fv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform2i$viii'] = function() {
+  
+  assert(Module["_emscripten_glUniform2i"] || typeof _emscripten_glUniform2i !== "undefined", "external function `emscripten_glUniform2i` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform2i'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform2i'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform2i'];
+  if (!func) func = _emscripten_glUniform2i;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glUniform2i$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform2iv$viii'] = function() {
+  
+  assert(Module["_emscripten_glUniform2iv"] || typeof _emscripten_glUniform2iv !== "undefined", "external function `emscripten_glUniform2iv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform2iv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform2iv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform2iv'];
+  if (!func) func = _emscripten_glUniform2iv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glUniform2iv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform3f$vifff'] = function() {
+  
+  assert(Module["_emscripten_glUniform3f"] || typeof _emscripten_glUniform3f !== "undefined", "external function `emscripten_glUniform3f` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform3f'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform3f'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform3f'];
+  if (!func) func = _emscripten_glUniform3f;
+  var fp = addFunction(func, 'vifff');
+  Module['_fp$emscripten_glUniform3f$vifff'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform3fv$viii'] = function() {
+  
+  assert(Module["_emscripten_glUniform3fv"] || typeof _emscripten_glUniform3fv !== "undefined", "external function `emscripten_glUniform3fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform3fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform3fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform3fv'];
+  if (!func) func = _emscripten_glUniform3fv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glUniform3fv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform3i$viiii'] = function() {
+  
+  assert(Module["_emscripten_glUniform3i"] || typeof _emscripten_glUniform3i !== "undefined", "external function `emscripten_glUniform3i` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform3i'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform3i'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform3i'];
+  if (!func) func = _emscripten_glUniform3i;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glUniform3i$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform3iv$viii'] = function() {
+  
+  assert(Module["_emscripten_glUniform3iv"] || typeof _emscripten_glUniform3iv !== "undefined", "external function `emscripten_glUniform3iv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform3iv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform3iv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform3iv'];
+  if (!func) func = _emscripten_glUniform3iv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glUniform3iv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform4f$viffff'] = function() {
+  
+  assert(Module["_emscripten_glUniform4f"] || typeof _emscripten_glUniform4f !== "undefined", "external function `emscripten_glUniform4f` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform4f'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform4f'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform4f'];
+  if (!func) func = _emscripten_glUniform4f;
+  var fp = addFunction(func, 'viffff');
+  Module['_fp$emscripten_glUniform4f$viffff'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform4fv$viii'] = function() {
+  
+  assert(Module["_emscripten_glUniform4fv"] || typeof _emscripten_glUniform4fv !== "undefined", "external function `emscripten_glUniform4fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform4fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform4fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform4fv'];
+  if (!func) func = _emscripten_glUniform4fv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glUniform4fv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform4i$viiiii'] = function() {
+  
+  assert(Module["_emscripten_glUniform4i"] || typeof _emscripten_glUniform4i !== "undefined", "external function `emscripten_glUniform4i` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform4i'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform4i'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform4i'];
+  if (!func) func = _emscripten_glUniform4i;
+  var fp = addFunction(func, 'viiiii');
+  Module['_fp$emscripten_glUniform4i$viiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniform4iv$viii'] = function() {
+  
+  assert(Module["_emscripten_glUniform4iv"] || typeof _emscripten_glUniform4iv !== "undefined", "external function `emscripten_glUniform4iv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniform4iv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniform4iv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniform4iv'];
+  if (!func) func = _emscripten_glUniform4iv;
+  var fp = addFunction(func, 'viii');
+  Module['_fp$emscripten_glUniform4iv$viii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniformMatrix2fv$viiii'] = function() {
+  
+  assert(Module["_emscripten_glUniformMatrix2fv"] || typeof _emscripten_glUniformMatrix2fv !== "undefined", "external function `emscripten_glUniformMatrix2fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniformMatrix2fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniformMatrix2fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniformMatrix2fv'];
+  if (!func) func = _emscripten_glUniformMatrix2fv;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glUniformMatrix2fv$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniformMatrix3fv$viiii'] = function() {
+  
+  assert(Module["_emscripten_glUniformMatrix3fv"] || typeof _emscripten_glUniformMatrix3fv !== "undefined", "external function `emscripten_glUniformMatrix3fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniformMatrix3fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniformMatrix3fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniformMatrix3fv'];
+  if (!func) func = _emscripten_glUniformMatrix3fv;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glUniformMatrix3fv$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUniformMatrix4fv$viiii'] = function() {
+  
+  assert(Module["_emscripten_glUniformMatrix4fv"] || typeof _emscripten_glUniformMatrix4fv !== "undefined", "external function `emscripten_glUniformMatrix4fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUniformMatrix4fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUniformMatrix4fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUniformMatrix4fv'];
+  if (!func) func = _emscripten_glUniformMatrix4fv;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glUniformMatrix4fv$viiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glUseProgram$vi'] = function() {
+  
+  assert(Module["_emscripten_glUseProgram"] || typeof _emscripten_glUseProgram !== "undefined", "external function `emscripten_glUseProgram` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glUseProgram'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glUseProgram'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glUseProgram'];
+  if (!func) func = _emscripten_glUseProgram;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glUseProgram$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glValidateProgram$vi'] = function() {
+  
+  assert(Module["_emscripten_glValidateProgram"] || typeof _emscripten_glValidateProgram !== "undefined", "external function `emscripten_glValidateProgram` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glValidateProgram'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glValidateProgram'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glValidateProgram'];
+  if (!func) func = _emscripten_glValidateProgram;
+  var fp = addFunction(func, 'vi');
+  Module['_fp$emscripten_glValidateProgram$vi'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glVertexAttrib1f$vif'] = function() {
+  
+  assert(Module["_emscripten_glVertexAttrib1f"] || typeof _emscripten_glVertexAttrib1f !== "undefined", "external function `emscripten_glVertexAttrib1f` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glVertexAttrib1f'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glVertexAttrib1f'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glVertexAttrib1f'];
+  if (!func) func = _emscripten_glVertexAttrib1f;
+  var fp = addFunction(func, 'vif');
+  Module['_fp$emscripten_glVertexAttrib1f$vif'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glVertexAttrib1fv$vii'] = function() {
+  
+  assert(Module["_emscripten_glVertexAttrib1fv"] || typeof _emscripten_glVertexAttrib1fv !== "undefined", "external function `emscripten_glVertexAttrib1fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glVertexAttrib1fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glVertexAttrib1fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glVertexAttrib1fv'];
+  if (!func) func = _emscripten_glVertexAttrib1fv;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glVertexAttrib1fv$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glVertexAttrib2f$viff'] = function() {
+  
+  assert(Module["_emscripten_glVertexAttrib2f"] || typeof _emscripten_glVertexAttrib2f !== "undefined", "external function `emscripten_glVertexAttrib2f` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glVertexAttrib2f'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glVertexAttrib2f'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glVertexAttrib2f'];
+  if (!func) func = _emscripten_glVertexAttrib2f;
+  var fp = addFunction(func, 'viff');
+  Module['_fp$emscripten_glVertexAttrib2f$viff'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glVertexAttrib2fv$vii'] = function() {
+  
+  assert(Module["_emscripten_glVertexAttrib2fv"] || typeof _emscripten_glVertexAttrib2fv !== "undefined", "external function `emscripten_glVertexAttrib2fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glVertexAttrib2fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glVertexAttrib2fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glVertexAttrib2fv'];
+  if (!func) func = _emscripten_glVertexAttrib2fv;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glVertexAttrib2fv$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glVertexAttrib3f$vifff'] = function() {
+  
+  assert(Module["_emscripten_glVertexAttrib3f"] || typeof _emscripten_glVertexAttrib3f !== "undefined", "external function `emscripten_glVertexAttrib3f` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glVertexAttrib3f'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glVertexAttrib3f'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glVertexAttrib3f'];
+  if (!func) func = _emscripten_glVertexAttrib3f;
+  var fp = addFunction(func, 'vifff');
+  Module['_fp$emscripten_glVertexAttrib3f$vifff'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glVertexAttrib3fv$vii'] = function() {
+  
+  assert(Module["_emscripten_glVertexAttrib3fv"] || typeof _emscripten_glVertexAttrib3fv !== "undefined", "external function `emscripten_glVertexAttrib3fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glVertexAttrib3fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glVertexAttrib3fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glVertexAttrib3fv'];
+  if (!func) func = _emscripten_glVertexAttrib3fv;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glVertexAttrib3fv$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glVertexAttrib4f$viffff'] = function() {
+  
+  assert(Module["_emscripten_glVertexAttrib4f"] || typeof _emscripten_glVertexAttrib4f !== "undefined", "external function `emscripten_glVertexAttrib4f` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glVertexAttrib4f'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glVertexAttrib4f'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glVertexAttrib4f'];
+  if (!func) func = _emscripten_glVertexAttrib4f;
+  var fp = addFunction(func, 'viffff');
+  Module['_fp$emscripten_glVertexAttrib4f$viffff'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glVertexAttrib4fv$vii'] = function() {
+  
+  assert(Module["_emscripten_glVertexAttrib4fv"] || typeof _emscripten_glVertexAttrib4fv !== "undefined", "external function `emscripten_glVertexAttrib4fv` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glVertexAttrib4fv'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glVertexAttrib4fv'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glVertexAttrib4fv'];
+  if (!func) func = _emscripten_glVertexAttrib4fv;
+  var fp = addFunction(func, 'vii');
+  Module['_fp$emscripten_glVertexAttrib4fv$vii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glVertexAttribPointer$viiiiii'] = function() {
+  
+  assert(Module["_emscripten_glVertexAttribPointer"] || typeof _emscripten_glVertexAttribPointer !== "undefined", "external function `emscripten_glVertexAttribPointer` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glVertexAttribPointer'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glVertexAttribPointer'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glVertexAttribPointer'];
+  if (!func) func = _emscripten_glVertexAttribPointer;
+  var fp = addFunction(func, 'viiiiii');
+  Module['_fp$emscripten_glVertexAttribPointer$viiiiii'] = function() { return fp };
+  return fp;
+}
+
+
+Module['_fp$emscripten_glViewport$viiii'] = function() {
+  
+  assert(Module["_emscripten_glViewport"] || typeof _emscripten_glViewport !== "undefined", "external function `emscripten_glViewport` is missing.perhaps a side module was not linked in? if this symbol was expected to arrive from a system library, try to build the MAIN_MODULE with EMCC_FORCE_STDLIBS=XX in the environment");
+  // Use the original wasm function itself, for the table, from the main module.
+  var func = Module['asm']['emscripten_glViewport'];
+  // Try an original version from a side module.
+  if (!func) func = Module['_emscripten_glViewport'];
+  // Otherwise, look for a regular function or JS library function.
+  if (!func) func = Module['_emscripten_glViewport'];
+  if (!func) func = _emscripten_glViewport;
+  var fp = addFunction(func, 'viiii');
+  Module['_fp$emscripten_glViewport$viiii'] = function() { return fp };
+  return fp;
+}
+
 function invoke_iiii(index,a1,a2,a3) {
   var sp = stackSave();
   try {
@@ -59341,6 +65336,8 @@ if (!Object.getOwnPropertyDescriptor(Module, "UNWIND_CACHE")) Module["UNWIND_CAC
 if (!Object.getOwnPropertyDescriptor(Module, "readAsmConstArgs")) Module["readAsmConstArgs"] = function() { abort("'readAsmConstArgs' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
 if (!Object.getOwnPropertyDescriptor(Module, "jstoi_q")) Module["jstoi_q"] = function() { abort("'jstoi_q' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
 if (!Object.getOwnPropertyDescriptor(Module, "jstoi_s")) Module["jstoi_s"] = function() { abort("'jstoi_s' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Object.getOwnPropertyDescriptor(Module, "reallyNegative")) Module["reallyNegative"] = function() { abort("'reallyNegative' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Object.getOwnPropertyDescriptor(Module, "formatString")) Module["formatString"] = function() { abort("'formatString' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
 if (!Object.getOwnPropertyDescriptor(Module, "PATH")) Module["PATH"] = function() { abort("'PATH' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
 if (!Object.getOwnPropertyDescriptor(Module, "PATH_FS")) Module["PATH_FS"] = function() { abort("'PATH_FS' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
 if (!Object.getOwnPropertyDescriptor(Module, "SYSCALLS")) Module["SYSCALLS"] = function() { abort("'SYSCALLS' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };

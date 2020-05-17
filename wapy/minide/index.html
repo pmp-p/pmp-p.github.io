@@ -1,4 +1,158 @@
-<!doctype html>
+<!doctype html><script type='text/python'>import embed
+# TODO: https://github.com/mrdoob/stats.js/
+# zoom : https://codepen.io/skladany/pen/KrjRQE
+import sys
+
+def aio_suspend():
+    import syscall
+
+class aio:
+    suspend =aio_suspend
+
+
+# allow hardware(js) interrupts while in python virtual machine
+embed.STI()
+
+
+</script>
+<script>
+default_code=`# Click [save] toolbar's icon to run program
+# Cliquer la disquette dans la barre d'outil pour executer
+
+
+def test():
+    x=999
+    while x:
+        aio.suspend()
+        print('{:0>4}: Hello #python-fr'.format(x))
+        x -= 1
+
+def ffi_test():
+    lib = ffi.open('/lib/libtest.so')
+    return lib.func("v","init_test","")
+
+def ptr_test():
+    renderer = static(SDL_Renderer)
+    print(SDL_Renderer)
+    print(renderer)
+
+    rd = embed.sdl(renderer)
+
+    print(SDL_Renderer)
+    print(renderer)
+    print(rd)
+
+def sdl2_test():
+    #import sys
+    import usdl2 as sdl2
+
+    from ctypes import PT
+
+    def run():
+        if sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO):
+            print("ERROR")
+            return 1
+
+        if 1:
+            window = sdl2.SDL_CreateWindow(b"Hello World",
+                                       sdl2.SDL_WINDOWPOS_CENTERED,
+                                       sdl2.SDL_WINDOWPOS_CENTERED,
+                                       320, 240, sdl2.SDL_WINDOW_SHOWN)
+        else:
+            renderer = PT('SDL_Renderer')
+            window = PT('SDL_Window')
+            e = sdl2.SDL_CreateWindowAndRenderer(320,240,0, window.byref(), renderer.byref())
+
+
+        window = int(window)
+
+
+        print("window:",window)
+
+
+        fname = b'hello.bmp'
+
+        image = PT('SDL_Surface', sdl2.SDL_LoadBMP(fname) )
+
+        print("image:",image)
+
+        windowsurface = sdl2.SDL_GetWindowSurface(window)
+        sdl2.SDL_BlitSurface(image.c.ptr, None, windowsurface, None)
+        sdl2.SDL_UpdateWindowSurface(window)
+        sdl2.SDL_FreeSurface(image.c.ptr)
+
+        running = True
+        tick = 0
+
+        event = PT( sdl2.SDL_Event )
+
+
+        while running:
+            while sdl2.SDL_PollEvent(event.byref()) != 0:
+                if event.type == sdl2.SDL_QUIT:
+                    running = False
+                    break
+            aio.suspend()
+            #sdl2.SDL_Delay(16)
+
+        print("running:",running)
+        sdl2.SDL_DestroyWindow(window)
+        sdl2.SDL_Quit()
+        return 0
+
+    run()
+
+
+from usdl2 import *
+
+def sdl_test():
+    global window, renderer
+    NULL = None
+
+
+
+    import ctypes
+
+    e = SDL_Init(SDL_INIT_VIDEO)
+    if not e:
+        if 1:
+            renderer = ctypes.PT('SDL_Renderer')
+            window = ctypes.PT('SDL_Window')
+            e = SDL_CreateWindowAndRenderer(320,240,0,window.byref(),renderer.byref())
+        else:
+            window = SDL_CreateWindow("Hello World", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 592, 460, SDL_WINDOW_SHOWN)
+
+    else:
+        print('SDL_Init error', e)
+
+
+    print(renderer)
+    renderer = int(renderer)
+    print(renderer)
+
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderDrawLine(renderer, 220, 100, 200, 140)
+    SDL_RenderDrawLine(renderer, 200, 140, 240, 140)
+    SDL_RenderDrawLine(renderer, 240, 140, 220, 100)
+
+
+    if 1:
+        bitmapSurface = SDL_LoadBMP(b"hello.bmp")
+
+        print(bitmapSurface)
+
+        bitmapTex = SDL_CreateTextureFromSurface(renderer, bitmapSurface);
+        SDL_FreeSurface(bitmapSurface);
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, bitmapTex, NULL, NULL);
+
+    SDL_RenderPresent(renderer)
+`
+</script>
+
+
+
 <title>wapy.js</title>
 
 <base href="..">
@@ -9,26 +163,12 @@
 <!-- MDI windowing -->
 <link rel="stylesheet" href="minide/mdi/mdi.css">
 
-    <!-- floating browser -->
-    <script defer src="minide/mdi/browser/browser.js"></script>
-
-    <!-- floating xterminal -->
-    <script defer src="minide/mdi/vt/vt.js"></script>
 
 
-
-
-<!-- // the python core either wapy or cpython -->
-<script src="lib/pythons.003.js"></script>
-
-<!-- // the js link part beetween js engine main loop and python main loop -->
-<script src="lib/plink.003.js"></script>
-
-<script defer src="lib/pyterm.js"></script>
 
 
 <head>
-
+    <meta charset="UTF-8">
 </head>
 
 
@@ -40,7 +180,7 @@
 
 <!-- EDITOR ZONE -->
 <form method="post">
-    <textarea id="editor" name="content" cols="132" rows="35"></textarea>
+    <textarea id="editor" name="content" cols="132" rows="51"></textarea>
 </form>
 
 <div id=mdi_vt class=mdi>
@@ -51,8 +191,6 @@
 
     </div>
 </div>
-
-
 
 
 
@@ -76,74 +214,20 @@
 
 
 <div id="aio_fd_0"></div>
-<canvas id="canvas" width="240" height="320" oncontextmenu="event.preventDefault()" tabindex="-1" style="border=1px;position:absolute;right:64px;top:64px"></canvas>
+<canvas id="canvas" width="320" height="240" oncontextmenu="event.preventDefault()" tabindex="-1" style="border=1px;position:absolute;right:32px;top:64px"></canvas>
 
 
 <div id="help" style="position:absolute;left:0;bottom:0">
-  <p>Click the title bars and hold to drag windows. Click [save] icon to run program</p>
+  <p>Click the title bars and hold to drag windows. Click [save] icon to run program. Wapy ©®™ is built only by and for week-end coders.</p>
    <!-- <p>Double-click titlebar to maximize. Click the lower-right corner to resize.</p>
  <p>Click the tilde to open a new tab. Click with a modifier (ctrl/alt/option) to close the window.</p> -->
 </div>
 
 
-<pre id="log" style="position:absolute;left:0;bottom:200px">...</pre>
+<pre id="log" style="position:absolute;left:0;bottom:60px">...</pre>
 
 
 </body>
-
-<!--
-<script src="socket.io/socket.io.js"></script>
-<script src="term.js"></script>
-<script src="options.js"></script>
-<script src="tty.js"></script>
--->
-
-<!-- EMPYTHON INTERFACE -->
-<!--
-<script type='text/javascript' src="./pp/btoa_utf8.js"></script>
-<script type='text/javascript' src="./pp/tools.js"></script>
-<script type='text/javascript' src="./pp/fd.js"></script>
--->
-<!-- -->
-
-
-
-<script type='text/python'>
-import embed
-# allow hardware(js) interrupts while in python virtual machine
-
-embed.STI()
-
-def aio_suspend():
-    import syscall
-
-class aio:
-    suspend =aio_suspend
-
-
-</script>
-
-<script type='text/javascript'>
-    window.repl = 1
-    window.stock = false
-
-    function PYTHONSTARTUP(){
-        console.log("PYTHONSTARTUP")
-    }
-
-    // ============================== FILE I/O (sync => bad) =================================
-    include("lib/file_api_002.js")
-
-    // ================= web->sockets (async, may work) ===============================
-    include("lib/socket_api_002.js")
-
-
-    // cors handling thanks to https://github.com/Rob--W/cors-anywhere https://robwu.nl/cors-anywhere.html
-    if ( undef("CORS_BROKER") ){
-        window.CORS_BROKER = "https://cors-anywhere.herokuapp.com/"
-        console.log("Using default brooker CORS_BROKER="+CORS_BROKER)
-    }
-</script>
 
 
 
@@ -270,45 +354,66 @@ if(0){
 </script>
 
 
+<!-- // the js link part beetween js engine main loop and python main loop -->
+<script src="lib/plink.003.js"></script>
 
 
+<!-- // the python core either wapy or cpython -->
+<script  src="lib/pythons.003.js"></script>
+
+
+<script src="lib/pyterm.js"></script>
 
 
 <script src="edit_area/edit_area_full.js" type="text/javascript" language="javascript"></script>
 
 <script>
 
+
+window.repl = 1
+window.stock = false
+
+function PYTHONSTARTUP(){
+    console.log("PYTHONSTARTUP")
+//    <!-- floating browser -->
+    include("minide/mdi/browser/browser.js")
+
+//    <!-- floating xterminal -->
+    include("minide/mdi/vt/vt.js")
+
+}
+
+// ============================== FILE I/O (sync => bad) =================================
+include("lib/file_api_002.js")
+
+// ================= web->sockets (async, may work) ===============================
+include("lib/socket_api_002.js")
+
+
+// cors handling thanks to https://github.com/Rob--W/cors-anywhere https://robwu.nl/cors-anywhere.html
+if ( undef("CORS_BROKER") ){
+    window.CORS_BROKER = "https://cors-anywhere.herokuapp.com/"
+    console.log("Using default brooker CORS_BROKER="+CORS_BROKER)
+}
+
+
 function editAreaLoaded(id){
     if(id=="editor")
     {
         var new_file= {
-            id: "file1",
-            text: `# Click [save] toolbar's icon to run program
-# Cliquer la disquette dans la barre d'outil pour executer
-
-def test():
-    x=999
-    while x:
-        aio.suspend()
-        print('{:0>4}: Hello #python-fr'.format(x))
-        x -= 1
-
-test()
-
-
-`         , syntax: 'python'
+            id: "file1"
+            , text: default_code
+            , syntax: 'python'
             , title: 'noname.py'
         };
         editAreaLoader.openFile( id , new_file);
-        setTimeout(function(){
-
-
-
-    var frame_editor = document.querySelector("#frame_editor")
-    frame_editor.style.position = "absolute"
-    frame_editor.style.left=0
-}
-, 900);
+        setTimeout(
+            function(){
+                var frame_editor = document.querySelector("#frame_editor")
+                frame_editor.style.position = "absolute"
+                frame_editor.style.left=0
+            }
+            , 900);
     }
 
 }
@@ -348,5 +453,6 @@ editAreaLoader.init({
     ,end_toolbar : "separator, help"
 });
 </script>
+
 
 

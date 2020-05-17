@@ -1,0 +1,92 @@
+(function(){
+
+  var SCROLL_WIDTH = 24;
+
+  var popup = document.getElementById("vt0");
+  var vt0_handle = document.getElementById("vt0_handle");
+  var btn_close = document.getElementById("btn_close");
+  var vt0_anchor = document.getElementById("vt0_anchor");
+
+  //-- let the popup make draggable & movable.
+  var offset = { x: 0, y: 0 };
+
+	      var WIDTH =  640
+    var HEIGHT = 480
+
+
+  vt0_handle.addEventListener('mousedown', mouseDown, false);
+  window.addEventListener('mouseup', mouseUp, false);
+
+  function mouseUp()
+  {
+    window.removeEventListener('mousemove', popupMove, true);
+  }
+
+  function mouseDown(e){
+    offset.x = e.clientX - popup.offsetLeft;
+    offset.y = e.clientY - popup.offsetTop;
+    window.addEventListener('mousemove', popupMove, true);
+  }
+
+  function popupMove(e){
+    popup.style.position = 'absolute';
+    var top = e.clientY - offset.y;
+    var left = e.clientX - offset.x;
+    popup.style.top = top + 'px';
+    popup.style.left = left + 'px';
+  }
+  //-- / let the popup make draggable & movable.
+
+  window.onkeydown = function(e){
+    if(e.keyCode == 27){ // if ESC key pressed
+      //btn_close.click(e);
+    }
+  }
+
+  vt0_onclick = function(e){
+    // vt0_anchor
+    spreadvt0_anchor(true);
+
+
+    // reset div position
+    popup.style.top = "40px";
+    popup.style.left = "40px";
+    popup.style.height = "480px";
+
+    //popup.style.width = window.innerWidth - SCROLL_WIDTH + "px";
+    //popup.style.height = window.innerHeight - SCROLL_WIDTH + "px";
+    popup.style.display = "block";
+    oldParent = document.getElementById("aio_fd_0");
+    oldParent.style.display = "block";
+
+
+    while (oldParent.childNodes.length) { popup.appendChild(oldParent.firstChild); }
+    term.fit();
+    popup.style.height = "500px";
+  }
+
+
+
+  btn_close.onclick = function(e){
+    popup.style.display = "none";
+    vt0_anchor.style.display = "none";
+  }
+
+  window.onresize = function(e){
+    spreadvt0_anchor();
+  }
+
+  function spreadvt0_anchor(flg){
+      /*
+    var WIDTH =  window.outerWidth
+    var HEIGHT = window.outerHeight
+    vt0_anchor.style.width = WIDTH + 100 + "px";
+    vt0_anchor.style.height = HEIGHT + 100 + "px";
+    if (flg != undefined && flg == true) vt0_anchor.style.display = "block";
+    */
+  }
+
+}());
+
+
+setTimeout(btn_popup_onclick,500)
