@@ -17,12 +17,12 @@ html {
 
 h1 {
   font: 20px/1.5 sans-serif;
-  background: #333;
-  margin: -25px -25px 0 -25px;
-  height: 30px;
-  padding: 10px 25px;
+  background: #DdDdDd;
+  margin: 0px 0px 0 0px;
+  height: 42px;
+  padding: 5px 10px;
   color: white;
-  border-top: #e15729 solid 10px;
+  border-top: #e15729 solid 4px;
   text-align:left;
 }
 

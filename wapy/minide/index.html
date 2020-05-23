@@ -42,50 +42,53 @@ def ptr_test():
     print(renderer)
     print(rd)
 
-def sdl2_test():
-    #import sys
+def init_sdl():
+    global renderer, window
+    import ctypes
     import usdl2 as sdl2
+    e = SDL_Init(SDL_INIT_VIDEO)
+    if not e:
+        if 1:
+            renderer = ctypes.PT('SDL_Renderer')
+            window = ctypes.PT('SDL_Window')
+            e = sdl2.SDL_CreateWindowAndRenderer(320,240,0,window.byref(),renderer.byref())
+        else:
+            window = sdl2.SDL_CreateWindow("Hello World", sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED, 640, 480, sdl2.SDL_WINDOW_SHOWN)
 
+    else:
+        print('SDL_Init error', e)
+
+
+def sdl2_fail():
+    import usdl2 as sdl2
     from ctypes import PT
 
     def run():
-        if sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO):
-            print("ERROR")
-            return 1
-
-        if 1:
-            window = sdl2.SDL_CreateWindow(b"Hello World",
-                                       sdl2.SDL_WINDOWPOS_CENTERED,
-                                       sdl2.SDL_WINDOWPOS_CENTERED,
-                                       320, 240, sdl2.SDL_WINDOW_SHOWN)
-        else:
-            renderer = PT('SDL_Renderer')
-            window = PT('SDL_Window')
-            e = sdl2.SDL_CreateWindowAndRenderer(320,240,0, window.byref(), renderer.byref())
-
-
-        window = int(window)
-
+        init_sdl()
 
         print("window:",window)
 
-
         fname = b'hello.bmp'
 
-        image = PT('SDL_Surface', sdl2.SDL_LoadBMP(fname) )
+        image = sdl2.SDL_LoadBMP(fname)
 
         print("image:",image)
 
         windowsurface = sdl2.SDL_GetWindowSurface(window)
-        sdl2.SDL_BlitSurface(image.c.ptr, None, windowsurface, None)
-        sdl2.SDL_UpdateWindowSurface(window)
-        sdl2.SDL_FreeSurface(image.c.ptr)
+
+
+        sdl2.SDL_BlitSurface(image, None, windowsurface, None)
+
+
+        #sdl2.SDL_UpdateWindowSurface(window.byref())
+
+
+        sdl2.SDL_FreeSurface(image)
 
         running = True
         tick = 0
 
         event = PT( sdl2.SDL_Event )
-
 
         while running:
             while sdl2.SDL_PollEvent(event.byref()) != 0:
@@ -105,25 +108,14 @@ def sdl2_test():
 
 from usdl2 import *
 
-def sdl_test():
+def sdl2_test():
     global window, renderer
     NULL = None
 
 
 
-    import ctypes
 
-    e = SDL_Init(SDL_INIT_VIDEO)
-    if not e:
-        if 1:
-            renderer = ctypes.PT('SDL_Renderer')
-            window = ctypes.PT('SDL_Window')
-            e = SDL_CreateWindowAndRenderer(320,240,0,window.byref(),renderer.byref())
-        else:
-            window = SDL_CreateWindow("Hello World", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 592, 460, SDL_WINDOW_SHOWN)
-
-    else:
-        print('SDL_Init error', e)
+    init_sdl()
 
 
     print(renderer)
@@ -171,11 +163,25 @@ def sdl_test():
     <meta charset="UTF-8">
 </head>
 
+<style>
+* {
+  box-sizing: border-box;
+}
 
+</style>
 
 <body>
-<h1>Python3.x (wasm)</h1>
-<br/>
+
+<h1>
+<div align=left>
+<img height=32 src=../logos/wapy-266x80.png>
+<img height=32 src=../logos/650px-Python3-powered_hello-world.svg.png>
+<img height=32 src=../logos/panda3d-374x80.png>
+<img height=32 src=../logos/sdl2-136x80.png>
+</div>
+</h1>
+
+
 
 
 <!-- EDITOR ZONE -->
@@ -219,6 +225,7 @@ def sdl_test():
 
 <div id="help" style="position:absolute;left:0;bottom:0">
   <p>Click the title bars and hold to drag windows. Click [save] icon to run program. Wapy ©®™ is built only by and for week-end coders.</p>
+    <p>Python 3.x (wasm) : All code is running <b>inside</b> your browser</p>
    <!-- <p>Double-click titlebar to maximize. Click the lower-right corner to resize.</p>
  <p>Click the tilde to open a new tab. Click with a modifier (ctrl/alt/option) to close the window.</p> -->
 </div>
@@ -404,7 +411,7 @@ function editAreaLoaded(id){
             id: "file1"
             , text: default_code
             , syntax: 'python'
-            , title: 'noname.py'
+            , title: '__main__.py'
         };
         editAreaLoader.openFile( id , new_file);
         setTimeout(
