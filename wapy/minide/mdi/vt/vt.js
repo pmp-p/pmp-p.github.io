@@ -58,8 +58,8 @@ function mdi_vt(mdi_name, dlay) {
 
 
     // reset div position
-    popup.style.top = "40px";
-    popup.style.left = "720px";
+    popup.style.top = "50px";
+    popup.style.left = "780px";
     popup.style.height = "480px";
 
     //popup.style.width = window.innerWidth - SCROLL_WIDTH + "px";

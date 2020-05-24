@@ -208,7 +208,7 @@ Module['FS_createPath']('/assets/python3/aio', 'cpy', true, true);
     }
   
    }
-   loadPackage({"files": [{"filename": "/lib/libtest.so", "start": 0, "end": 488, "audio": 0}, {"filename": "/hello.bmp", "start": 488, "end": 1089822, "audio": 0}, {"filename": "/assets/python3/__init__.py", "start": 1089822, "end": 1089845, "audio": 0}, {"filename": "/assets/python3/python3.py", "start": 1089845, "end": 1098687, "audio": 0}, {"filename": "/assets/python3/aio/__init__.py", "start": 1098687, "end": 1099109, "audio": 0}, {"filename": "/assets/python3/aio/plink_android.py", "start": 1099109, "end": 1104872, "audio": 0}, {"filename": "/assets/python3/aio/plink.py", "start": 1104872, "end": 1122315, "audio": 0}, {"filename": "/assets/python3/aio/irc/__init__.py", "start": 1122315, "end": 1122316, "audio": 0}, {"filename": "/assets/python3/aio/irc/client.py", "start": 1122316, "end": 1125054, "audio": 0}, {"filename": "/assets/python3/aio/cpy/aio.py", "start": 1125054, "end": 1128104, "audio": 0}, {"filename": "/assets/python3/aio/cpy/__init__.py", "start": 1128104, "end": 1128104, "audio": 0}, {"filename": "/assets/python3/aio/cpy/websocket.py", "start": 1128104, "end": 1128146, "audio": 0}, {"filename": "/assets/site_wapy.py", "start": 1128146, "end": 1128146, "audio": 0}], "remote_package_size": 1128146, "package_uuid": "0b5964d0-1e99-49ac-9393-3571884edcc9"});
+   loadPackage({"files": [{"filename": "/lib/libtest.so", "start": 0, "end": 488, "audio": 0}, {"filename": "/hello.bmp", "start": 488, "end": 1089822, "audio": 0}, {"filename": "/assets/python3/__init__.py", "start": 1089822, "end": 1089845, "audio": 0}, {"filename": "/assets/python3/python3.py", "start": 1089845, "end": 1098687, "audio": 0}, {"filename": "/assets/python3/aio/__init__.py", "start": 1098687, "end": 1099109, "audio": 0}, {"filename": "/assets/python3/aio/plink_android.py", "start": 1099109, "end": 1104872, "audio": 0}, {"filename": "/assets/python3/aio/plink.py", "start": 1104872, "end": 1122315, "audio": 0}, {"filename": "/assets/python3/aio/irc/__init__.py", "start": 1122315, "end": 1122316, "audio": 0}, {"filename": "/assets/python3/aio/irc/client.py", "start": 1122316, "end": 1125054, "audio": 0}, {"filename": "/assets/python3/aio/cpy/aio.py", "start": 1125054, "end": 1128104, "audio": 0}, {"filename": "/assets/python3/aio/cpy/__init__.py", "start": 1128104, "end": 1128104, "audio": 0}, {"filename": "/assets/python3/aio/cpy/websocket.py", "start": 1128104, "end": 1128146, "audio": 0}, {"filename": "/assets/site_wapy.py", "start": 1128146, "end": 1128146, "audio": 0}], "remote_package_size": 1128146, "package_uuid": "0b7f25f1-f174-40b3-8c83-3b718ace39a0"});
   
   })();
   
@@ -61118,9 +61118,9 @@ var NAMED_GLOBALS = {
   "const_table_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___func2": 1223652,
   "raw_code_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___func2": 1223660,
   "fun_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call__": 1223680,
-  "const_obj_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___0": 1224072,
-  "const_obj_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___1": 1224120,
-  "const_obj_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___2": 1224164,
+  "const_obj_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___0": 1224084,
+  "const_obj_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___1": 1224132,
+  "const_obj_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call___2": 1224176,
   "const_table_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call__": 1224192,
   "raw_code_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder___call__": 1224224,
   "fun_data_stupyde_fixes_ctypes__lt_module_gt__ctypes_binder": 1224256,

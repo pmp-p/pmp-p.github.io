@@ -59,9 +59,9 @@ function mdi(mdi_name, dlay){
     // reset div position
     popup.style.display = "block";
 
-    popup.style.top = "450px";
+    popup.style.top = "350px";
 
-    popup.style.left = "1080px";
+    popup.style.left = "1100px";
     popup.style.height = "480px";
 
   }

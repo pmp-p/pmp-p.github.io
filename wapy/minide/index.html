@@ -59,54 +59,6 @@ def init_sdl():
         print('SDL_Init error', e)
 
 
-def sdl2_fail():
-    import usdl2 as sdl2
-    from ctypes import PT
-
-    def run():
-        init_sdl()
-
-        print("window:",window)
-
-        fname = b'hello.bmp'
-
-        image = sdl2.SDL_LoadBMP(fname)
-
-        print("image:",image)
-
-        windowsurface = sdl2.SDL_GetWindowSurface(window)
-
-
-        sdl2.SDL_BlitSurface(image, None, windowsurface, None)
-
-
-        #sdl2.SDL_UpdateWindowSurface(window.byref())
-
-
-        sdl2.SDL_FreeSurface(image)
-
-        running = True
-        tick = 0
-
-        event = PT( sdl2.SDL_Event )
-
-        while running:
-            while sdl2.SDL_PollEvent(event.byref()) != 0:
-                if event.type == sdl2.SDL_QUIT:
-                    running = False
-                    break
-            aio.suspend()
-            #sdl2.SDL_Delay(16)
-
-        print("running:",running)
-        sdl2.SDL_DestroyWindow(window)
-        sdl2.SDL_Quit()
-        return 0
-
-    run()
-
-
-from usdl2 import *
 
 def sdl2_test():
     global window, renderer
@@ -140,7 +92,71 @@ def sdl2_test():
         SDL_RenderCopy(renderer, bitmapTex, NULL, NULL);
 
     SDL_RenderPresent(renderer)
+
+def static(c_n):
+    import ctypes
+    return ctypes.PT(c_n)
+
+def sdl2_fail():
+    global running
+    import usdl2 as sdl2
+    from ctypes import PT
+
+    def run():
+        global running
+        init_sdl()
+
+        print("window:",window)
+
+        fname = b'hello.bmp'
+
+        image = sdl2.SDL_LoadBMP(fname)
+
+        print("image:",image)
+
+        windowsurface = sdl2.SDL_GetWindowSurface(window)
+
+
+        sdl2.SDL_BlitSurface(image, None, windowsurface, None)
+
+
+        #sdl2.SDL_UpdateWindowSurface(window.byref())
+
+
+        sdl2.SDL_FreeSurface(image)
+
+        running = True
+        tick = 0
+
+        event = PT( sdl2.SDL_Event )
+
+        while running:
+            while sdl2.SDL_PollEvent(event.byref()) != 0:
+                if event.type == sdl2.SDL_QUIT:
+                    running = False
+                    break
+                aio.suspend()
+            #sdl2.SDL_Delay(16)
+
+        print("running:",running)
+        sdl2.SDL_DestroyWindow(window)
+        sdl2.SDL_Quit()
+        return 0
+
+    run()
+
+F=dir()
+from usdl2 import *
+
+print("\\n"*4)
+print("SDL2 is now loaded, you can run some tests functions too")
+print(F)
+
+
 `
+
+
+
 </script>
 
 
@@ -168,17 +184,67 @@ def sdl2_test():
   box-sizing: border-box;
 }
 
+html, body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0 auto;
+  width: 1000px;
+  transform-origin:top center;
+}
+
+
+
+header {
+  width: 100%;
+  background-color: pink;
+}
+
+/*
+img {
+  width: 100%;
+}
+
+div {
+  float: left;
+  width: 60%;
+  background-color:green;
+}
+
+div+div {
+  width: 40%;
+  background-color: teal;
+}
+
+header h1, div h2 {
+  padding: 12px;
+}
+*/
+
+body {
+    background-color: #646464;
+    -ms-transform:scale(1); // Req for IE9
+    transform:scale(1);
+
+}
+
 </style>
 
 <body>
 
 <h1>
-<div align=left>
+<div align=left style="position: relative;bottom: 4px;top: -2px">
+<img height=32 src="/wapy/logos/wa-80x80.png">
 <img height=32 src="/wapy/logos/wapy-266x80.png">
 <img height=32 src="/wapy/logos/650px-Python3-powered_hello-world.svg.png">
 <img height=32 src="/wapy/logos/panda3d-374x80.png">
 <img height=32 src="/wapy/logos/sdl2-136x80.png">
+ - Python 3.x (wasm) : All code is running <b>inside</b> your browser -
 </div>
+
 </h1>
 
 
@@ -220,12 +286,11 @@ def sdl2_test():
 
 
 <div id="aio_fd_0"></div>
-<canvas id="canvas" width="320" height="240" oncontextmenu="event.preventDefault()" tabindex="-1" style="border=1px;position:absolute;right:32px;top:64px"></canvas>
+<canvas id="canvas" width="320" height="240" oncontextmenu="event.preventDefault()" tabindex="-1" style="border=1px;position:absolute;right:28px;top:60px"></canvas>
 
 
-<div id="help" style="position:absolute;left:0;bottom:0">
+<div id="help" style="position:absolute;bottom:0">
   <p>Click the title bars and hold to drag windows. Click [save] icon to run program. Wapy ©®™ is built only by and for week-end coders.</p>
-    <p>Python 3.x (wasm) : All code is running <b>inside</b> your browser</p>
    <!-- <p>Double-click titlebar to maximize. Click the lower-right corner to resize.</p>
  <p>Click the tilde to open a new tab. Click with a modifier (ctrl/alt/option) to close the window.</p> -->
 </div>
