@@ -2,25 +2,147 @@
 # TODO: https://github.com/mrdoob/stats.js/
 # zoom : https://codepen.io/skladany/pen/KrjRQE
 import sys
+import builtins
 
 def aio_suspend():
     import syscall
 
+builtins.aio_suspend = aio_suspend
+
 class aio:
     suspend =aio_suspend
 
+def static(c_n):
+    import ctypes
+    return ctypes.PT(c_n)
+
+import utime as Time
+
+class Lapse:
+    def __init__(self, intv=1.0, oneshot=None):
+        self.intv = int(intv * 1000000)
+        self.next = self.intv
+        self.last = Time.time() * 1000000
+        if oneshot:
+            self.shot = False
+            return
+        self.shot = None
+
+    # FIXME: pause / resume(reset)
+
+    def __bool__(self):
+        if self.shot is True:
+            return False
+
+        t = Time.time() * 1000000
+        self.next -= t - self.last
+        self.last = t
+        if self.next <= 0:
+            if self.shot is False:
+                self.shot = True
+            self.next = self.intv
+            return True
+
+        return False
+
 
 # allow hardware(js) interrupts while in python virtual machine
-embed.STI()
+def VMIF(sti):
+    if sti:embed.STI()
+    else:embed.CLI()
+    if not embed.FLAGS_IF():
+        print("Warning : hardware interrupt disabled, using micropython VM")
+    else:
+        print("Warning : hardware interrupt enabled, using WAPY VM")
+    print("\n>>> ",end='')
+
+def STI():
+    VMIF(True)
+
+def CLI():
+    VMIF(False)
+
+STI()
 
 
 </script>
 <script>
-default_code=`# Click [save] toolbar's icon to run program
+file_sockserv = `
+def rgb_test0(r,g):
+    print(locals().keys())
+    print(r,g)
+
+#def rgb_test(r=255):
+#    print(r)
+
+#BUG local of *argv names get lost
+def rgb_test(r=255,g=255):
+    print(locals().keys())
+    print(r,g)
+
+rgb_test0(0,255)
+
+#print("\\n","="*60)
+
+#BUG pystack
+#rgb_test(r=1,g=1)
+
+#BUG locals
+# STI()
+rgb_test(1,1)
+
+`
+
+file_bugs = `
+
+
+def tf_test_ok(x):
+    try:
+        print("try")
+    finally:
+        print("finally")
+
+#BUG
+def tf_test_bug(x):
+    try:
+        return "try"
+    finally:
+        print("finally")
+
+print( tf_test_ok(1) )
+#embed.log
+print("---------------------------")
+print( tf_test_bug(1) )
+
+def rgb_test0(r,g,b):
+    print(r)
+    print(g)
+    print(b)
+
+#BUG local of *argv names get lost
+def rgb_test(r=255,g=255,b=255):
+    print(r)
+    print(g)
+    print(b)
+
+
+
+print("\\n","="*60)
+
+rgb_test0(0,0,255)
+
+rgb_test()
+
+import pystone1
+pystone1.__main__()
+
+`
+
+file___main__ =`# Click [save] toolbar's icon to run program
 # Cliquer la disquette dans la barre d'outil pour executer
 
 
-def test():
+def blockio_test():
     x=999
     while x:
         aio.suspend()
@@ -28,19 +150,37 @@ def test():
         x -= 1
 
 def ffi_test():
+    import ffi
     lib = ffi.open('/lib/libtest.so')
     return lib.func("v","init_test","")
 
-def ptr_test():
-    renderer = static(SDL_Renderer)
-    print(SDL_Renderer)
-    print(renderer)
+embed.os_hideloop()
+blockio_test()
 
-    rd = embed.sdl(renderer)
+print()
+embed.os_showloop()
+aio_suspend()
+ffi_test()()
+`
 
-    print(SDL_Renderer)
-    print(renderer)
-    print(rd)
+file_upysdl2 = `
+
+#BUG pystack def draw_triangle(r=255,g=255,b=255):
+#BUG local def draw_triangle(r,g=255,b=255):
+#BUG SDL_UpdateWindowSurface()
+
+
+def draw_triangle(r,g,b=255):
+    global renderer
+
+    print(r)
+    print(g)
+    print(b)
+
+    SDL_SetRenderDrawColor(renderer, r, g, b, SDL_ALPHA_OPAQUE)
+    SDL_RenderDrawLine(renderer, 220, 100, 200, 140)
+    SDL_RenderDrawLine(renderer, 200, 140, 240, 140)
+    SDL_RenderDrawLine(renderer, 240, 140, 220, 100)
 
 def init_sdl():
     global renderer, window
@@ -51,110 +191,109 @@ def init_sdl():
         if 1:
             renderer = ctypes.PT('SDL_Renderer')
             window = ctypes.PT('SDL_Window')
-            e = sdl2.SDL_CreateWindowAndRenderer(320,240,0,window.byref(),renderer.byref())
+            e = sdl2.SDL_CreateWindowAndRenderer(320,240,0, window.byref(), renderer.byref())
         else:
-            window = sdl2.SDL_CreateWindow("Hello World", sdl2.SDL_WINDOWPOS_CENTERED, sdl2.SDL_WINDOWPOS_CENTERED, 640, 480, sdl2.SDL_WINDOW_SHOWN)
+            window = sdl2.SDL_CreateWindow("Hello World", sdl2.SDL_WINDOWPOS_UNDEFINED, sdl2.SDL_WINDOWPOS_UNDEFINED, 640, 480, sdl2.SDL_WINDOW_SHOWN)
 
+        # TODO: unpack the new ptr automatically
+        int(renderer)
+        int(window)
     else:
         print('SDL_Init error', e)
 
+    return window, renderer,
 
 
 def sdl2_test():
-    global window, renderer
-    NULL = None
-
-
-
+    global window, renderer, running, ev, evref
 
     init_sdl()
 
+    bitmapSurface = SDL_LoadBMP(b"hello.bmp")
+    print("bitmap",bitmapSurface)
 
-    print(renderer)
-    renderer = int(renderer)
-    print(renderer)
-
-
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-    SDL_RenderDrawLine(renderer, 220, 100, 200, 140)
-    SDL_RenderDrawLine(renderer, 200, 140, 240, 140)
-    SDL_RenderDrawLine(renderer, 240, 140, 220, 100)
-
-
-    if 1:
-        bitmapSurface = SDL_LoadBMP(b"hello.bmp")
-
-        print(bitmapSurface)
-
+    if 0:
+        windowsurface = SDL_GetWindowSurface(window)
+        print("windowsurface=",windowsurface)
+        SDL_BlitSurface(bitmapSurface, None, windowsurface, None)
+        #BUG
+        SDL_UpdateWindowSurface(window)
+    else:
         bitmapTex = SDL_CreateTextureFromSurface(renderer, bitmapSurface);
         SDL_FreeSurface(bitmapSurface);
         SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, bitmapTex, NULL, NULL);
+        SDL_RenderCopy(renderer, bitmapTex, None, None);
 
+
+    # a blue triangle
+    draw_triangle(0,0,255)
+
+
+    last = 0
+
+    running = True
+
+    ev = static( SDL_Event )
+    evref = ev.byref()
+
+    countdown = 15
+    tictac = Lapse(1)
+
+    embed.os_hideloop()
+
+    while running:
+        aio.suspend()
+
+        if tictac:
+            countdown -=1
+            if not countdown:
+                print("tmout!")
+                running = False
+
+        elif SDL_PollEvent(evref) != 0:
+            if ev.type == SDL_QUIT:
+                running = False
+                break
+            if ev.type != last:
+                print(countdown, "ev.type =", ev.type)
+                last = ev.type
+        SDL_RenderPresent(renderer)
+
+
+    embed.os_showloop()
+    if 0:
+        SDL_DestroyWindow(window)
+        SDL_Quit()
+
+
+def sdl2_ok():
+    global window, renderer
+    init_sdl()
+
+    bitmapSurface = SDL_LoadBMP(b"hello.bmp")
+    print("bitmap=",bitmapSurface)
+
+    bitmapTex = SDL_CreateTextureFromSurface(renderer, bitmapSurface);
+    SDL_FreeSurface(bitmapSurface);
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, bitmapTex, None, None);
+
+    draw_triangle(0,0,255)
     SDL_RenderPresent(renderer)
 
-def static(c_n):
-    import ctypes
-    return ctypes.PT(c_n)
-
-def sdl2_fail():
-    global running
-    import usdl2 as sdl2
-    from ctypes import PT
-
-    def run():
-        global running
-        init_sdl()
-
-        print("window:",window)
-
-        fname = b'hello.bmp'
-
-        image = sdl2.SDL_LoadBMP(fname)
-
-        print("image:",image)
-
-        windowsurface = sdl2.SDL_GetWindowSurface(window)
-
-
-        sdl2.SDL_BlitSurface(image, None, windowsurface, None)
-
-
-        #sdl2.SDL_UpdateWindowSurface(window.byref())
-
-
-        sdl2.SDL_FreeSurface(image)
-
-        running = True
-        tick = 0
-
-        event = PT( sdl2.SDL_Event )
-
-        while running:
-            while sdl2.SDL_PollEvent(event.byref()) != 0:
-                if event.type == sdl2.SDL_QUIT:
-                    running = False
-                    break
-                aio.suspend()
-            #sdl2.SDL_Delay(16)
-
-        print("running:",running)
-        sdl2.SDL_DestroyWindow(window)
-        sdl2.SDL_Quit()
-        return 0
-
-    run()
 
 F=dir()
 from usdl2 import *
+
+aio_suspend()
 
 print("\\n"*4)
 print("SDL2 is now loaded, you can run some tests functions too")
 print(F)
 
+sdl2_test()
 
 `
-
 
 
 </script>
@@ -417,8 +556,6 @@ if(0){
 
     window.onload = function() {
         window.state = {};
-        //setTimeout(window.main, 3000);
-        //setTimeout(browse,3000);
     }
 
 
@@ -472,20 +609,29 @@ if ( undef("CORS_BROKER") ){
 function editAreaLoaded(id){
     if(id=="editor")
     {
-        var new_file= {
-            id: "file1"
-            , text: default_code
-            , syntax: 'python'
-            , title: '__main__.py'
-        };
-        editAreaLoader.openFile( id , new_file);
+        var fileid = 1;
+
+        function new_file(fname) {
+            return {
+                id: "file" + fileid++
+                , text: window["file_" + fname ]
+                , syntax: 'python'
+                , title: fname + '.py'
+            }
+        }
+
+        editAreaLoader.openFile( id , new_file("__main__"))
+        editAreaLoader.openFile( id , new_file("upysdl2"))
+        editAreaLoader.openFile( id , new_file("bugs"))
+        editAreaLoader.openFile( id , new_file("sockserv"))
+
         setTimeout(
             function(){
                 var frame_editor = document.querySelector("#frame_editor")
                 frame_editor.style.position = "absolute"
                 frame_editor.style.left=0
             }
-            , 900);
+            , 850);
     }
 
 }
