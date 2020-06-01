@@ -1,118 +1,102 @@
 <!doctype html><script type='text/python'>import embed
 # TODO: https://github.com/mrdoob/stats.js/
 # zoom : https://codepen.io/skladany/pen/KrjRQE
+
 import sys
 import builtins
-
-def aio_suspend():
-    import syscall
-
-builtins.aio_suspend = aio_suspend
-
-class aio:
-    suspend =aio_suspend
+import ctypes
 
 def static(c_n):
-    import ctypes
     return ctypes.PT(c_n)
 
 import utime as Time
 
-class Lapse:
-    def __init__(self, intv=1.0, oneshot=None):
-        self.intv = int(intv * 1000000)
-        self.next = self.intv
-        self.last = Time.time() * 1000000
-        if oneshot:
-            self.shot = False
-            return
-        self.shot = None
-
-    # FIXME: pause / resume(reset)
-
-    def __bool__(self):
-        if self.shot is True:
-            return False
-
-        t = Time.time() * 1000000
-        self.next -= t - self.last
-        self.last = t
-        if self.next <= 0:
-            if self.shot is False:
-                self.shot = True
-            self.next = self.intv
-            return True
-
-        return False
+import python3
 
 
 # allow hardware(js) interrupts while in python virtual machine
-def VMIF(sti):
+def VMIF(sti, verbose=0):
     if sti:embed.STI()
     else:embed.CLI()
-    if not embed.FLAGS_IF():
-        print("Warning : hardware interrupt disabled, using micropython VM")
-    else:
-        print("Warning : hardware interrupt enabled, using WAPY VM")
-    print("\n>>> ",end='')
+    if verbose:
+        if not embed.FLAGS_IF():
+            print("Warning : hardware interrupt disabled, using micropython VM")
+        else:
+            print("Warning : hardware interrupt enabled, using WAPY VM")
+        print("\n❯❯❯ ",end='')
 
-def STI():
-    VMIF(True)
+def STI(verbose=0):
+    VMIF(True,verbose)
 
-def CLI():
-    VMIF(False)
+def CLI(verbose=0):
+    VMIF(False,verbose)
 
-STI()
+STI(1)
 
 
 </script>
-<script>
-file_sockserv = `
-def rgb_test0(r,g):
-    print(locals().keys())
-    print(r,g)
 
-#def rgb_test(r=255):
-#    print(r)
+<style>
+.python {
+    // no effect
+    type : "text/plain";
+}
 
-#BUG local of *argv names get lost
-def rgb_test(r=255,g=255):
-    print(locals().keys())
-    print(r,g)
+</style>
 
-rgb_test0(0,255)
+<script id="sockserv.py" class=file  type="text/plain">
 
-#print("\\n","="*60)
+import io
+import binascii
 
-#BUG pystack
-#rgb_test(r=1,g=1)
-
-#BUG locals
-# STI()
-rgb_test(1,1)
-
-`
-
-file_bugs = `
+import plink
+from plink import window,CallPath
 
 
-def tf_test_ok(x):
-    try:
-        print("try")
-    finally:
-        print("finally")
+class socket:
+    def __init__(self):
+        self.i = io.BytesIO()
+        self.o = io.BytesIO()
+        self.sid = "?"
 
-#BUG
-def tf_test_bug(x):
-    try:
-        return "try"
-    finally:
-        print("finally")
+    @classmethod
+    def getaddrinfo(cls, host, port):
+        return [ [(host,port,)] ]
 
-print( tf_test_ok(1) )
-#embed.log
-print("---------------------------")
-print( tf_test_bug(1) )
+    async def connect(self, addr):
+        window.embed_dbg = 1
+        plink.DBG=1
+        self.sid = await window.socks.open(*addr)
+        try:
+            await aio.io.ctl(self, 'open',tmout=3000)
+        except Exception as e:
+            print("SOCKET:",self,"TMOUT",e)
+
+    def makefile(self):pass
+
+    def write(self,b):
+        CallPath.proxy.io( self.sid ,m="N", jscmd=b )
+
+
+    def __repr__(self):
+        return f"<socket {self.sid}>"
+
+
+async def __main__(argc, argv):
+    print(" ------------- Hello WasmPython + sockets ----------")
+
+    (HOST,PORT) = ('pmpp.ddns.net', 26667)
+    print(f'connecting to {HOST}:{PORT}')
+
+    sock = socket()
+    await sock.connect( (HOST,PORT,) )
+    sock.write(b"CAP LS\nNICK wapy\nUSER wapy wapy locahost :wsocket\nJOIN #sav\n")
+
+
+</script>
+
+<script id="bugs.py" class=file type="text/plain">
+#CLI()
 
 def rgb_test0(r,g,b):
     print(r)
@@ -127,20 +111,22 @@ def rgb_test(r=255,g=255,b=255):
 
 
 
-print("\\n","="*60)
+print("\n","="*60)
 
 rgb_test0(0,0,255)
 
 rgb_test()
 
+aio.suspend()
+
+
+#===============================================
+
 import pystone1
 pystone1.__main__()
+</script>
 
-`
-
-file___main__ =`# Click [save] toolbar's icon to run program
-# Cliquer la disquette dans la barre d'outil pour executer
-
+<script id="__main__.py" class=file type="text/plain">
 
 def blockio_test():
     x=999
@@ -161,22 +147,21 @@ print()
 embed.os_showloop()
 aio_suspend()
 ffi_test()()
-`
 
-file_upysdl2 = `
+</script>
 
-#BUG pystack def draw_triangle(r=255,g=255,b=255):
-#BUG local def draw_triangle(r,g=255,b=255):
+<script id="upysdl2.py" class=file type="text/plain">
+
+#BUG pystack/locals def draw_triangle(r=255,g=255,b=255) : workaround no INT path.
 #BUG SDL_UpdateWindowSurface()
 
 
-def draw_triangle(r,g,b=255):
+renderer = None
+window = None
+
+
+def draw_triangle(r=128,g=128,b=128):
     global renderer
-
-    print(r)
-    print(g)
-    print(b)
-
     SDL_SetRenderDrawColor(renderer, r, g, b, SDL_ALPHA_OPAQUE)
     SDL_RenderDrawLine(renderer, 220, 100, 200, 140)
     SDL_RenderDrawLine(renderer, 200, 140, 240, 140)
@@ -189,8 +174,8 @@ def init_sdl():
     e = SDL_Init(SDL_INIT_VIDEO)
     if not e:
         if 1:
-            renderer = ctypes.PT('SDL_Renderer')
-            window = ctypes.PT('SDL_Window')
+            renderer = static(SDL_Renderer)
+            window = static(SDL_Window)
             e = sdl2.SDL_CreateWindowAndRenderer(320,240,0, window.byref(), renderer.byref())
         else:
             window = sdl2.SDL_CreateWindow("Hello World", sdl2.SDL_WINDOWPOS_UNDEFINED, sdl2.SDL_WINDOWPOS_UNDEFINED, 640, 480, sdl2.SDL_WINDOW_SHOWN)
@@ -237,7 +222,7 @@ def sdl2_test():
     evref = ev.byref()
 
     countdown = 15
-    tictac = Lapse(1)
+    tictac = python3.Lapse(1)
 
     embed.os_hideloop()
 
@@ -281,22 +266,28 @@ def sdl2_ok():
     draw_triangle(0,0,255)
     SDL_RenderPresent(renderer)
 
-
+CLI()
 F=dir()
 from usdl2 import *
+builtins.SDL_Renderer = SDL_Renderer
+print( "SDL_Renderer", SDL_Renderer , "=", renderer)
+STI()
+
+
+print("\n"*4)
+print("SDL2 is now loaded, you can run some tests functions like :")
+for f in F:
+    if str(f).count('sdl2'):
+        print(' -',f)
 
 aio_suspend()
 
-print("\\n"*4)
-print("SDL2 is now loaded, you can run some tests functions too")
-print(F)
-
 sdl2_test()
 
-`
-
+aio_suspend()
 
 </script>
+
 
 
 
@@ -429,7 +420,7 @@ body {
 
 
 <div id="help" style="position:absolute;bottom:0">
-  <p>Click the title bars and hold to drag windows. Click [save] icon to run program. Wapy ©®™ is built only by and for week-end coders.</p>
+  <p>Click and hold title bars to drag windows. Click [save] icon to run program. Wapy ©®™ is built only by and for week-end coders.</p>
    <!-- <p>Double-click titlebar to maximize. Click the lower-right corner to resize.</p>
  <p>Click the tilde to open a new tab. Click with a modifier (ctrl/alt/option) to close the window.</p> -->
 </div>
@@ -571,6 +562,8 @@ if(0){
 <script  src="lib/pythons.003.js"></script>
 
 
+<script src="wapy-lib.js"></script>
+
 <script src="lib/pyterm.js"></script>
 
 
@@ -611,19 +604,24 @@ function editAreaLoaded(id){
     {
         var fileid = 1;
 
-        function new_file(fname) {
+        function new_script(fname) {
             return {
                 id: "file" + fileid++
-                , text: window["file_" + fname ]
+                , text: `# Click [save] toolbar's icon to run program
+# Cliquer la disquette dans la barre d'outil pour executer` + window[fname ].text
                 , syntax: 'python'
-                , title: fname + '.py'
+                , title: fname
             }
         }
 
-        editAreaLoader.openFile( id , new_file("__main__"))
-        editAreaLoader.openFile( id , new_file("upysdl2"))
-        editAreaLoader.openFile( id , new_file("bugs"))
-        editAreaLoader.openFile( id , new_file("sockserv"))
+        var scripts = document.getElementsByTagName('script')
+
+        for(var i = 0; i < scripts.length; i++){
+            var script = scripts[i]
+            if(script.className == 'file'){
+                editAreaLoader.openFile( id , new_script(script.id))
+            }
+        }
 
         setTimeout(
             function(){
@@ -666,7 +664,7 @@ editAreaLoader.init({
     ,EA_load_callback: "editAreaLoaded"
     ,save_callback : "save_callback"
     ,change_callback: "change_callback"
-    ,begin_toolbar : "new_document, load, save"
+    ,begin_toolbar : "save" //, new_document, load, save"
     ,toolbar : "separator, search, go_to_line, fullscreen, |, undo, redo, |, select_font,|, change_smooth_selection, highlight, reset_highlight, word_wrap"
     ,end_toolbar : "separator, help"
 });

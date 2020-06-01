@@ -1,9 +1,9 @@
 include("lib/pyterm.css")
-include("https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.4/xterm.min.css","css")
-include("https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.4/xterm.min.js")
-include("https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.4/addons/fit/fit.min.js")
+include("https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css","css")
+include("https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js")
+include("https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/addons/fit/fit.min.js")
 
-
+window.meaningchars = 0
 
 
 Module.canvas = canvas;
@@ -49,12 +49,33 @@ window.onload = function() {
     /*Setup key input handler */
 
     term.on('data', function(key, e) {
+        const kc = key.charCodeAt(0)
+        //const printable = !e.domEvent.altKey && !e.domEvent.altGraphKey && !e.domEvent.ctrlKey && !e.domEvent.metaKey;
         if ( xterm_helper(term, key) ) {
-            if (key.charCodeAt(0) <=27)
-                console.log("KBD : "+key.charCodeAt(0)+ " len= "+key.length)
-            window.stdin += key
+            if (kc <=27) {
+                console.log("KBD : "+kc+ " len= "+key.length+" mc="+  window.meaningchars)
+                if (kc==13) {
+                    if ( window.meaningchars ==0 ) {
+                        term.write("\r\n❯❯❯ ")
+                        return
+                    }
+                    window.meaningchars = 0
+                }
+            }
+
+            if (kc>127) {
+                const utf = unescape(encodeURIComponent(String.fromCharCode(kc)))
+                console.log("KBD : "+kc+ " len= "+key.length+ " utf8:"+ utf)
+                window.stdin += utf
+            } else {
+                window.stdin += key
+            }
+            if (kc!=13)
+                window.meaningchars++
         }
+        //local echo
         //term.write(key)
+
     });
     /*Initialize MicroPython itself*/
     /*Initialize the REPL.*/

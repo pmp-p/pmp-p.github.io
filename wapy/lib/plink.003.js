@@ -1,7 +1,9 @@
 "use strict";
 
 if (typeof SharedArrayBuffer !== 'function' || typeof Atomics !== 'object') {
-    document.getElementById('log').textContent = 'This browser does not support SharedArrayBuffers!'
+    var log = document.getElementById('log');
+    if (log)
+        log.textContent = 'This browser does not support SharedArrayBuffers!'
 }
 
 // const worker = new Worker('worker.js');

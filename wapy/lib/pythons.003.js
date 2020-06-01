@@ -182,13 +182,8 @@ function init_repl_begin(){
         console.log("shared memory ptr was set by wasm module to : " + window.plink.shm )
         console.log("kbd shared memory port was set by wasm module to : " + window.plink.io_port_kbd )
     } else {
-        window.plink.shm =  Module._shm_ptr()
-        // IO_KBD dev0
-        window.plink.io_port_kbd = Module._shm_get_ptr(0, 0)
-        // get repl max buffer size but dont start it yet
-        window.PyRun_SimpleString_MAXSIZE = Module._repl_run(1)
+        console.log("ERROR : shared memory ptr setup from EM_ASM failed")
     }
-
 
     console.log("init_repl: shm "+window.plink.shm+"["+PyRun_SimpleString_MAXSIZE +"]")
 
@@ -585,7 +580,7 @@ async function pythons(argc, argv){
                         Module.emterpreterFile = emterpretXHR.response
                         console.log("Using "+window.script_interpreter+" VM via asyncify")
                     } else {
-                        console.log("Using "+window.script_interpreter+" VM synchronously because no micropython.binary => " + emterpretXHR.status )
+console.log("Using "+window.script_interpreter+" VM synchronously because no "+window.script_interpreter+".binary => " + emterpretXHR.status )
                     }
                     include(window.script_interpreter + ".js")
                 }
