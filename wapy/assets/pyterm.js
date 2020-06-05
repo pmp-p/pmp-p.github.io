@@ -1,4 +1,4 @@
-include("lib/pyterm.css")
+include("pyterm.css")
 include("https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css","css")
 include("https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js")
 include("https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/addons/fit/fit.min.js")

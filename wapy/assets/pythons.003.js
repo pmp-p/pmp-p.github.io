@@ -67,10 +67,14 @@ function include(filename, filetype){
             filetype = 'css';
 
     if ( (filename.indexOf('.') === 0) || (filename.indexOf('/') === 0 ) ){
-        //absolute !
+        //absolute local server
     } else {
-        //corrected
-        filename = window.JSDIR + filename;
+        if (filename.startsWith('http://') || filename.startsWith('https://')) {
+        //absolute remote
+        } else {
+            //corrected
+            filename = window.JSDIR + filename;
+        }
     }
 
     if (filetype=="js"){ //if filename is a external JavaScript file
@@ -387,14 +391,6 @@ function window_prompt(){
 
 
 function stdin_poll(){
-    //pending draw ?
-    if (stdout_blit)
-        flush_stdout();
-
-    //pending io/rpc ?
-    if (plink.io)
-        plink.io()
-
 
     if (window.cpython) {
         // is last batch out ?
@@ -439,7 +435,7 @@ function stdin_poll(){
     }
 
     /// flush whole buffer to shared memory as a null terminated str
-    stringToUTF8( utf8, plink.io_port_kbd, 1024) // MP_IO_SIZE
+    stringToUTF8( utf8, plink.io_port_kbd, plink.MP_IO_SIZE)
 
 
 }
@@ -479,16 +475,11 @@ function xterm_helper(term, key) {
 
 // TODO: add a dupterm for stderr, and display error in color in xterm if not in stdin_raw mode
 
+function flush_stdio(){}
 
-window.stdout_blit = false
-window.stdout_array = []
-
-
-function flush_stdout(){}
-
-function stdout_process(cc) {
-    term_impl(cc)
-    stdout_blit = false
+function stdio_process(fd, cc) {
+    if (fd==1)
+        term_impl(cc)
 }
 
 // this is a demultiplexer for stdout and os (DOM/js ...) control
@@ -499,7 +490,7 @@ function pts_decode(text){
         for (key in jsdata) {
             // TODO: multiple fds for pty.js
             if (key=="1") {
-                stdout_process(unhex_utf8( jsdata[key]))
+                stdio_process(1, unhex_utf8( jsdata[key]))
                 continue
             }
             try {
@@ -513,7 +504,7 @@ function pts_decode(text){
     } catch (x) {
         // found a raw C string via libc
         console.log("C-OUT ["+text+"]")
-        flush_stdout()
+        flush_stdio()
         try {
             posix.syslog(text)
         } catch (y) {
@@ -543,7 +534,16 @@ function setStatus(args) {
 
 function preMainLoop(args) {
     //console.log("preMainLoop(js): " + args)
+
+    //pending io ?
+    flush_stdio();
+
     stdin_poll()
+
+    //pending io/rpc ?
+    if (plink.io)
+        plink.io()
+
     return true
 }
 
@@ -582,7 +582,7 @@ async function pythons(argc, argv){
                     } else {
 console.log("Using "+window.script_interpreter+" VM synchronously because no "+window.script_interpreter+".binary => " + emterpretXHR.status )
                     }
-                    include(window.script_interpreter + ".js")
+                    include('./' + window.script_interpreter + ".js")
                 }
                 emterpretXHR.send(null)
             break

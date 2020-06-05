@@ -21,37 +21,8 @@ async function dlopen_lzma(lib,size_hint) {
 
 // ============================== FILE I/O (sync => bad) =================================
 
-// cheat a bit for clear log and less hammer
+// miss cache , cheat a bit for clear log and less hammer
 var miss = [
-"asyncio/io/__init__.py",
-"asyncio/io/index.html",
-"boot/__init__.py",
-"boot/index.html",
-"imp/__init__.py",
-"imp/index.html",
-"types/__init__.py",
-"types/index.html",
-"uselect.py",
-"uselect/__init__.py",
-"uselect/index.html",
-"xpy/__init__.py",
-"xpy/builtins/__init__.py",
-"xpy/builtins/index.html",
-"imp_pivot/__init__.py",
-"imp_pivot/index.html",
-"xpy/femtoui/__init__.py",
-"xpy/femtoui/index.html",
-"ulink/__init__.py",
-"ulink/index.html",
-"datetime/__init__.py",
-"datetime/index.html",
-"_datetime/__init__.py",
-"_datetime/index.html",
-"_datetime.py",
-"asyncio/asyncify/__init__.py",
-"asyncio/asyncify/index.html",
-"imp_empty_pivot_module/__init__.py",
-"imp_empty_pivot_module/index.html",
 ]
 
 window.urls = {"cors": null, "name":"webcache","id":-1, "index": "/index.html", "err":miss}
@@ -101,8 +72,6 @@ function awfull_get(url, charset) {
     oReq.send();
     return oReq.response
 }
-
-
 
 
 function wasm_file_open(url , cachefile ) {

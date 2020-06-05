@@ -12,16 +12,20 @@ function blob_as_str(b) {
     return x.responseText
 }
 
-
+/*
 
 // setup websocket with callbacks
-var ws = new WebSocket('ws://localhost:26667/', 'binary')  // or ['binary',]
+var ws = new WebSocket('ws://192.168.1.66:26667/', 'binary')  // or ['binary',]
 
 ws.binaryType = "blob"   // or 'arrayBuffer'
 
 ws.onopen = function() {
     log('CONNECT')
-    ws.send( new Blob(["CAP LS\nNICK micropy\nUSER micropy micropy locahost :wsocket\nJOIN #sat\n"]) )
+    ws.send( new Blob([`CAP LS\r
+NICK wapy\r
+USER wapy micropy locahost :wsocket\r
+JOIN #sav\r
+`]) )
 }
 
 ws.onclose = function() { log('DISCONNECT') }
@@ -52,3 +56,4 @@ ws.onmessage = function(e) {
 }
 
 
+*/

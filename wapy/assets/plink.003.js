@@ -236,7 +236,7 @@ plink.io = function() {
         return //
     }
     const rpcdata = "aio.step('''"+ JSON.stringify(plink.embed.state) +"''')#aio.step\n"
-    stringToUTF8( rpcdata, plink.shm, 16384 )
+    stringToUTF8( rpcdata, plink.shm, PyRun_SimpleString_MAXSIZE)
     plink.embed.state_reset()
 }
 
