@@ -357,17 +357,6 @@ import * as vm from "./pythons.es6.js"
 Module = vm.scripting.set_host(vm, window)
 
 
-var hast_host = window.parent && window.parent.ide
-
-function trace(ln) {
-    if (hast_host) {
-        setTimeout(() => window.parent.ide.setCursor(0+ln,0),1)
-    }
-}
-
-vm.scripting.trace  = trace
-
-
 async function window_load(event) {
 
     // pseudo-readline buffer toward Python wasm vm via emscripten stdio polyfill
@@ -385,7 +374,26 @@ async function window_load(event) {
 
 }
 
+
+
+
 window.addEventListener('load', window_load )
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//

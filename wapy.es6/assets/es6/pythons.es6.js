@@ -459,6 +459,18 @@ function scripting_set_host(self, win) {
         window.stdin_echo = false
     }
 
+
+    scripting.host = window.parent && window.parent.ide
+
+    function trace(ln) {
+        if (vm.scripting.host) {
+            setTimeout(() => window.parent.ide.setCursor(0+ln,0),1)
+        }
+    }
+
+    scripting.trace  = trace
+
+
     // ===================================== STDIN ================================
 
     // aio.plink.pts hold tty devices descriptors

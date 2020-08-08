@@ -127,7 +127,7 @@ pythons.excepthook = sys_excepthook
 <html>
 <title>🐍 wapy.js 🐍</title>
 
-<base href="../../..">
+<base href="../..">
 
 <head>
 
@@ -427,7 +427,7 @@ function PyInit(term){
     /* Initialize Python itself */
     /* Initialize the REPL. */
 
-    vm.scripting.embed( { 'prefix' : "../../", 'runscripts' : true, 'sti' : true } )
+    vm.scripting.embed( { 'prefix' : "./", 'runscripts' : true, 'sti' : true } )
 
     // go to last line in case a script has ran.
     term.scrollToBottom()

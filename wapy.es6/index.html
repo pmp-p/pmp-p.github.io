@@ -76,8 +76,8 @@ async function main(){
 
     var layout = new GoldenLayout(config , document.getElementById('desktop'));
 
-var menu;
-var edi;
+    var menu;
+    var edi;
 
     layout.registerComponent('index',
         function( container, componentState ){
@@ -138,8 +138,11 @@ var edi;
     layout.registerComponent( 'testComponent', persistentComponent );
 
     layout.init()
-	edi.setSize(350,600)
-	menu.setSize(150,600)
+
+    if (savedState == null ) {
+    	edi.setSize(350,600)
+    	menu.setSize(150,600)
+    }
 
 	await _until(defined)("editor")
 	editor('vide.html')
