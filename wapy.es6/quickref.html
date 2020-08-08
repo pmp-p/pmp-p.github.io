@@ -1,0 +1,67 @@
+<html>
+Minimal dom
+<ul>
+<li><a href onclick=docload('device/minimal.html')>embedded</a>
+<li><a href onclick=docload('device/minimal.html')>from server</a>
+<li><a href onclick=docload('device/minimal.html')>from remote</a>
+</ul>
+<a href=minimaldom.webm target=device>[ video only ]</a><hr>
+
+
+Device Simulator
+<ul>
+<li><a href onclick=docload('device/device.html')>device</a>
+</ul>
+
+
+<hr>
+
+Canvas 2D
+<ul>
+<li>
+</ul>
+
+
+Canvas 3D
+<ul>
+<li>
+</ul>
+
+<hr>
+
+Sockets
+<ul>
+<li>
+</ul>
+
+Web
+<ul>
+<li>
+</ul>
+
+
+Learn Python
+<ul>
+<li><a href=https://hackinscience.org/exercises/ target=new>hackinscience</a>
+<li>w3schools
+</ul>
+
+Edit Python
+<ul>
+<li><a href=https://thonny.org target=new>Thonny (tiny IDE)</a>
+<li><a href=http://eric-ide.python-projects.org target=new>Eric (full IDE)</a>
+</ul>
+
+
+<script>
+async function docload(doc){
+    var url
+    if (doc.endsWith('.py')) {
+
+    } else {
+    	url='assets/'+doc
+        window.parent.editor(url)
+        window.parent.device.open(url,'device')
+    }
+}
+</script>

@@ -1,0 +1,170 @@
+<html>
+
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://unpkg.com/xterm@4.7.0/css/xterm.css" />
+    <base href="..">
+
+    <title>🐍 wapy.js 🐍</title>
+
+    <h1>Bare bones WASI browser polyfill demo</h1>
+
+</head>
+
+<body>
+<hr>
+Open the browser console to see the output from the WebAssembly module.
+<div id="stdio"></div>
+<hr>
+
+
+
+</body>
+</html>
+
+<script defer type=module>
+
+import * as xterm from "./assets/xterm.js"
+
+
+var term = new window.Terminal( {
+        cols: 100,
+        rows: 30,
+        screenKeys: true,
+        cursorBlink: true
+    });
+    term.open(document.getElementById('stdio'));
+    term.write('Loading, please wait at least ~30 seconds on first run ...\r\n\r\n')
+    term.write('Press ctrl+shift+i to see debug logs, or go to Menu / [more tools] / [developpers tools]\r\n')
+    term.esc = function esc(data) {
+        return String.fromCharCode(27)+data
+    }
+
+    function ESC(data) {
+        term.write(String.fromCharCode(27)+data)
+    }
+
+    const keymapping = {
+        'ArrowUp' : esc("[A"),
+        'ArrowDown' : esc("[B"),
+        'ArrowRight' : esc("[C"),
+        'ArrowLeft' : esc("[D"),
+        'Home' : esc("[H"),
+        'End' : esc("[F"),
+    }
+
+    // Ctrl+L is mandatory ! xterm.js 4.7.0+
+    function xterm4_helper(term, e, kc) {
+        if (e.domEvent.ctrlKey) {
+            console.log('ctrl + '+ kc)
+            if (kc == 76) {
+                console.log('clear + '+ term.buffer.active.cursorY)
+                var cy = 0+term.buffer.active.cursorY
+                if ( cy > 0) {
+                    var cx = 0+term.buffer.active.cursorX
+                    if (cy <= term.rows) {
+                        term.esc("[B")
+                        term.esc("[J")
+                        term.esc("[A")
+                    }
+
+                    term.esc("[A")
+                    term.esc("[K")
+                    term.esc("[1J")
+
+                    for (var i=1;i<cy;i++) {
+                        term.esc("[A")
+                        term.esc("[M")
+                    }
+                    ESC("[M")
+                    if (cx > 0) {
+                        term.esc("["+cx+"C")
+
+                    }
+                }
+                return false
+            }
+        }
+        return true
+    }
+
+    /*Setup key input handler */
+    term.onKey(e => {
+        const printable = !e.domEvent.altKey && !e.domEvent.altGraphKey && !e.domEvent.ctrlKey && !e.domEvent.metaKey;
+        const kc = e.domEvent.keyCode
+        if ( !xterm4_helper(term,e, kc) )
+            return;
+
+        var key = e.domEvent.key
+
+        if (key.length>1) {
+            if (key.startsWith('Arrow') ) {
+                window.meaningchars++
+                window.stdin += keymapping[key]
+                return
+            } else {
+                key = String.fromCharCode(kc)
+            }
+            console.log('key '+ e.domEvent.key +" => [" + key + ']  was ['  + kc + ']' )
+        }
+
+        //window.de = e.domEvent
+
+        if (kc <=27) {
+            console.log("KBD : "+kc+ " len= "+key.length+" mc="+  window.meaningchars)
+            if (kc==13) {
+                if ( window.meaningchars ==0 ) {
+                    term.write("\r\n❯❯❯ ")
+                    return
+                }
+                window.meaningchars = 0
+            }
+
+        }
+
+        const utf = unescape(encodeURIComponent(key))
+
+        if (utf.substr(0,1) != key.substr(0,1) ) {
+            console.log("utf-8:" + utf )
+            window.stdin += utf
+        } else {
+            window.stdin += key
+        }
+
+        if (kc!=13)
+            window.meaningchars++
+    //local echo
+        //term.write(key)
+    })
+
+
+function term_reset() {
+
+    ESC("[2J")   // clear
+    ESC("[0:0H") // home cursor
+    ESC("[?3h")  // 132 cols
+
+}
+
+
+/* ====================================================== */
+
+
+import * as wasm from "./assets/polyfill.js"
+
+//wasm.dlopen("wasi/hello.wasm", window.stdio);
+
+function stdio_custom(fd, str){
+    if (fd === 1)
+        //console.log("["+fd+"] : "+ str);
+        term.write("["+fd+"] : "+ str + "\r")
+    else
+        console.error("["+fd+"] : "+ str);
+}
+
+wasm.dlopen("wasi/hello.wasm", stdio_custom);
+
+</script>
+
+
