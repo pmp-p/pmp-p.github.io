@@ -136,11 +136,6 @@ if (!window.undef) {
 
 }
 
-// NETWORK
-
-include("./../simplepeer.min.js")
-
-
 
 // ============================== FILE I/O (sync => bad) =================================
 
@@ -158,8 +153,8 @@ urls.discard.suffixes = ['.mpy']
 
 function awfull_get(url, charset) {
 
-    if (aio.posix.cors)
-        url = aio.posix.cors(url)
+    if (vm.aio.posix.cors)
+        url = vm.aio.posix.cors(url)
 
     function updateProgress (oEvent) {
       if (oEvent.lengthComputable) {
@@ -252,8 +247,8 @@ function wasm_file_open(url , cachefile ) {
             url = url.substr(1)
         else {
             // [TODO:do some tests there for your CORS integration]
-            if (aio.posix.cors)
-                url = aio.posix.cors(url)
+            if (vm.aio.posix.cors)
+                url = vm.aio.posix.cors(url)
         }
 
         var ab = awfull_get(url)
@@ -354,30 +349,74 @@ register(wasm_file_exists)
 import * as vm from "./pythons.es6.js"
 
 
-Module = vm.scripting.set_host(vm, window)
+// default CORS handler
+if (!vm.aio.posix.cors) {
+    vm.aio.posix.cors_broker = "https://cors-anywhere.herokuapp.com/"
+    vm.aio.posix.cors = function (url){
+            if (url.includes('/wyz.fr/'))
+                return vm.aio.posix.cors_broker + url
+            return url
+    }
+    console.log("Using default brooker vm.aio.posix.cors_broker = " + vm.aio.posix.cors_broker)
+}
 
+vm.scripting.fs_get = awfull_get
+
+Module = vm.scripting.set_host(vm, window)
 
 async function window_load(event) {
 
     // pseudo-readline buffer toward Python wasm vm via emscripten stdio polyfill
     window.prompt = vm.window_prompt
 
-    /* Write text to the terminal */
-    document.body.setAttribute('style', 'white-space: pre;');
-    window.term_impl = function(text){ document.body.innerHTML += text }
+    if (!window.term_impl) {
+        /* Write text to dom instead of user supplied terminal */
+        document.body.setAttribute('style', 'white-space: pre;');
+
+        window.term_impl = function(text){ document.body.innerHTML += text }
+    }
+
+    console.log(' ----------------- The page is fully loaded : ' + window.location);
+
+    for (const script of document.getElementsByTagName('script')) {
+        if (script.type == 'module') {
+            if (script.src.search('wapy-min.js')>0) {
+                var elems = script.src.rsplit('#',1)
+                var url = elems.shift()
+                var code = elems.shift()
+
+                elems = url.rsplit('?',1)
+                url = elems.shift()
+
+                var argv = elems.shift().split('&')
+
+                console.log('url : '+url)
+
+                console.log(script.src)
+                console.log('code : '+code)
+                vm.scripting.main = code
+                console.log('argv : '+JSON.stringify(argv))
+            }
+        }
+    }
+    vm.scripting.embed( vm.scripting )
+
+}
 
 
-    console.log(' ----------------- The page is fully loaded ----------------------');
-
-
-    vm.scripting.embed( { 'prefix' : "../../", 'runscripts' : true, 'sti' : true } )
-
+let navData = window.performance.getEntriesByType("navigation");
+if (navData.length > 0 && navData[0].loadEventEnd > 0)
+{
+    console.log('Document is already loaded, starting module manually');
+    setTimeout(window_load,0)
+} else {
+    console.log('Document is not loaded, queuing to load event');
+    window.addEventListener('load', window_load )
 }
 
 
 
 
-window.addEventListener('load', window_load )
 
 
 

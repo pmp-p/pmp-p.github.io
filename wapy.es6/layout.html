@@ -1,0 +1,160 @@
+<html>
+
+<base href=".">
+
+<head>
+<meta charset="UTF-8">
+<link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-base.css" />
+<link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-light-theme.css" />
+<link rel="stylesheet" href="minide/minide.css">
+<title>Wapy.es6</title>
+
+</head>
+
+<script>
+window.JSDIR = "assets/"
+</script>
+
+<script src="assets/aio.lib.js" sync>
+</script>
+
+<script>
+
+
+async function main(){
+
+    function edi_onsave(data){
+        console.log('edi_onsave : '+data)
+    }
+    window.hub = {
+        'edit_area' : {
+            'onsave' : edi_onsave,
+         }
+    }
+
+    include("https://code.jquery.com/jquery-3.5.1.slim.min.js")
+    await _until(defined)("jQuery")
+
+    include("https://golden-layout.com/files/latest/js/goldenlayout.min.js")
+    await _until(defined)("GoldenLayout")
+
+    var savedState = localStorage.getItem( 'savedState' );
+
+    if (savedState !== null ) {
+        var config = JSON.parse( savedState );
+    } else {
+        var config = {
+            content: [{
+                type: 'row',
+                content:[
+                {
+                    type: 'component',
+                    componentName: 'index',
+                    componentState: { label: 'index' }
+                },
+                {
+                    type: 'component',
+                    componentName: 'editor',
+                    componentState: { label: 'editor' }
+                },
+                {
+                    type: 'column',
+                    content:[
+                    {
+                        type: 'component',
+                        componentName: 'device',
+                        componentState: { label: '1' }
+                    }/*,{
+                        type: 'component',
+                        componentName: 'device',
+                        componentState: { label: '2' }
+                    }*/]
+                }]
+            }]
+        };
+    }
+
+    var layout = new GoldenLayout(config , document.getElementById('desktop'));
+
+    var menu;
+    var edi;
+
+    layout.registerComponent('index',
+        function( container, componentState ){
+            container.getElement().html("<iframe width=200px height=100% src=quickref.html></iframe>");
+		menu = container
+        }
+    );
+
+
+
+    layout.registerComponent('editor',
+        function( container, componentState ){
+            //container.getElement().html('<h3>' + componentState.label + '</h3>' );
+            container.getElement().html("<iframe id=code name=code width=100% height=100% src=code.html></iframe>");
+		edi = container
+        }
+    );
+
+    layout.registerComponent('device',
+        function( container, componentState ){
+            container.getElement().html("<iframe id=device name=device width=100% height=100% src=vide.html></iframe>" );
+        }
+    );
+
+
+    layout.on( 'stateChanged', function(){
+        var state = JSON.stringify( layout.toConfig() );
+        localStorage.setItem( 'savedState', state );
+    });
+
+    var persistentComponent = function( container, state ){
+
+      //Check for localStorage
+      if( !typeof window.localStorage ) {
+        container.getElement().append(  '<h2 class="err">Your browser doesn\'t support localStorage.</h2>');
+        return;
+      }
+
+      // Create the input
+      var input = $( '<input type="text" />' );
+
+      // Set the initial / saved state
+      if( state.label ) {
+        input.val( state.label );
+      }
+
+      // Store state updates
+      input.on( 'change', function(){
+        container.setState({
+          label: input.val()
+        });
+      });
+
+      // Append it to the DOM
+      container.getElement().append(  '<h2>I\'ll be saved to localStorage</h2>', input );
+    };
+
+    layout.registerComponent( 'testComponent', persistentComponent );
+
+    layout.init()
+
+    if (savedState == null ) {
+    	edi.setSize(350,600)
+    	menu.setSize(150,600)
+    }
+
+	await _until(defined)("editor")
+	editor('vide.html')
+}
+
+main()
+</script>
+
+<body>
+<div>Wapy.es6</div>
+
+<div id=desktop style="width:100%;height:100%"></div>
+</body>
+
+</html>

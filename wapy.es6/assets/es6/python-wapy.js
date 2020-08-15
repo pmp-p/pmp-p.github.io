@@ -227,9 +227,9 @@ register(wasm_file_exists)
 import * as vm from "./pythons.es6.js"
 
 
+vm.scripting.fs_get = awfull_get
+
+
 Module = vm.scripting.set_host(vm, window)
-
-
-
 
 

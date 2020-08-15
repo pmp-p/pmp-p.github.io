@@ -10,6 +10,8 @@
 // kbd
 // http://ascii-table.com/ansi-escape-sequences-vt-100.php
 
+import * as simplepeer from "../simplepeer.min.js";
+
 
 try {
     clog("logger test : ")
@@ -398,7 +400,7 @@ function aio_write(fd, data){
 function aio_bind(mask, port){
 
     if (!posix.hub) {
-        var peer = new SimplePeer({ "initiator" : true })
+        var peer = new simplepeer.SimplePeer({ "initiator" : true })
         peer.on('connect', () => { console.log('HUB.CONNECTED') } )
         peer.on('signal', function (data) {
             for (var key in posix.fildes) {
@@ -416,7 +418,7 @@ function aio_bind(mask, port){
 
     clog("aio_bind : " + url )
 
-    var peer = new SimplePeer({ "initiator" : false }) //, "stream": localStream
+    var peer = new simplepeer.SimplePeer({ "initiator" : false }) //, "stream": localStream
         peer.on('signal', function (data) {
             console.log('client.signal :'+data);
             posix.hub.signal(data)

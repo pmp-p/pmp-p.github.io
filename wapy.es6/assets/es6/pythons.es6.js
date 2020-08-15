@@ -71,18 +71,18 @@ function init_repl(){
 
     console.log("repl: Begin (" + arguments_.length+")")
 
-    if ( vm.aio.plink.shm ) {
-        console.log("shared memory ptr was set by wasm module to : " + vm.aio.plink.shm )
-        console.log("kbd shared memory port was set by wasm module to : " + vm.aio.plink.io_port_kbd )
+    if ( aio.plink.shm ) {
+        console.log("shared memory ptr was set by wasm module to : " + aio.plink.shm )
+        console.log("kbd shared memory port was set by wasm module to : " + aio.plink.io_port_kbd )
     } else {
         console.log("ERROR : shared memory ptr setup from EM_ASM failed")
     }
 
     console.log("init_repl: shm " + aio.plink.shm+"[" + aio.plink.MAXSIZE + "]")
-
+/*
     if (arguments_.length>1) {
 
-        var argv0 = "" + arguments_[1]
+        var argv0 = "" + arguments_.pop() //[1]
 
         if (argv0.startsWith('edit=')) {
             var fileref=document.createElement('script')
@@ -91,7 +91,7 @@ function init_repl(){
             fileref.setAttribute("id",'argv0.py')
             //fileref.setAttribute("src", argv0.substr(5))
             //fileref.setAttribute("src", window.urls.cors(argv0.substr(5)) )
-            fileref.text =  '//' + window.urls.cors(argv0.substr(5))
+            fileref.text =  '//' + aio.posix.cors(argv0.substr(5))
             fileref.setAttribute('async',false);
             document.getElementsByTagName("head")[0].appendChild(fileref)
         } else {
@@ -102,26 +102,34 @@ function init_repl(){
                 console.log("CORS PATCH OFF")
             }
 
-            clog('running with sys.argv', argv0)
-
-            window.currentTransferSize = 0
-            window.currentTransfer = argv0
-
-            var ab = awfull_get(argv0,'utf-8')
-            if (window.currentTransferSize>=0) {
-                FS.createDataFile("/",'main.py', ab, true, true);
-                PyRun_VerySimpleFile('main.py')
-            } else {
-                console.log("error getting main.py from '"+argv0+"'")
-                term_impl("Javascript : error getting main.py from '"+argv0+"'\r\n")
-                //TODO: global control var to skip page scripts
-            }
         }
 
     }
+*/
 
     // set ready for embedded scripts in page
     window.pyscripts = new Array()
+
+    if (scripting.main) {
+        var argv0 = scripting.main
+        clog('running with sys.argv', argv0)
+
+        window.currentTransferSize = 0
+        window.currentTransfer = argv0
+
+        var ab = vm.scripting.fs_get(argv0,'utf-8')
+        if (window.currentTransferSize>=0) {
+            FS.createDataFile("/",'main.py', ab, true, true);
+            console.log("got main.py [" + ab +"]")
+            PyRun_VerySimpleFile('main.py')
+        } else {
+
+            term_impl("Javascript : error getting main.py from '"+argv0+"'\r\n")
+            //TODO: global control var to skip page scripts
+        }
+    }
+
+
 
     if (config.sti) {
         console.log("allow int for bytecode loop preemption")
@@ -232,7 +240,7 @@ function PyRun_SimpleString(text){
             /*
             if ( header.endsWith('.py') ) {
                 console.log("Getting shebang py=["+header+"] async="+ async_script)
-                var tmp = awfull_get(text, "utf-8")
+                var tmp = scripting.fs_get(text, "utf-8")
                 if (tmp)
                     text=tmp
             }
@@ -256,7 +264,7 @@ function PyRun_SimpleString(text){
 
         console.log("wrote "+text.length+"B to shm")
     } else
-        console.log("invalid text block")
+        console.log("invalid text block [" + text + "]")
 
     if (pyscripts.length)
         return setTimeout(PyRun_SimpleString, 16 )
@@ -439,6 +447,8 @@ async function embed(cnf) {
     if (config['runscripts']) {
         await _until(defined)("pyscripts")
         runscripts()
+    } else {
+        console.log('not running embedded scripts')
     }
 }
 
@@ -501,7 +511,9 @@ function scripting_set_host(self, win) {
     scripting.set_host = undefined
     scripting_set_host = undefined
     window.vm = self
+
     return window.Module
+
 }
 
 
@@ -509,6 +521,8 @@ const scripting = {
     "echo" : undefined,
     "raw"  : undefined,
     "stdin" : "",
+    "fs_get" : undefined,
+    "main" : undefined,
     "interpreter" : "?",
     "type" : "text/python",
     "set_host" : scripting_set_host,
@@ -516,6 +530,9 @@ const scripting = {
     "runscripts": runscripts,
     "xterm4_helper" : xterm4_helper,
     "init_repl" : init_repl,
+    'run_scripts' : true,
+    'sti' : true,
+    'prefix': '../../',
 }
 
 

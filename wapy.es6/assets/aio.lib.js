@@ -21,6 +21,7 @@ if (!window.undef) {
 
     const delay = (ms, fn_solver) => new Promise(resolve => setTimeout(() => resolve(fn_solver()), ms*1000));
 
+    // https://stackoverflow.com/questions/5202085/javascript-equivalent-of-pythons-rsplit
     String.prototype.rsplit = function(sep, maxsplit) {
         var split = this.split(sep);
         return maxsplit ? [ split.slice(0, -maxsplit).join(sep) ].concat(split.slice(-maxsplit)) : split;

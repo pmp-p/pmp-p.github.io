@@ -2,7 +2,7 @@
 Minimal dom
 <ul>
 <li><a href onclick=docload('device/minimal.html')>embedded</a>
-<li><a  onclick=docload('loader.html')>from server</a>
+<li><a href onclick=docload('assets/es6/wapy-min.js?-i&-u&-B#test_time.py')>from server</a>
 <li><a  onclick=docload('loader.html')>from remote</a>
 </ul>
 <a href=minimaldom.webm target=device>[ video only ]</a><hr>
@@ -43,7 +43,8 @@ Web
 Learn Python
 <ul>
 <li><a href=https://hackinscience.org/exercises/ target=new>hackinscience</a>
-<li>w3schools
+<li>w3schools<!-- https://www.w3schools.com/python/python_syntax.asp -->
+<li>tutorialspoint<!-- http://www.tutorialspoint.com/python/index.htm -->
 </ul>
 
 Edit Python
@@ -54,14 +55,30 @@ Edit Python
 
 
 <script>
+
+// <!--
+String.prototype.rsplit = function(sep, maxsplit) {
+    var split = this.split(sep);
+    return maxsplit ? [ split.slice(0, -maxsplit).join(sep) ].concat(split.slice(-maxsplit)) : split;
+}
+
+
 async function docload(doc){
     var url
     if (doc.endsWith('.py')) {
-
+        //window.parent.device.open(doc, 'device')
+        var fileref = window.parent.device.document.createElement('script')
+            fileref.setAttribute("type","module")
+            fileref.setAttribute("src", doc)
+            fileref.setAttribute('async', true)
+            //fileref.setAttribute('defer', true)
+        window.parent.device.document.getElementsByTagName("head")[0].appendChild(fileref)
     } else {
     	url='assets/'+doc
         window.parent.editor(url)
         window.parent.device.open(url,'device')
     }
+
 }
+// -->
 </script>

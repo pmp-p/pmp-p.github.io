@@ -1,0 +1,13 @@
+<script>
+console.log("Url : "+window.location.href)
+var scripturl = window.location.href.split('#',2)[1]
+scripturl = "https://wyz.fr/paste" + scripturl.split('wyz.fr',2)[1]
+console.log('File : '+ scripturl)
+
+var scr = document.createElement('script')
+    scr.setAttribute("type","module")
+    scr.setAttribute("src", "assets/es6/wapy-min.js?-i&-u&-B#https://cors-anywhere.herokuapp.com/"+scripturl+"/raw")
+    scr.setAttribute('async', true)
+document.getElementsByTagName("head")[0].appendChild(scr)
+</script>
+
