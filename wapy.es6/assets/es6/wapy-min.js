@@ -351,6 +351,8 @@ import * as vm from "./pythons.es6.js"
 
 // default CORS handler
 if (!vm.aio.posix.cors) {
+    vm.scripting.prefix="../"
+
     vm.aio.posix.cors_broker = "https://cors-anywhere.herokuapp.com/"
     vm.aio.posix.cors = function (url){
             if (url.includes('/wyz.fr/'))
