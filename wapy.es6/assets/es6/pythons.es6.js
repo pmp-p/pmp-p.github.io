@@ -33,24 +33,6 @@ import * as aio from  "./aio.plink.es6.js"
 function preRun(){
     console.log("preRun: Begin")
 
-    // do we need to call it instead of Module
-    if (window.stock)
-        setTimeout(postRun,1)
-    else {
-        // we still can modify argc/argv.
-        var argv = window.location.href.split('?',2)
-        var e;
-        while (e=argv.shift())
-            arguments_.push(e)
-        argv = arguments_.pop().split('&')
-        while (e=argv.shift())
-            arguments_.push(e)
-
-        if ( defined('PYTHONSTARTUP') )
-            PYTHONSTARTUP()
-        else
-            console.log("preRun: function PYTHONSTARTUP() ? " )
-    }
     console.log("preRun: End")
 
 }
@@ -110,25 +92,24 @@ function init_repl(){
     // set ready for embedded scripts in page
     window.pyscripts = new Array()
 
-    if (scripting.main) {
-        var argv0 = scripting.main
-        clog('running with sys.argv', argv0)
+    if (script.main) {
+        var argv0 = script.main
+        clog("Running with sys.argv[0] = '"+ argv0 + "'")
 
         window.currentTransferSize = 0
         window.currentTransfer = argv0
 
-        var ab = vm.scripting.fs_get(argv0,'utf-8')
+        var ab = vm.script.fs_get(argv0,'utf-8')
         if (window.currentTransferSize>=0) {
             FS.createDataFile("/",'main.py', ab, true, true);
-            console.log("got main.py [" + ab +"]")
+            console.log("got main.py [" + ab.length +"]")
             PyRun_VerySimpleFile('main.py')
         } else {
 
-            term_impl("Javascript : error getting main.py from '"+argv0+"'\r\n")
+            script.puts("Javascript : error getting main.py from '"+argv0+"'\r\n")
             //TODO: global control var to skip page scripts
         }
     }
-
 
 
     if (config.sti) {
@@ -158,7 +139,7 @@ STI(1)`)
     }
 
     init_repl = undefined
-    scripting.repl_init = undefined
+    script.repl_init = undefined
 
 
 
@@ -170,7 +151,7 @@ function runscripts() {
     for(var i = 0; i < scripts.length; i++){
         const scr = scripts[i]
 
-        if(scr.type == window.script_type_python){
+        if(scr.type == vm.script.type){
             if (scr.text) {
                 clog("added script of len " + scr.text.length )
                 pyscripts.push(scr.text)
@@ -183,9 +164,8 @@ function runscripts() {
     if (pyscripts.length)
         PyRun_SimpleString()
     else
-        console.log("no '"+window.script_type_python+"' script tag found")
+        console.log("no '" + vm.script.type + "' script tag found")
 }
-
 
 
 
@@ -240,7 +220,7 @@ function PyRun_SimpleString(text){
             /*
             if ( header.endsWith('.py') ) {
                 console.log("Getting shebang py=["+header+"] async="+ async_script)
-                var tmp = scripting.fs_get(text, "utf-8")
+                var tmp = script.fs_get(text, "utf-8")
                 if (tmp)
                     text=tmp
             }
@@ -263,8 +243,8 @@ function PyRun_SimpleString(text){
             stringToUTF8( text, aio.plink.shm, aio.plink.MAXSIZE )
 
         console.log("wrote "+text.length+"B to shm")
-    } else
-        console.log("invalid text block [" + text + "]")
+    } //else
+        //console.log("invalid text block [" + text + "]")
 
     if (pyscripts.length)
         return setTimeout(PyRun_SimpleString, 16 )
@@ -335,44 +315,7 @@ function stdin_poll(){
     console.log('FLUSHED')
 }
 
-function ESC(data) {
-    return String.fromCharCode(27)+data
-}
 
-// Ctrl+L is mandatory ! xterm.js 4.7.0+
-function xterm4_helper(term, e, kc) {
-    if (e.domEvent.ctrlKey) {
-        console.log('ctrl + '+ kc)
-        if (kc == 76) {
-            console.log('clear + '+ term.buffer.active.cursorY)
-            var cy = 0+term.buffer.active.cursorY
-            if ( cy > 0) {
-                var cx = 0+term.buffer.active.cursorX
-                if (cy <= term.rows) {
-                    term.write( ESC("[B") )
-                    term.write( ESC("[J") )
-                    term.write( ESC("[A") )
-                }
-
-                term.write( ESC("[A") )
-                term.write( ESC("[K") )
-                term.write( ESC("[1J"))
-
-                for (var i=1;i<cy;i++) {
-                    term.write( ESC("[A") )
-                    term.write( ESC("[M") )
-                }
-                term.write( ESC("[M") )
-                if (cx > 0) {
-                    term.write( ESC("["+cx+"C") )
-
-                }
-            }
-            return false
-        }
-    }
-    return true
-}
 
 
 
@@ -385,7 +328,7 @@ function flush_stdio(){}
 function stdio_process(fd, cc) {
     // TODO: multiple vt fds for pty.js
     if (fd==1)
-        term_impl(cc)
+        script.puts(cc)
 }
 
 
@@ -420,17 +363,17 @@ function pythons(argc, argv){
         var scr = scripts[i]
 
         if (scr.type == script_type_python) {
-            console.log('requesting script interpreter : ' + scripting.interpreter )
-            var emterpretURL = scripting.interpreter + ".binary"
+            console.log('requesting script interpreter : ' + script.interpreter )
+            var emterpretURL = script.interpreter + ".binary"
             var emterpretXHR = new XMLHttpRequest;
                 emterpretXHR.open("GET", emterpretURL, !0),
                 emterpretXHR.responseType = "arraybuffer",
                 emterpretXHR.onload = function() {
                     if ( (200 === emterpretXHR.status) || (0 === emterpretXHR.status) ) {
                         Module.emterpreterFile = emterpretXHR.response
-                        console.log("Using "+ scripting.interpreter + " VM via asyncify")
+                        console.log("Using "+ script.interpreter + " VM via asyncify")
                     } else {
-console.log("Using " + scripting.interpreter + " VM synchronously because no " + scripting.interpreter+".binary => " + emterpretXHR.status )
+console.log("Using " + script.interpreter + " VM synchronously because no " + script.interpreter+".binary => " + emterpretXHR.status )
                     }
                     embed_pythons()
                 }
@@ -442,8 +385,8 @@ console.log("Using " + scripting.interpreter + " VM synchronously because no " +
 
 async function embed(cnf) {
     config = cnf
-    console.log("loading ["+ scripting.interpreter + "] flavour")
-    include(config['prefix'] + scripting.interpreter + ".js")
+    console.log("loading ["+ script.interpreter + "] flavour")
+    include(config['prefix'] + script.interpreter + ".js")
     if (config['runscripts']) {
         await _until(defined)("pyscripts")
         runscripts()
@@ -453,32 +396,33 @@ async function embed(cnf) {
 }
 
 
-function scripting_set_host(self, win) {
+function scripting_set_host(self, win, api_fsync, api_fasync) {
     window = win
     window.clog = clog
     window.script_type_python = "text/python"
 
     if ( window.cpython ) {
-        scripting.interpreter = "python"
+        script.interpreter = "python"
         window.stdin_echo = true
         window.stdin_raw = false;
         window.stdin_flush = false;
     } else {
-        scripting.interpreter = "wapy"
+        script.interpreter = "wapy"
         window.stdin_raw = true
         window.stdin_echo = false
     }
 
 
-    scripting.host = window.parent && window.parent.ide
+    script.host = window.parent && window.parent.ide
 
-    function trace(ln) {
-        if (vm.scripting.host) {
-            setTimeout(() => window.parent.ide.setCursor(0+ln,0),1)
-        }
+
+
+    if (api_fsync){
+        fsync = api_fsync
+        clog("VM.FSYNC: fsync support enabled")
+    } else {
+        clog("VM.FSYNC: no fsync support")
     }
-
-    scripting.trace  = trace
 
 
     // ===================================== STDIN ================================
@@ -508,7 +452,7 @@ function scripting_set_host(self, win) {
     }
 
     // not required anymore
-    scripting.set_host = undefined
+    script.set_host = undefined
     scripting_set_host = undefined
     window.vm = self
 
@@ -517,7 +461,8 @@ function scripting_set_host(self, win) {
 }
 
 
-const scripting = {
+const script = {
+    "argv" : [],
     "echo" : undefined,
     "raw"  : undefined,
     "stdin" : "",
@@ -528,16 +473,21 @@ const scripting = {
     "set_host" : scripting_set_host,
     "embed" : embed,
     "runscripts": runscripts,
-    "xterm4_helper" : xterm4_helper,
     "init_repl" : init_repl,
     'run_scripts' : true,
     'sti' : true,
     'prefix': '../../',
+    "vt" : undefined,
+    "vt_helper" : undefined,
+    "puts" : undefined,
 }
 
-
+var fsync = undefined
+var fasync = undefined
 var window = undefined
 const posix = aio.posix
 var dom = aio.dom
 
-export { window, dom, scripting, PyRun_SimpleString, pythons, window_prompt, aio, posix, stdio_process }
+var argv = []
+
+export { argv, window, dom, script, PyRun_SimpleString, pythons, window_prompt, aio, posix, stdio_process, fsync, fasync }

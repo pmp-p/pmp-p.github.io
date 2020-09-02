@@ -4,8 +4,11 @@
 
 <head>
 <meta charset="UTF-8">
+<!--
 <link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-base.css" />
 <link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-light-theme.css" />
+-->
+
 <link rel="stylesheet" href="minide/minide.css">
 <title>Wapy.es6</title>
 
@@ -32,10 +35,17 @@ async function main(){
          }
     }
 
-    include("https://code.jquery.com/jquery-3.5.1.slim.min.js")
+    //include("https://code.jquery.com/jquery-3.5.1.slim.min.js")
+    include("jquery-3.5.1.slim.min.js")
     await _until(defined)("jQuery")
 
-    include("https://golden-layout.com/files/latest/js/goldenlayout.min.js")
+
+    include("goldenlayout-base.css")
+    include("goldenlayout-light-theme.css")
+
+    //include("https://golden-layout.com/files/latest/js/goldenlayout.min.js")
+
+    include("goldenlayout.min.js")
     await _until(defined)("GoldenLayout")
 
     var savedState = localStorage.getItem( 'savedState' );
@@ -152,7 +162,7 @@ main()
 </script>
 
 <body>
-<div>Wapy.es6</div>
+<div>Wapy.es6 <a href=minimaldom.webm target=new>[ View video only ]</a><hr></div>
 
 <div id=desktop style="width:100%;height:100%"></div>
 </body>

@@ -1,16 +1,22 @@
 <html>
 Minimal dom
 <ul>
-<li><a href onclick=docload('device/minimal.html')>embedded</a>
-<li><a href onclick=docload('assets/es6/wapy-min.js?-i&-u&-B#test_time.py')>from server</a>
-<li><a  onclick=docload('loader.html')>from remote</a>
+<li><a href onclick=docload('minimal.html')>embedded</a>
+<li><a href onclick=docload('python3.html?-u&-B#https://wyz.fr/8B-vides')>from pastebin</a>
 </ul>
-<a href=minimaldom.webm target=device>[ video only ]</a><hr>
+
+
+Minimal Term
+<ul>
+<li><a href onclick=docload('assets/es6/wapy.min.js?-i&-u&-B#assets/samples/hello.py')>from server</a>
+<li><a href onclick=docload('python3.html?-i&-u&-B#https://wyz.fr/8B-vides')>from pastebin</a>
+</ul>
 
 
 Device Simulator
 <ul>
-<li><a href onclick=docload('device/device.html')>device</a>
+<li><a href onclick=docload('device-min.html?-i#assets/samples/hello.py')>device min</a>
+<li><a href onclick=docload('device-full.html')>device full</a>
 </ul>
 
 
@@ -18,7 +24,7 @@ Device Simulator
 
 Canvas 2D
 <ul>
-<li>
+<li><a href onclick=docload('device-min.html?-i#assets/samples/brythonclock.py')>brythonclock</a>
 </ul>
 
 
@@ -39,10 +45,17 @@ Web
 <li>
 </ul>
 
+<hr>
+
+<ul>
+<li><a href onclick=docload('droid.html?python3.8&-i#assets/samples/brythonclock.py')>Android simulator</a>
+</ul>
+
+<hr>
 
 Learn Python
 <ul>
-<li><a href=https://hackinscience.org/exercises/ target=new>hackinscience</a>
+<li><a href=https://hackinscience.org/ target=new>hackinscience</a>
 <li>w3schools<!-- https://www.w3schools.com/python/python_syntax.asp -->
 <li>tutorialspoint<!-- http://www.tutorialspoint.com/python/index.htm -->
 </ul>
@@ -50,7 +63,7 @@ Learn Python
 Edit Python
 <ul>
 <li><a href=https://thonny.org target=new>Thonny (tiny)</a>
-<li><a href=http://eric-ide.python-projects.org target=new>Eric (fullstack)</a>
+<li><a href=http://eric-ide.python-projects.org target=new>Eric IDE (fullstack)</a>
 </ul>
 
 
@@ -65,17 +78,31 @@ String.prototype.rsplit = function(sep, maxsplit) {
 
 async function docload(doc){
     var url
-    if (doc.endsWith('.py')) {
-        //window.parent.device.open(doc, 'device')
+
+    //window.parent.device.document.body.innerHTML=""
+    //window.parent.device.document.body.innerText=""
+
+
+    if ( doc.search('wapy.min.js')>0 ) {
+        var elems = doc.rsplit('#',1)
+        url = elems.pop()
+
         var fileref = window.parent.device.document.createElement('script')
             fileref.setAttribute("type","module")
             fileref.setAttribute("src", doc)
             fileref.setAttribute('async', true)
             //fileref.setAttribute('defer', true)
+        window.parent.editor(url)
         window.parent.device.document.getElementsByTagName("head")[0].appendChild(fileref)
     } else {
-    	url='assets/'+doc
-        window.parent.editor(url)
+    window.parent.device.document.close()
+    window.parent.device.open('vide.html','device')
+        url=doc
+        if (doc.search('#')>0) {
+            var elems = doc.rsplit('#',1)
+            doc= elems.pop()
+        }
+        window.parent.editor(doc)
         window.parent.device.open(url,'device')
     }
 

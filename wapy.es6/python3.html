@@ -1,0 +1,21 @@
+<div id=stdio tabindex=0></div>
+<script>
+console.log("Url : "+window.location.href)
+
+var elems = window.location.href.split('#',2)
+var argv = elems.shift().split('?',2)[1].split('&')
+var scripturl = elems.shift()
+
+if ( scripturl.search('http') == 0 ) {
+    scripturl = "https://wyz.fr/paste" + scripturl.split('wyz.fr',2)[1]
+    scripturl = "https://cors-anywhere.herokuapp.com/"+scripturl+"/raw"
+}
+
+var scr = document.createElement('script')
+    scr.setAttribute("type","module")
+    scr.setAttribute("src", "assets/es6/wapy.min.js?"+ argv.join('&')+"#" + scripturl)
+    scr.setAttribute('async', true)
+document.getElementsByTagName("head")[0].appendChild(scr)
+</script>
+
+

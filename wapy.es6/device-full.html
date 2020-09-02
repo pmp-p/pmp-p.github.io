@@ -1,0 +1,503 @@
+<script type='text/python'>#<!--
+
+from threading import Thread
+
+class Spam(Thread):
+
+    async def run(self, *args, **kwargs):
+        count = 0
+        while not (await self):
+            count += 1
+            document.body.innerHTML << '( and is still Here %s )<br/>' % count
+
+
+def dom():
+
+    spam = Spam()
+
+    # scheduling time slice in seconds.
+    spam.rt(3)
+
+    document.body.innerHTML = '<pre>Python was Here !</pre>'
+
+    # go !
+    spam.start()
+
+
+
+async def atruc():
+    await aio.sleep(1)
+    print('async-machin')
+
+
+async def main(*argv, **env):
+    print('aio main done')
+
+
+if 0:
+    tic = 3
+
+    while tic:
+        print('tic',tic)
+        tic -= 1
+        time.sleep(1)
+
+    #unset  = object()
+
+    class Fact(object):
+        """A data descriptor that sets and returns values
+           normally and prints a message logging their access.
+        """
+
+        def __init__(self, host, name, default=None):
+            self.name = name
+            self.host = host
+            self.host.setup(self.name, default)
+
+        def __get__(self, obj, objtype):
+            print("get", self.name)
+            return self.host[self.name]
+
+        def __set__(self, obj, val):
+            print("maj", self.name)
+            self.host[self.name] = val
+
+    class FactMgr(object):
+        def __init__(self):
+            print('FactMgr init')
+            self.__d__ = dict()
+
+        def __setitem__(self, key, v):
+            setattr(self.__class__, key, Fact(host=self, name=key, default=v))
+
+        def __getitem__(self, key, default = undef):
+            if default is undef:
+                return self.__d__.get( key)
+            return self.__d__.get( key, default)
+
+        def setup(self, key, v):
+            self.__d__.__setitem__( key, v)
+
+    fm = FactMgr()
+
+    fm["x"] = 10
+    print(fm.x+0)
+
+    fm.x = 333
+    print(fm.x, fm["x"])
+
+    fm.x += 333
+    print(fm.x, fm["x"])
+
+    print('test valid pythons.pycore.pyc_test')
+    embed.corepy('pyc_test')
+    print('\ntest invalid pythons.pycore function')
+    embed.corepy('aïe')
+
+
+import pythons
+
+
+
+
+
+def sys_excepthook(etype, exc, tb, **kw):
+    fn = kw.get('file')
+    ln = kw.get('line')
+    es = str(exc)
+    if etype is SyntaxError:
+        if es == "'await' outside function":
+            print(">>> AsyncTopLevel - hook : %s" % exc )
+        else:
+            print(">>> SyntaxError - hook : %s" % exc )
+            print('user:%s:%s'%(fn,ln))
+        return
+
+    format_list = kw.get('format_list',[])
+    return pythons.__excepthook__(etype, exc, tb, **kw)
+
+
+pythons.excepthook = sys_excepthook
+
+
+#--></script>
+
+
+
+<html>
+<title>🐍 wapy.js 🐍</title>
+
+<!-- <base href="../.."> -->
+
+<head>
+
+<meta charset="UTF-8">
+
+
+
+<style>
+html, body {
+  width: 100%;
+  height:100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+    background-color: #646464;
+    transform:scale(1);
+    margin: 0 auto;
+    width: 1024px;
+    height: 600px;
+    transform-origin:top center;
+    z-index: 0;
+}
+
+
+#stdio {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    top: 30px;
+    z-index: 0;
+}
+
+#web {
+    width: 600px;
+    //height: 100%;
+height: 600px;
+    top: 35px;
+    right : 10px;
+    border: 2px blue solid;
+    position: absolute;
+    z-index: 1;
+}
+
+#canvas {
+    border: 2px red solid;
+    width:320px;
+    height:240px;
+    top: 40px;
+    right : 15px;
+    position: absolute;
+    z-index: 2;
+}
+
+.xterm-viewport { overflow: hidden !important; height: 100%; }
+
+button {
+    position: relative;
+    bottom: 0px;
+    top: -4px;
+}
+img {
+    position: relative;
+    bottom: 0px;
+    top: 2px;
+
+}
+</style>
+
+
+</head>
+
+
+<body>
+<!-- icon logo bar -->
+<div align=left style="background-color: #AAAAAA; position: relative;bottom: 0px;top: 0px">
+
+    <button id=feed onclick=vm.script.runscripts()>???</button>
+    <button onclick=visibility("web")>Browser on/off</button>
+    <button onclick=visibility("canvas")>Canvas on/off</button>
+
+    <a href="https://github.com/pmp-p/wapy/tree/wapy-wipdonotuse">
+    <img height=20 src="assets/logos/wa-80x80.png">
+    <img height=20 src="assets/logos/wapy-266x80.png">
+    </a>
+    <img height=20 src="assets/logos/650px-Python3-powered_hello-world.svg.png">
+    <a href="https://github.com/pmp-p/panda3d/tree/mobile-sandbox">
+    <img height=20 src="assets/logos/panda3d-374x80.png">
+    </a>
+    <img height=20 src="assets/logos/sdl2-136x80.png">
+
+    <a href="https://paypal.me/pmpp">
+        <img height=20 src="assets/logos/beer.png">
+    </a>
+
+    <img height=20 src="assets/logos/iso1664.png">
+    <a href="https://kiwi.freenode.net/#micropython-fr?nick=wapy-ide">
+        <img height=20 src="assets/logos/irc.png">
+    </a>
+
+ - Python 3.x wasm : running <u><b>inside</b></u> your browser
+</div>
+
+
+    <div id="stdio" tabindex=0></div>
+
+    <iframe id="web" name="web" src="" scrolling="yes" title="web">
+    </iframe>
+
+
+    <canvas id="canvas"><p>Your browser doesn't support canvas.</p></canvas>
+
+    <!-- log stream -->
+    <pre id="log" style="position:absolute;left:4;bottom:-40px">...</pre>
+
+
+</body>
+</html>
+
+
+<!-- <script src="assets/aio.lib.js"></script> -->
+
+
+<script>
+
+
+//Module.canvas = canvas;
+//include("jquery.js")
+
+
+//include("https://code.jquery.com/jquery-2.2.4.min.js")
+
+// some kind of zoom handler - YMMV - uncomment above jquery include to activate
+function handle_zoom(whenready,arg){
+    jQuery(document).ready(function($){
+
+        nsZoomZoom();
+
+        $( window ).resize(function() {
+            nsZoomZoom();
+        })
+
+
+        function nsZoomZoom() {
+            htmlWidth = $('html').innerWidth()
+            bodyWidth = 1280
+
+            if (htmlWidth < bodyWidth)
+               scale = 1
+            else {
+               scale = htmlWidth / bodyWidth
+            }
+
+            $("body").css('transform', 'scale(' + scale + ')')
+        }
+
+
+        whenready(arg)
+    })
+}
+
+
+
+
+
+
+
+function visibility(target) {
+  var x = document.getElementById(target);
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  } else {
+    x.style.display = "none";
+  }
+}
+
+
+
+async function get_file(name)
+{
+
+    let response = await fetch(name);
+    //let data = await response.arrayBuffer()
+    //  return data;
+    return response;
+}
+
+var hast_host = false
+
+
+function PyInit(term){
+
+    function ESC(data) {
+        return String.fromCharCode(27)+data
+    }
+
+    /* Setup "readline" */
+    // window_prompt is the pythons.js function that will flush
+    // pseudo-readline buffer toward Python wasm vm via emscripten stdio polyfill
+    // window.prompt = vm.window_prompt
+
+    /* Write text to the terminal */
+    vm.script.puts = function(text){ term.write(text) }
+
+    const keymapping = {
+        'ArrowUp' : ESC("[A"),
+        'ArrowDown' : ESC("[B"),
+        'ArrowRight' : ESC("[C"),
+        'ArrowLeft' : ESC("[D"),
+        'Home' : ESC("[H"),
+        'End' : ESC("[F"),
+        'Delete' : ESC("[C" + String.fromCharCode(127)),
+    }
+
+    /* Setup copy/paste handler ( only for text of len > 4 to prevent most conflicts with VT/ANSI keyboard entries ) */
+    term.onData((data) => {
+        const text = unescape(encodeURIComponent(data.toString()))
+        if (text.length > 4 ) {
+            console.log("TERM Copy/Paste: "+ text.length)
+            window.stdin += text
+            window.meaningchars += text.length
+        }
+    })
+
+
+    /*Setup key input handler, this is mostly for event driven repl ( ie: not cpython ) */
+
+    term.onKey(e => {
+        const printable = !e.domEvent.altKey && !e.domEvent.altGraphKey && !e.domEvent.ctrlKey && !e.domEvent.metaKey;
+        const kc = e.domEvent.keyCode
+
+        // that helper handle ctrl+L for clearing screen while keeping cursor pos in the line
+        if ( !vm.script.vt_helper(term,e, kc) )
+            return;
+
+        var key = e.domEvent.key
+
+        if (key.length>1) {
+            if ( key in keymapping ) {
+                window.meaningchars++
+                window.stdin += keymapping[key]
+                return
+            } else {
+                key = String.fromCharCode(kc)
+            }
+            console.log('key '+ e.domEvent.key +" => [" + key + ']  was ['  + kc + ']' )
+        }
+
+        //window.de = e.domEvent
+
+        if (kc <=27) {
+            console.log("KBD : "+kc+ " len= "+key.length+" mc="+  window.meaningchars)
+            if (kc==13) {
+                if ( window.meaningchars ==0 ) {
+                    term.write("\r\n❯❯❯ ")
+                    return
+                }
+                window.meaningchars = 0
+            }
+
+        }
+
+        const utf = unescape(encodeURIComponent(key))
+
+        if (utf.substr(0,1) != key.substr(0,1) ) {
+            console.log("utf-8:" + utf )
+            window.stdin += utf
+        } else {
+            window.stdin += key
+        }
+
+        if (kc!=13)
+            window.meaningchars++
+
+    })
+
+    // clear screen.
+    term.write(ESC("[2J"))
+
+    /* Initialize Python itself */
+    /* Initialize the REPL. */
+
+    //vm.script.embed( { 'prefix' : "./", 'runscripts' : true, 'sti' : true } )
+
+    // go to last line in case a script has ran.
+    term.scrollToBottom()
+
+}
+
+
+
+async function PYTHONSTARTUP() {
+    console.log("PYTHONSTARTUP")
+
+
+    // the bundling/building of that thing is obfuscated
+    include("https://unpkg.com/xterm@4.7.0/css/xterm.css")
+    include("https://unpkg.com/xterm@4.7.0/lib/xterm.js")
+
+
+    // wait for xterm4.js to be ready
+
+    await _until(defined)("Terminal")
+
+
+    // cors handling thanks to https://github.com/Rob--W/cors-anywhere https://robwu.nl/cors-anywhere.html
+    if (!vm.aio.posix.cors){
+        vm.aio.posix.cors_broker = "https://cors-anywhere.herokuapp.com/"
+        console.log("Using default brooker vm.posix.cors = "+ vm.posix.cors)
+    }
+
+    // example filter for getting online data
+    vm.aio.posix.cors = function (url){
+        if (url.includes('/wyz.fr/'))
+            return vm.aio.posix.cors_broker + url
+        return url
+    }
+
+
+    // follow the running code in editor function
+
+    function trace(ln) {
+        if (hast_host)
+            window.parent.ide.setCursor(0+ln,0)
+    }
+
+
+    vm.script.trace = trace
+
+
+    vm.script.vt = new Terminal( {
+        cols: 100,
+        rows: 30,
+        screenKeys: true,
+        cursorBlink: true
+    });
+
+    vm.script.vt.open(document.getElementById('stdio'));
+    vm.script.vt.write('Loading ...')
+
+
+    include("device.js")
+
+
+    if (window.jQuery) {
+       handle_zoom(PyInit, vm.script.vt)
+    } else {
+       handle_zoom = undefined
+       PyInit(vm.script.vt)
+    }
+
+    // is there a parent frame available ?
+    if (window.parent.vm != vm) {
+        window.parent.vm = vm
+        // or innerHTML
+        feed.innerText = "❯❯❯"
+        hast_host = true
+    } else {
+        window.runscripts = function runscripts(){
+            clog('runscripts: not connected to an editor, restarting embedded script')
+            vm.script.vt.reset()
+            setTimeout(vm.runscripts, 1000)
+        }
+    }
+}
+
+</script>
+<script src=assets/es6/wapy.min.js type=module></script>
+
+
+
+

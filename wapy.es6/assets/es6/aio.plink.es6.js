@@ -13,14 +13,19 @@
 import * as simplepeer from "../simplepeer.min.js";
 
 
+
+
 try {
-    clog("logger test : ")
+    console.log("aio: logger test : ")
     clog("ok")
 } catch (x) {
     window.clog = console.log
     window.log = console.log
+
     clog("ERROR: " + x)
 }
+
+
 
 
 if (typeof SharedArrayBuffer !== 'function' || typeof Atomics !== 'object') {
@@ -92,6 +97,15 @@ function isCallable(value) {
 }
 
 
+function unhex_utf8(s) {
+    var ary = []
+    for ( var i=0; i<s.length; i+=2 ) {
+        ary.push( parseInt(s.substr(i,2),16) )
+    }
+    return new TextDecoder().decode( new Uint8Array(ary) )
+}
+
+
 
 // ================= aio (down/up) link =================================================
 
@@ -117,7 +131,7 @@ var err = {}
 var plink = {
     "ref" : [],
     "MAXSIZE" : 0,
-    "dbg" : 1,
+    "dbg" : 0,
     "id" : 2,
 }
 
@@ -207,7 +221,7 @@ function io_dispatch(payload) {
         return io_sync( unhex_utf8( payload.substr(4) ) )
 
     if (payload.startsWith("//A:"))
-        console.log("io_async N/I" + unhex_utf8( payload.substr(4) ) )
+        clog("io_async N/I" + unhex_utf8( payload.substr(4) ) )
         //return io_async( unhex_utf8( payload.substr(4) ) )
 }
 
@@ -258,7 +272,7 @@ function embed_call(jsdata) {
 
 //DBG
 if (plink.dbg)
-            console.log("embed_not_a_call(id=" + callid + ", query="+name+") value == " + target)
+            clog("embed_not_a_call(id=" + callid + ", query="+name+") value == " + target)
 
             plink.state[""+callid ] = ""+target;
             return;
@@ -270,31 +284,16 @@ if (plink.dbg)
 
 //DBG
 if (plink.dbg)
-        console.log('embed_call:'+ ( target.name || ""+target) +' callid '+callid+' launched with',params,' on object ' + (owner.name || ""+owner) )
+        clog('embed_call:'+ ( target.name || ""+target) +' callid '+callid+' launched with',params,' on object ' + (owner.name || ""+owner) )
 
         //setTimeout( embed_call_impl ,1, callid, target, owner, params );
         embed_call_impl( callid, target, owner, params )
 
     } catch (x) {
-        console.log('malformed RPC '+jsdata+" : "+x +" for path : "+ name)
+        clog('malformed RPC '+jsdata+" : "+x +" for path : "+ name)
     }
 }
 
-
-function log(msg) {
-    const out = document.getElementById('log')
-    if (out){
-        var lines = out.textContent.split("\n")
-        while (lines.length > 4 )
-            lines.shift()
-        out.textContent = lines.join("\n") + msg + '\n';
-    }
-}
-
-function clog(msg) {
-    console.log(msg)
-    log(msg)
-}
 
 
 function recvmmsg() {
@@ -472,7 +471,7 @@ function demux_fd(text) {
             try {
                 posix.syslog(text)
             } catch (y) {
-                term_impl(text+"\r\n")
+                vm.script.puts(text+"\r\n")
             }*/
         }
     }
@@ -539,4 +538,4 @@ var dom = {
 
 
 //
-export { dom, solve_path, name, plink, posix, ctl, socket, pts_decode, err, isCallable }
+export {  dom, solve_path, name, plink, posix, ctl, socket, pts_decode, err, isCallable }

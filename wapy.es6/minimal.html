@@ -1,0 +1,72 @@
+<script type='text/python'>#<!--
+import pythons.js.demo as demo
+demo.delay = 3
+
+#=======================================
+demo.interlude("say hello world")
+#=======================================
+
+print("Hello World (using stdio)")
+
+
+
+
+#=======================================
+demo.interlude("clearing page")
+#=======================================
+
+
+def clrscr():
+    document.body.innerHTML=""
+    document.body.innerText=""
+    document.close()
+    document.open()
+
+clrscr()
+
+print('page cleared')
+
+
+
+
+#=======================================
+demo.interlude("writing html to DOM")
+#=======================================
+
+def html_out(text):
+    if text is not None:
+        document.body.innerHTML << ('<button id=button>redirected-text-in-a-button: {}</button>'.format(text))
+
+html_out("hello world via async redirect")
+
+
+#=======================================
+demo.interlude("interact with DOM")
+#=======================================
+
+window.button.innerText = "! changed text !"
+
+
+
+
+#=======================================
+demo.interlude("c++ style output")
+#=======================================
+
+cout = document.body.innerText
+
+cout << "pure text ui only ( discard all existing and further html in page !)\n"
+
+
+print('bye')
+print()
+
+
+
+# --></script>
+
+<script src=assets/es6/wapy.min.js type=module></script>
+
+
+
+
