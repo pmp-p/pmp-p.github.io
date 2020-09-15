@@ -2,29 +2,21 @@
 Minimal dom
 <ul>
 <li><a href onclick=docload('minimal.html')>embedded</a>
-<li><a href onclick=docload('python3.html?-u&-B#https://wyz.fr/8B-vides')>from pastebin</a>
+<li><a href onclick=docload('python3.html?wapy&-u&-B#https://wyz.fr/8B-vides')>from pastebin</a>
 </ul>
 
 
 Minimal Term
 <ul>
-<li><a href onclick=docload('assets/es6/wapy.min.js?-i&-u&-B#assets/samples/hello.py')>from server</a>
-<li><a href onclick=docload('python3.html?-i&-u&-B#https://wyz.fr/8B-vides')>from pastebin</a>
+<li><a href onclick=docload('assets/es6/pythons.min.js?wapy&-i&-u&-B#assets/samples/hello.py')>from server</a>
+<li><a href onclick=docload('python3.html?wapy&-i&-u&-B#https://wyz.fr/8B-vides')>from pastebin</a>
 </ul>
-
-
-Device Simulator
-<ul>
-<li><a href onclick=docload('device-min.html?-i#assets/samples/hello.py')>device min</a>
-<li><a href onclick=docload('device-full.html')>device full</a>
-</ul>
-
 
 <hr>
 
 Canvas 2D
 <ul>
-<li><a href onclick=docload('device-min.html?-i#assets/samples/brythonclock.py')>brythonclock</a>
+<li><a href onclick=docload('device-min.html?wapy&-i#assets/samples/brythonclock.py')>brythonclock</a>
 </ul>
 
 
@@ -46,9 +38,13 @@ Web
 </ul>
 
 <hr>
-
+Device Components
 <ul>
-<li><a href onclick=docload('droid.html?python3.8&-i#assets/samples/brythonclock.py')>Android simulator</a>
+<li><a href onclick=docload('device-min.html?wapy&-i#assets/samples/hello.py')>device (simpleterm)</a>
+<li><a href onclick=docload('device-full.html')>device (xterm)</a>
+</ul>
+<ul>
+<li><a href onclick=docload('simulator.html?python3.8&-i&-u&-B&-m&org.beerware.pyweb.apk#')>Simulator</a>
 </ul>
 
 <hr>
@@ -83,7 +79,7 @@ async function docload(doc){
     //window.parent.device.document.body.innerText=""
 
 
-    if ( doc.search('wapy.min.js')>0 ) {
+    if ( doc.search('pythons.min.js')>0 ) {
         var elems = doc.rsplit('#',1)
         url = elems.pop()
 
@@ -95,13 +91,16 @@ async function docload(doc){
         window.parent.editor(url)
         window.parent.device.document.getElementsByTagName("head")[0].appendChild(fileref)
     } else {
-    window.parent.device.document.close()
-    window.parent.device.open('vide.html','device')
+
+        window.parent.device.document.close()
+        window.parent.device.open('vide.html','device')
+
         url=doc
         if (doc.search('#')>0) {
             var elems = doc.rsplit('#',1)
             doc= elems.pop()
         }
+// TODO reset frame and load with timer
         window.parent.editor(doc)
         window.parent.device.open(url,'device')
     }

@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 var meaningchars = 0
 
@@ -22,6 +22,8 @@ function Term(outputSelector, width, height, hand) {
     this.buffer = ""
     // See: http://www.mediaevent.de/javascript/Extras-Javascript-Keycodes.html
     this.complete = false
+
+    this.is_termjs = 1
 
     this.table = {
         8: "\x7f",
@@ -127,58 +129,67 @@ Term.prototype.show_cursor = function () {
 }
 
 
-function handle_esc(string) {
+//function handle_esc(string) {
+Term.prototype.esc_done = function (j) {
+    this.complete = true
+    return j
+}
+Term.prototype.handle_esc = function (i, string) {
     // A Escape sequence. Trying to parse it, in case it is not complete abort and safe the bytes in buffer
     // See http://www-user.tu-chemnitz.de/~heha/hs_freeware/terminal/terminal.htm
     // http://www.termsys.demon.co.uk/vtansi.htm
     // TODO. A not supported Esc sequence blocks all output. Fixit.
     this.complete = false
-    var complete=false
     var j=1
 
     if(string[i+1]=='['){
+        if(string[i+2] == 'C'){
+            this.x++;
+            this.refresh(this.y, this.y)
+            return this.esc_done(2)
+        }
          if(string[i+2] == 'm'){
             this.cur_att = 7 << 3
-            complete=true
-            j=2
+            return this.esc_done(2)
          }
 
          if(string[i+2] == '0' && string[i+3] == 'm'){
             this.cur_att = 7 << 3
-            complete=true
-            j=3
+            return this.esc_done(3)
          }
 
          if(string.slice(i+1).match(/^\[[0-9;]*m/)){
             var m=/^\[[0-9;]*m/.exec(string.slice(i+1))
-            j=m[0].length
-            complete=true
+            //j=m[0].length
+            //this.complete=true
             var numbers=m[0].match(/[0-9]*/g)
             for(var n=0;n<numbers.length;n++){
                 var num=parseInt(numbers[n])
                 if(isNaN(num))
                     continue
+
                 if(num>29 && num <38){
                     // Foreground
                     this.cur_att &= 7
                     this.cur_att |= (num-30) << 3
-                    complete = true
+                    this.complete = true
                 }
+
                 if(num>39 && num<48){
                     // Background
                     this.cur_att &= 7 << 3
                     this.cur_att |= num-40
-                    complete = true
+                    this.complete = true
                 }
             }
+            return this.esc_done(m[0].length)
          }
 
          if(string.slice(i+1).match(/^\[[0-9]+,[0-9]+[Hf]/)){    // goto xy
             var pos= /^\[([0-9]+),([0-9]+)[Hf]/.exec(string.slice(i+1))
             this.x = parseInt(pos[1])
             this.y = parseInt(pos[2])
-            complete=true
-            j=1+pos[0].length
+            return this.esc_done(1+pos[0].length)
          }
 
         if(string.slice(i+1).match(/^\[2J/)){     // clear screen
@@ -187,31 +198,29 @@ function handle_esc(string) {
             this.y_base=0
             this.x=this.y=0
             this.refresh(0,this.h-1)
-            j=3
-            complete=true
+            return this.esc_done(3)
          }
+
          if(string.slice(i+1).match(/^\[0?J/)){     // clear screen from cursor down
             for (x = this.x  ; x < this.w  ; x++)
                 this.lines[(this.y + this.y_base)%this.h][x] = 32 | this.def_attr << 16
+
             for (y = this.y+1; y < this.h+1; y++)
                 this.lines[(y + this.y_base)%this.h] = this.newline.slice()
+
             this.refresh(0,this.h-1)
-            j=(/^\[0?J/.exec(string.slice(i+1))).length+1
-            complete=true
+            return this.esc_done( (/^\[0?J/.exec(string.slice(i+1))).length+1 )
          }
 
          if(string.slice(i+1).match(/^\[6n/)){
-            j=3
-            complete=true
             console.log("???:" + string.fromCharCode(33)+"["+this.x+";"+this.y+"R" )
-            //this.handler(string.fromCharCode(33)+"["+this.x+";"+this.y+"R")
+            return this.esc_done(3)
          }
     } else if( typeof(string[i+1]) == "string"){
         // There is a charater after esc, but it's not '[', simply ignor the esc.
         this.buffer=string.slice(i+1)
-        complete=true
+        this.complete=true
     }
-    this.complete = complete
     return j
 }
 
@@ -246,7 +255,7 @@ Term.prototype.write = function (string) {
                 break
 
             case 27:   // ^[
-                const j = handle_esc(string)
+                const j = this.handle_esc(i, string)
 
                 if(!this.complete){
                     //this.buffer = string.slice(i)
@@ -354,7 +363,7 @@ function helper(term, e, kc) {
     var x,y
 
     // xterm4
-    if (!term.y) {
+    if (!term.is_termjs) {
         x = 0+term.buffer.active.cursorX
         y = 0+term.buffer.active.cursorY
 
@@ -448,10 +457,11 @@ function handlevt(e, vtchar) {
     if (kc <=27) {
         console.log("KBD : "+kc+ " len= "+key.length+" mc="+  meaningchars)
         if (kc==13) {
-            if ( meaningchars ==0 ) {
+            if ( meaningchars == 0 ) {
                 vm.script.vt.write("\r\n❯❯❯ ")
                 return
             }
+            window.stdin_flush = true
             meaningchars = 0
         }
 
@@ -470,7 +480,10 @@ function handlevt(e, vtchar) {
         meaningchars++
 
     //local echo
-        //term.write(key)
+    if (vm.script.stdin_echo) {
+        term.write(key)
+        if (kc == 13) term.write("\n")
+    }
 }
 
 

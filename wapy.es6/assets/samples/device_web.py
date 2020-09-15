@@ -1,7 +1,7 @@
 
-from threading import Thread
+#from threading import Thread
 
-class Spam(Thread):
+class Spam(aio.Thread):
 
     async def run(self, *args, **kwargs):
         count = 0

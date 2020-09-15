@@ -36,7 +36,8 @@
 
 async function get_file(name)
 {
-
+    if (name.includes('/wyz.fr/'))
+        name = "https://cors-anywhere.herokuapp.com/" + name
     let response = await fetch(name);
     //let data = await response.arrayBuffer()
     //  return data;

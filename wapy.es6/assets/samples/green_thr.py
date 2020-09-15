@@ -15,7 +15,7 @@ def __main__(*argv, **env):
     print('aio __main__ done')
 
 
-class Bot(Thread):
+class Bot(aio.Thread):
 
     async def run(self, *args, **kwargs):
         global sock

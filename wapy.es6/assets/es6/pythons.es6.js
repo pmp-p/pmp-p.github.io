@@ -115,6 +115,7 @@ function init_repl(){
     if (config.sti) {
         console.log("allow int for bytecode loop preemption")
         //start repl
+
         PyRun_SimpleString(`
 import embed
 import pythons
@@ -134,14 +135,16 @@ def STI(verbose=0):
 
 def CLI(verbose=0):
     VMIF(False,verbose)
-STI(1)`)
 
+STI(1)
+`)
+
+    } else {
+        console.log("no support for bytecode loop preemption")
     }
 
     init_repl = undefined
     script.repl_init = undefined
-
-
 
 }
 
@@ -266,64 +269,54 @@ function window_prompt(){
 
 
 function stdin_poll(){
+    // buffer empty ?
+    if (!window.stdin.length)
+        return
+
+    //var utf8 = ""
 
     if (window.cpython) {
-        // is last batch out ?
-//        if (window.stdin.length)
-  //          return
 
         // did we get a newline ?
         if (!window.stdin_flush)
-            return
-
-        if (!window.stdin_buf.length)
             return
 
         if ( getValue( aio.plink.io_port_kbd, 'i8') ) {
             console.log("kbd port locked, retrying later")
             return
         }
-        var utf8 = unescape(encodeURIComponent(window.stdin_buf));
-        // keep the stdin buffer for prompt().
-        window.stdin = utf8
-        window.stdin_buf = ""
+
+        // reset "readline".
         window.stdin_flush = false;
 
-        console.log("ready to send kbdport@" + aio.plink.io_port_kbd + "["+utf8+"]")
+        //utf8 = unescape(encodeURIComponent(window.stdin))
 
     } else {
-        if (!window.stdin_raw)
-            return
-
-        if (!window.stdin.length)
-            return
 
         if (getValue(aio.plink.io_port_kbd, 'i8')) {
             console.log("kbd port @" +  aio.plink.io_port_kbd + " locked, retrying later")
             return
         }
-
-        var utf8 = unescape(encodeURIComponent(window.stdin));
-
-        // event driven repl can consume via kbd port.
-        window.stdin = ""
+        //utf8 = unescape(encodeURIComponent(window.stdin))
     }
+
+    const utf8 = unescape(encodeURIComponent(window.stdin)) // + "\r\n"
+
+    // event driven repl can consume via kbd port.
+    window.stdin = ""
+
+    //console.log("ready to send kbdport@" + aio.plink.io_port_kbd + "["+utf8+"]")
 
     /// flush whole buffer to shared memory as a null terminated str
     stringToUTF8( utf8, aio.plink.io_port_kbd, aio.plink.MP_IO_SIZE)
 
-    console.log('FLUSHED')
+    //console.log('FLUSHED')
 }
-
-
 
 
 
 // =================================== STDOUT ==================================
 
-// TODO: add a dupterm for stderr, and display error in color in xterm if not in stdin_raw mode
-
-function flush_stdio(){}
 
 function stdio_process(fd, cc) {
     // TODO: multiple vt fds for pty.js
@@ -331,6 +324,9 @@ function stdio_process(fd, cc) {
         script.puts(cc)
 }
 
+// TODO: add a dupterm for stderr, and display error in color in xterm if not in stdin_raw mode
+
+function flush_stdio(){}
 
 // ========================== startup hooks ======================================
 
@@ -341,16 +337,14 @@ function setStatus(args) {
 
 function preMainLoop(args) {
     //console.log("preMainLoop(js)"+JSON.stringify(aio.plink.state))
+    if (aio.plink.MAXSIZE) {
+        //pending io ?
+        flush_stdio();
+        stdin_poll()
 
-    //pending io ?
-    flush_stdio();
-
-    stdin_poll()
-
-    //pending io/rpc ?
-    if (aio.plink.MAXSIZE)
+        //pending io/rpc ?
         aio.plink.io()
-
+    }
     return true
 }
 
@@ -401,21 +395,7 @@ function scripting_set_host(self, win, api_fsync, api_fasync) {
     window.clog = clog
     window.script_type_python = "text/python"
 
-    if ( window.cpython ) {
-        script.interpreter = "python"
-        window.stdin_echo = true
-        window.stdin_raw = false;
-        window.stdin_flush = false;
-    } else {
-        script.interpreter = "wapy"
-        window.stdin_raw = true
-        window.stdin_echo = false
-    }
-
-
     script.host = window.parent && window.parent.ide
-
-
 
     if (api_fsync){
         fsync = api_fsync
@@ -463,9 +443,9 @@ function scripting_set_host(self, win, api_fsync, api_fasync) {
 
 const script = {
     "argv" : [],
-    "echo" : undefined,
-    "raw"  : undefined,
     "stdin" : "",
+    "stdin_raw"  : true,
+    "stdin_echo" : false,
     "fs_get" : undefined,
     "main" : undefined,
     "interpreter" : "?",

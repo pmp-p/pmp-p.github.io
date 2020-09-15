@@ -1,0 +1,173 @@
+<html>
+<title>🐍 Simulator 🐍</title>
+
+<head>
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="meta.description">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+
+<link rel="stylesheet" href="device.css">
+
+
+</head>
+
+<body>
+    <div id="stdio" tabindex=0></div>
+
+    <canvas id="canvas"><p>Your browser doesn't support canvas.</p></canvas>
+
+
+    <iframe id="web" name="web" src="" scrolling="yes" title="web">
+    </iframe>
+
+
+    <!-- log stream -->
+    <pre id="log" style="position:absolute;left:4;bottom:-40px">...</pre>
+
+
+</body>
+</html>
+
+
+
+<script>
+
+
+//Module.canvas = canvas;
+//include("jquery.js")
+//include("https://code.jquery.com/jquery-2.2.4.min.js")
+
+// some kind of zoom handler - YMMV - uncomment above jquery include to activate
+function handle_zoom(whenready,arg){
+    jQuery(document).ready(function($){
+
+        nsZoomZoom();
+
+        $( window ).resize(function() {
+            nsZoomZoom();
+        })
+
+
+        function nsZoomZoom() {
+            htmlWidth = $('html').innerWidth()
+            bodyWidth = 1280
+
+            if (htmlWidth < bodyWidth)
+               scale = 1
+            else {
+               scale = htmlWidth / bodyWidth
+            }
+
+            $("body").css('transform', 'scale(' + scale + ')')
+        }
+
+        if (whenready)
+            whenready(arg)
+    })
+}
+
+
+function visibility(target) {
+  var x = document.getElementById(target);
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  } else {
+    x.style.display = "none";
+  }
+}
+
+
+var hast_host = false
+
+async function PYTHONSTARTUP() {
+    console.log("PYTHONSTARTUP")
+
+
+    // cors handling thanks to https://github.com/Rob--W/cors-anywhere https://robwu.nl/cors-anywhere.html
+    if (!vm.aio.posix.cors){
+        vm.aio.posix.cors_broker = "https://cors-anywhere.herokuapp.com/"
+        console.log("Using default brooker vm.posix.cors = "+ vm.posix.cors)
+    }
+
+    // example filter for getting online data
+    vm.aio.posix.cors = function (url){
+        if (url.includes('/wyz.fr/'))
+            return vm.aio.posix.cors_broker + url
+        return url
+    }
+
+
+    // follow the running code in editor function
+
+    function trace(ln) {
+        if (hast_host)
+            window.parent.ide.setCursor(0+ln,0)
+    }
+
+
+    vm.script.trace = trace
+
+    //canvas.width = canvas.height * (canvas.clientWidth / canvas.clientHeight)
+
+/*
+    var canvas = document.getElementById('canvas');
+    var context = canvas.getContext('2d');
+        // no we get with of content and asign the same hight as the with. this gives up aspect ration 1:1.
+        context.canvas.width = window.innerWidth;
+        context.canvas.height = window.innerWidth;
+*/
+/*
+    if (window.jQuery) {
+       handle_zoom()
+    } else {
+       handle_zoom = undefined
+    }
+*/
+     handle_zoom = undefined
+
+
+
+    // is there a parent frame available ?
+    if (window.parent.vm != vm) {
+        window.parent.vm = vm
+        // or innerHTML
+        feed.innerText = "❯❯❯"
+        hast_host = true
+    } else {
+        window.runscripts = function runscripts(){
+            clog('runscripts: not connected to an editor, restarting embedded script')
+            vm.script.vt.reset()
+            setTimeout(vm.script.runscripts, 1000)
+        }
+    }
+}
+
+console.log("Url : "+window.location.href)
+
+var elems = window.location.href.split('#',2)
+var argv = elems.shift().split('?',2)[1].split('&')
+var scripturl = elems.shift()
+
+if ( scripturl.search('http') == 0 ) {
+    scripturl = "https://wyz.fr/paste" + scripturl.split('wyz.fr',2)[1]
+    scripturl = "https://cors-anywhere.herokuapp.com/"+scripturl+"/raw"
+}
+
+console.log('File : '+ scripturl)
+console.log('argv : '+ argv)
+
+var scr = document.createElement('script')
+    scr.setAttribute("type","module")
+    scr.setAttribute("src", "assets/es6/pythons.min.js?"+ argv.join('&')+"#" + scripturl)
+    scr.setAttribute('async', true)
+document.getElementsByTagName("head")[0].appendChild(scr)
+
+</script>
+
+
+
+
+
+
