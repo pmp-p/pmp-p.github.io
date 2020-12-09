@@ -791,7 +791,7 @@ print(sys.version)
         canvas.contentEditable = true;
         canvas.setAttribute("tabindex", "0");
         // Focus the canvas when the mouse enters it.
-        canvas.addEventListener('mouseenter',function() {canvas.focus();},false);
+        canvas.addEventListener('mouseenter',function() { console.log('mouseenter');canvas.focus();},false);
         return canvas;
       })(),
 
