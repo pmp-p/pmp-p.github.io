@@ -17,6 +17,8 @@
 
       //var stopFunc =  Module.cwrap('stopPythonCode', 'number');
       //stopFunc();
+        document.getElementById('play-button').disabled = true;
+        document.getElementById('stop-button').disabled = false;
 
       document.getElementById("console").innerHTML = '';
 
@@ -27,9 +29,9 @@
     }
     function stopCode() {
       //var stopFunc =  Module.cwrap('stopPythonCode', 'number');
-      //stopFunc();
-      document.getElementById('stop-button').disabled = true;
-
+        //stopFunc();
+        document.getElementById('stop-button').disabled = true;
+        document.getElementById('play-button').disabled = false;
         // for now the safest
         window.document.location.reload()
     }
