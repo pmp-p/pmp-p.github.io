@@ -29,6 +29,9 @@
       //var stopFunc =  Module.cwrap('stopPythonCode', 'number');
       //stopFunc();
       document.getElementById('stop-button').disabled = true;
+
+        // for now the safest
+        window.document.location.reload()
     }
 
     const sample1=`from math import pi, sin, cos
