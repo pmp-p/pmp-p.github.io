@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wasm-python terminal</title>
+
+    <!-- <link rel="stylesheet" href="https://unpkg.com/xterm@4.16.0/css/xterm.css" crossorigin/> -->
+    <link rel="stylesheet" href="./styles.css"/>
+
+    <link rel="stylesheet" href="./xtermjsixel/xterm.css" />
+    <link rel="stylesheet" href="./xtermjsixel/style.css"/>
+    <style>
+      #status {
+        display: inline-block;
+        vertical-align: top;
+        margin-top: 30px;
+        margin-left: 20px;
+        font-weight: bold;
+        color: rgb(120, 120, 120);
+      }
+
+      #progress {
+        height: 20px;
+        width: 300px;
+      }
+
+      div.emscripten { text-align: center; }
+      div.emscripten_border { border: 1px solid black; }
+      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+      canvas.emscripten { border: 0px none; background-color: blue; }
+      body {
+        font-family: arial;
+        margin: 0;
+        padding: none;
+      }
+    </style>
+
+    <!-- <script src="https://unpkg.com/xterm@4.16.0/lib/xterm.js" crossorigin></script> -->
+    <script src="./xtermjsixel/xterm.js" defer ></script>
+    <script src="./xtermjsixel/xterm-addon-image.js" defer></script>
+
+    <script type="module" src="index.js" defer></script>
+
+</head>
+
+<body>
+
+    <div class="spinner" id='spinner'></div>
+    <div class="emscripten" id="status">Downloading...</div>
+    <div class="emscripten">
+      <progress value="0" max="100" id="progress" hidden=1></progress>
+    </div>
+
+    <div class="emscripten_border">
+        <div id="terminal" tabIndex=1><p></div>
+        <div class="button-container">
+          VT340
+          <button id="repl" disabled>Start REPL</button>
+          <button id="clear" disabled>Clear</button>
+        </div>
+    </div>
+
+    <div class="emscripten_border" align=center >
+        <canvas class="emscripten" id="canvas" width="640" height="480" oncontextmenu="event.preventDefault()" tabindex=0></canvas>
+        <div class="button-container">
+            SDL2
+            <button id="clear" disabled>Clear</button>
+        </div>
+    </div>
+
+    <script>
+
+// true when mouse is NOT over canvas
+window.KEditing = true;
+
+function undef(e,o){
+    if (o===null)
+        o = window;
+    try {
+        e = o[e];
+    } catch (x) { return true }
+    if (typeof e === 'undefined' || e === null)
+        return true;
+    return false;
+}
+
+
+function setdefault(n,v,o){
+    if (o == null)
+        o = window;
+    if (undef(n,o)){
+        o[n]=v;
+        console.log('  |-- ['+n+'] set to ['+ o[n]+']' );
+        return true;
+    }
+    return false;
+}
+
+setdefault('GRAB_MOUSE',false);
+
+console.log('Begin: canvas.pointerlock');
+function canvas_grab_mouse(){
+    GRAB_MOUSE = !GRAB_MOUSE;
+    if ( GRAB_MOUSE ){
+        canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
+
+        canvas.onclick = function() {
+            canvas.requestPointerLock();
+        }
+    }
+
+}
+
+if (GRAB_MOUSE)
+    canvas_grab_mouse();
+
+
+document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock || document.webkitExitPointerLock;
+
+// pointer lock event listeners
+function lockChangeAlert() {
+    if(document.pointerLockElement === canvas || document.mozPointerLockElement === canvas || document.webkitPointerLockElement === canvas) {
+        console.log('lockChangeAlert: locked - turning bridge.stdin OFF');
+        window.KLock = true;
+        window.KEditing = false;
+        canvas.focus();
+
+    } else {
+        console.log('lockChangeAlert: Un-locked - turning on bridge.stdin on ');
+        window.KLock = false;
+        window.KEditing = true;
+        canvas.blur();
+
+        terminal.xterm.focus();
+
+    }
+}
+
+// Hook pointer lock state change events for different browsers
+document.addEventListener('pointerlockchange', lockChangeAlert, false);
+document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
+document.addEventListener('webkitpointerlockchange', lockChangeAlert, false);
+
+console.log('End: canvas.pointerlock');
+
+
+
+
+
+function canvas_move(e){
+    var rect = canvas.getBoundingClientRect();
+    console.log("Mouse: "+ (e.clientX- rect.left) + ' , '+ (e.clientY- rect.top) );
+}
+
+function canvas_contextmenu(e) {
+    if (e.button === 2) {
+        e.preventDefault();
+        return false;
+    }
+}
+
+function canvas_hook(){
+
+    function handlefocusC(e){
+
+        if(e.type=='mouseover'){
+            console.log('handlefocusC(in)->canvas');
+            vt.blur()
+            canvas.focus();
+            window.KEditing = false;
+            return false;
+        }
+
+        if(e.type=='mouseout'){
+            canvas.blur();
+            window.KEditing = true;
+            Podium.busy = 0
+            if (vt){
+                console.log('handlefocusC(out)->vt');
+                vt.focus();
+            }
+            return false;
+        }
+        return true;
+    }
+
+    canvas.contentEditable = true;
+    canvas.setAttribute('tabindex','0');
+    //canvas.addEventListener('mousemove',canvas_move,false);
+    canvas.addEventListener('contextmenu',canvas_contextmenu,false);
+    canvas.addEventListener('mouseover',handlefocusC,false);
+    canvas.addEventListener('mouseout',handlefocusC,false);
+
+}
+
+
+function resize_gl(){
+    var realToCSSPixels = window.devicePixelRatio || 1;
+
+    // Lookup the size the browser is displaying the canvas in CSS pixels
+    // and compute a size needed to make our drawingbuffer match it in
+    // device pixels.
+    var displayWidth  = Math.floor(gl.canvas.clientWidth  * realToCSSPixels);
+    var displayHeight = Math.floor(gl.canvas.clientHeight * realToCSSPixels);
+
+    // Check if the canvas is not the same size.
+    if (gl.canvas.width  != displayWidth || gl.canvas.height != displayHeight) {
+        // Make the canvas the same size
+        gl.canvas.width  = displayWidth;
+        gl.canvas.height = displayHeight;
+
+        // Set the viewport to match
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        console.log('   canvas.size [resized]');
+
+      return true;
+    }
+    console.log('   canvas.size [ *NOT* resized]');
+    return false;
+}
+
+function glcontextlost(e){
+    alert('WebGL context lost. You will need to reload the page.');
+    e.preventDefault();
+}
+
+function setStatus(status_text){
+    console.log("Status : " + status_text )
+}
+
+var Podium = {};
+Podium.busy = 0
+Podium.keydown = function(target,k) {
+    var oEvent = document.createEvent('KeyboardEvent');
+
+    // Chromium Hack
+    Object.defineProperty(oEvent, 'keyCode', {
+                get : function() {
+                    return this.keyCodeVal;
+                }
+    });
+    Object.defineProperty(oEvent, 'which', {
+                get : function() {
+                    return this.keyCodeVal;
+                }
+    });
+
+    if (oEvent.initKeyboardEvent) {
+        oEvent.initKeyboardEvent("keydown", true, true, document.defaultView, false, false, false, false, k, k);
+    } else {
+        oEvent.initKeyEvent("keydown", true, true, document.defaultView, false, false, false, false, k, 0);
+    }
+
+    oEvent.keyCodeVal = k;
+
+    if (oEvent.keyCode !== k) {
+        alert("keyCode mismatch " + oEvent.keyCode + "(" + oEvent.which + ")");
+    }
+
+    return target.dispatchEvent(oEvent);
+}
+
+function getchar(e){
+    if (!window.KEditing) {
+        kc = e.which || e.charCode || e.keyCode ;
+        console.log('getchar->canvas : ' + kc );
+        console.log(e)
+    }
+    return false;
+}
+
+function getkey(e){
+    if (!window.KEditing) {
+        const kc = e.which || e.charCode || e.keyCode ;
+        //console.log('getkey->canvas : ' + kc +' '+e.repeat);
+        const data = JSON.stringify( { "code" : e.code , "kc" : kc, 'repeat' : e.repeat })
+        window.worker.postMessage({ target: 'custom', userData: "#" + data });
+    }
+    return false;
+}
+
+
+custom_onload = function(terminal_widget) {
+    window.vt = terminal_widget
+    try {
+        gl = canvas.getContext("experimental-webgl", {antialias:gl_aa}) || canvas.getContext("webgl", {antialias:gl_aa});
+    } catch (x) {
+        gl = canvas.getContext("webgl");
+    }
+
+    var ext = gl.getExtension('OES_standard_derivatives');
+    if (!ext)
+        console.log('GL: [OES_standard_derivatives] supported');
+    else
+        console.log('GL: Error [OES_standard_derivatives] derivatives *not* supported');
+
+
+    var antialias = gl.getContextAttributes().antialias;
+    console.log('GL: antialias = '+antialias);
+
+    var aasize = gl.getParameter(gl.SAMPLES);
+    console.log('GL: antialias size = '+aasize );
+
+    if (!gl) {
+        setStatus("Uh, your browser doesn't support WebGL. This application won't work.");
+        return;
+
+    }
+    //window.addEventListener('keydown', getkey,true);
+    //window.addEventListener('keypress', getchar,true);
+/*
+    console.log("canvas_hook")
+    canvas_hook()
+
+    canvas.addEventListener("webglcontextlost",glcontextlost,false);
+
+    console.log("resize_gl")
+    resize_gl()
+*/
+
+
+}
+
+
+    </script>
+
+    <script src="emscripten.js"></script>
+
+</body>
+
+
+
+
+</html>
