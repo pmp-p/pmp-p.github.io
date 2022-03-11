@@ -2,7 +2,11 @@
 var readline_history = []
 
 function PyRun_SimpleString(code) {
-    window.worker.postMessage({ target: 'custom', userData: code });
+    if (window.worker) {
+        window.worker.postMessage({ target: 'custom', userData: code });
+    } else {
+        Module.postMessage(code);
+    }
 }
 
 function ESC(data) {
@@ -113,6 +117,7 @@ window.onload = async () => {
     const terminal = new WasmTerminal()
 
     window.terminal = terminal
+    window.PyRun_SimpleString = PyRun_SimpleString
 
     replButton.addEventListener('click', (e) => {
         term_reset()
@@ -132,6 +137,6 @@ print(sys.version)
     clearButton.removeAttribute('disabled')
     term_reset()
 
-    setTimeout(custom_onload, 4000, terminal.xterm)
+    setTimeout(custom_onload, 0, terminal.xterm)
 }
 
