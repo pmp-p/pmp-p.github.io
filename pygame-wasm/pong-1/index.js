@@ -1,17 +1,7 @@
+window.__defineGetter__('__FILE__', function() {
+  return (new Error).stack.split('/').slice(-1).join().split(':')[0] +": ";
+});
 
-var readline_history = []
-
-function PyRun_SimpleString(code) {
-    if (window.worker) {
-        window.worker.postMessage({ target: 'custom', userData: code });
-    } else {
-        Module.postMessage(code);
-    }
-}
-
-function ESC(data) {
-    return String.fromCharCode(27)+data
-}
 
 export class WasmTerminal {
 
@@ -101,42 +91,10 @@ export class WasmTerminal {
 
 }
 
-const replButton = document.getElementById('repl')
-const clearButton = document.getElementById('clear')
-
-function term_reset() {
-    terminal.xterm.clear()
-    terminal.xterm.write( ESC("[2J") )
-    terminal.xterm.write( ESC("[H") )
-    terminal.xterm.focus()
-}
-
 
 window.onload = async () => {
 
-    const terminal = new WasmTerminal()
+    await custom_onload(WasmTerminal)
 
-    window.terminal = terminal
-    window.PyRun_SimpleString = PyRun_SimpleString
-
-    replButton.addEventListener('click', (e) => {
-        term_reset()
-        PyRun_SimpleString(`
-print(chr(27),"[2J",chr(27),"[H",sep='',end='')
-print(open('/assets/py.six').read())
-print(sys.version)
-`)
-
-        })
-
-        clearButton.addEventListener('click', (e) => {
-            terminal.xterm.clear()
-        })
-
-    replButton.removeAttribute('disabled')
-    clearButton.removeAttribute('disabled')
-    term_reset()
-
-    setTimeout(custom_onload, 0, terminal.xterm)
 }
 

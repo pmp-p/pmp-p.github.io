@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- no-worker-xterm -->
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>python-wasm terminal</title>
-
+    <!-- <link rel="icon" type="image/png" href="favicon.png" sizes="16x16"> -->
     <link rel="stylesheet" href="./styles.css"/>
 
     <link rel="stylesheet" href="./xtermjsixel/xterm.css" />
@@ -37,6 +38,8 @@
       }
     </style>
 
+    <script src="emscripten.js"></script>
+
     <script src="./xtermjsixel/xterm.js" defer ></script>
     <script src="./xtermjsixel/xterm-addon-image.js" defer></script>
 
@@ -57,42 +60,66 @@
         <div class="button-container">
           VT340
           <button id="repl" disabled>Start REPL</button>
-          <button id="clear" disabled>Clear</button>
+          <button id="clearvt" disabled>Clear</button>
         </div>
     </div>
 
     <div class="emscripten_border" align=center >
-        <canvas class="emscripten" id="canvas" width="640" height="480" style="width: 320px; height: 180px;" oncontextmenu="event.preventDefault()" tabindex=0></canvas>
+        <canvas class="emscripten" id="canvas" width="640" height="480" style="width: 640px; height: 480px;" oncontextmenu="event.preventDefault()" tabindex=0></canvas>
         <div class="button-container">
             SDL2
-            <button id="clear" disabled>Clear</button>
+            <button id="clearsdl" disabled>Clear</button>
         </div>
     </div>
 
+
+
+
     <script>
     function custom_prerun(){
-        console.log("custom_prerun")
+        console.log(__FILE__, "custom_prerun")
     }
 
     function custom_postrun(){
-        console.log("custom_postrun")
-        setTimeout(PyRun_SimpleString, 4000, 'execfile("touchpong.py")')
+        console.log(__FILE__, "custom_postrun")
+        setTimeout(Module.PyRun_SimpleString, 500, '(os.path.isfile("main.py") and execfile("main.py")) or None')
     }
 
 
-    function custom_onload(vt) {
+    async function custom_onload(WasmTerminal) {
         // your code as in window.onload
+        console.log(__FILE__, "custom_onload");
 
-        console.log("custom_onload");
-        window.vt = vt  // that is a xterm.js instance
+        // it uses  document.getElementById('terminal') to get its host
+        const wasmterm = new WasmTerminal( document.getElementById('terminal') )
 
+        window.xterm = wasmterm.xterm
+
+        const replButton = document.getElementById('repl')
+        const clearButton  = document.getElementById('clearvt')
+
+        replButton.addEventListener('click', (e) => {
+            xterm.reset()
+            Module.PyRun_SimpleString(`
+print(chr(27),"[2J",chr(27),"[H",sep='',end='')
+print(open('/assets/cpython.six').read())
+print()
+print(sys.version)
+`) // Keep the newline or linenumbering will activate
+
+            })
+
+            document.getElementById('clearvt').addEventListener('click', (e) => {
+                xterm.clear()
+            })
+
+        replButton.removeAttribute('disabled')
+        clearButton.removeAttribute('disabled')
+
+        setTimeout( emscripten, 0, "canvas", wasmterm)
     }
-
     </script>
-    <script src="emscripten.js"></script>
-    <script async type="text/javascript" src="main/python.js"></script>
 
 </body>
-
 
 </html>
