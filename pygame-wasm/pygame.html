@@ -130,7 +130,7 @@ Python = """${JSON.stringify(Python)}"""
 execfile("/data/data/pythonrc.py")
 `
         // possible race condition with Module.postMessage when in non worker mode
-        setTimeout(Module.PyRun_SimpleString, 50, runsite)
+        setTimeout(Module.PyRun_SimpleString, 500, runsite)
 
 
         await _rcp(`${Module.APK}.py`, `/data/data/${Module.APK}/assets/main.py`)

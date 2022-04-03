@@ -396,7 +396,8 @@ export class WasmTerminal {
         })
         await _until(defined,"apk_ready")
         await _until(defined, "postMessage", Module)
-        await custom_site(FS)
+        //await custom_site(FS)
+        setTimeout(custom_site, 500, FS)
     }
     register(fshandler)
 
