@@ -144,7 +144,7 @@ function _until(fn_solver){
           if ( fn_solver.apply(null, argv ) ) {
             console.log("_until has reached", argv)
             resolve();
-          } else if (Date.now() > start_time + 15000) {
+          } else if (Date.now() > start_time + 30000) {
             console.error('ERROR time out waiting for condition _until',argv);
             resolve();
           } else {
