@@ -30,6 +30,7 @@
 
         div.emscripten { text-align: center; }
         div.emscripten_border { border: 1px solid black; }
+        div.thick_border { border: 4px solid black; }
 
         /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
         canvas.emscripten { border: 0px none; background-color: blue; }
@@ -64,22 +65,28 @@
       <progress value="0" max="100" id="progress" hidden=1></progress>
     </div>
 
-    <div class="emscripten_border">
-        <div id="terminal" tabIndex=1><p></div>
-        <div class="button-container">
-          VT340
-          <button id="repl" disabled>Start REPL</button>
-          <button id="clearvt" disabled>Clear</button>
-        </div>
-    </div>
+    <!-- <div class="thick_border" align=center > -->
+        <div class="emscripten_border" align=center >
+            <canvas class="emscripten" id="canvas" width="640" height="480" style="width: 640px; height: 480px;" oncontextmenu="event.preventDefault()" tabindex=0></canvas>
+            <div class="button-container">
+                Canvas2D/3D (SDL2)
+                <button id="aiopaused_true" disabled>AIO ■</button>
+                <button id="aiopaused_false" disabled>AIO ▶</button>
+                <button id="pygame_music_pause" disabled>Music ■</button>
+            </div>
 
-    <div class="emscripten_border" align=center >
-        <canvas class="emscripten" id="canvas" width="640" height="480" style="width: 640px; height: 480px;" oncontextmenu="event.preventDefault()" tabindex=0></canvas>
-        <div class="button-container">
-            SDL2
-            <button id="clearsdl" disabled>Clear</button>
         </div>
-    </div>
+
+        <div class="emscripten_border">
+            <div id="terminal" tabIndex=1><p></div>
+            <div class="button-container">
+              VT340
+              <button id="repl" disabled>Start REPL</button>
+              <button id="clearvt" disabled>Clear</button>
+            </div>
+        </div>
+    <!--    </div> -->
+
 
     <script type="application/javascript">
     config = { xtermjs : 1 }
@@ -124,13 +131,38 @@ execfile("/data/data/pythonrc.py")
         if (python.APK) {
             await _rcp(`${python.APK}.py`, `/data/data/${python.APK}/assets/main.py`)
 
-            // possible race condition with Module.postMessage when in non worker mode
+            setTimeout(python.setStatus, 1000, "hide")
+            on_click("aiopaused_true","aio.paused=True")
+            on_click("aiopaused_false","aio.paused=False")
+            on_click("pygame_music_pause","pygame.music.pause()")
+            // hide the top status bar (emscripten loader)
+
             python.PyRun_SimpleString(runsite)
+
         } else {
             console.log(__FILE__, "not script to run")
         }
     }
 
+    function on_click(button_id, pycode, jsfunc) {
+        const wdg = document.getElementById(button_id)
+        if (wdg) {
+            if (pycode) {
+                wdg.addEventListener('click', (e) => {
+                    // #! turns echo off
+                    Module.PyRun_SimpleString(`#!
+${pycode}
+`) // Keep the newline or linenumbering will activate
+
+                })
+            }
+            if (jsfunc)
+                jsfunc()
+            wdg.removeAttribute('disabled')
+        } else
+            console.error(__FILE__, `cannot bind code to id=${button_id}`)
+
+    }
 
     window.onload = function () {
         // nothing is ready.
@@ -149,22 +181,15 @@ execfile("/data/data/pythonrc.py")
             const replButton = document.getElementById('repl')
             const clearButton  = document.getElementById('clearvt')
 
-            replButton.addEventListener('click', (e) => {
-                xterm.reset()
-                Module.PyRun_SimpleString(`#!
+            on_click('repl',`
 print(chr(27),"[2J",chr(27),"[H",sep='',end='')
 print(open('/assets/cpython.six').read())
 print()
 print(sys.version)
-`) // Keep the newline or linenumbering will activate
+`, () => { xterm.reset() } )
 
-            })
+            on_click('clearvt',"", ()=>{xterm.clear()} )
 
-            document.getElementById('clearvt').addEventListener('click', (e) => {
-                xterm.clear()
-            })
-
-            replButton.removeAttribute('disabled')
             clearButton.removeAttribute('disabled')
 
         }
@@ -172,6 +197,40 @@ print(sys.version)
 
         pythonvm("canvas", wasmterm )
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     </script>
 </body>

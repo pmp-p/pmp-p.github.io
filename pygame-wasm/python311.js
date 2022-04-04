@@ -383,6 +383,9 @@ register(WasmTerminal)
 
 async function fshandler(VM) {
     console.log(__FILE__,"fshandler Begin")
+    await _until(defined,"FS", VM)
+    await _until(defined,"python")
+
     VM.FS.mkdir("/data")
     VM.FS.mkdir("/data/data")
     VM.FS.mkdir("/data/data/" + VM.APK);
@@ -617,6 +620,15 @@ function pythonvm(canvasid, vterm) {
         print : function(){},
 
         setStatus : function(text) {
+            if (text == "hide") {
+                progressElement.value = null;
+                progressElement.max = null;
+                progressElement.hidden = true;
+                spinnerElement.style.display = 'none';
+                statusElement.innerHTML = "";
+                return ;
+            }
+
             if (!this.setStatus.last)
                 this.setStatus.last = { time: Date.now(), text: '' };
 
@@ -667,11 +679,9 @@ function pythonvm(canvasid, vterm) {
                 //window.Module = VM
                 //window.FS = VM.FS
 
-                await _until(defined,"FS", VM)
 
                 await _until(defined, "APK", VM)
 
-                await _until(defined,"python")
 
                 if (VM.APK)
                     await fshandler(VM)
@@ -709,6 +719,8 @@ await _until(defined,"python")
 console.log(__FILE__,"waiting vfs")
 
 if (!modularized) {
+    await _until(defined, "APK", Module)
+
     await fshandler(window.Module)
     await _until(defined, "postMessage", VM)
     if (window.custom_site)
