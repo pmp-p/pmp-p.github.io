@@ -1,58 +1,63 @@
-<!DOCTYPE html>
-<html lang="en">
-<!-- no-worker-xterm -->
+<!doctype html>
+<html lang="en-us">
+<!-- no-worker, xterm, fs -->
 <head>
+    <title>CPython</title>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>python-wasm terminal</title>
+
     <!-- <link rel="icon" type="image/png" href="favicon.png" sizes="16x16"> -->
+
     <link rel="stylesheet" href="./styles.css"/>
 
     <link rel="stylesheet" href="./xtermjsixel/xterm.css" />
     <link rel="stylesheet" href="./xtermjsixel/style.css"/>
     <style>
-      #status {
-        display: inline-block;
-        vertical-align: top;
-        margin-top: 30px;
-        margin-left: 20px;
-        font-weight: bold;
-        color: rgb(120, 120, 120);
-      }
+        #status {
+            display: inline-block;
+            vertical-align: top;
+            margin-top: 20px;
+            margin-left: 30px;
+            font-weight: bold;
+            color: rgb(120, 120, 120);
+        }
 
-      #progress {
-        height: 20px;
-        width: 300px;
-      }
+        #progress {
+            height: 20px;
+            width: 300px;
+        }
 
-      div.emscripten { text-align: center; }
-      div.emscripten_border { border: 1px solid black; }
+        div.emscripten { text-align: center; }
+        div.emscripten_border { border: 1px solid black; }
 
-      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-      canvas.emscripten { border: 0px none; background-color: blue; }
-      body {
-        font-family: arial;
-        margin: 0;
-        padding: none;
-      }
+        /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+        canvas.emscripten { border: 0px none; background-color: blue; }
+
+        body {
+            font-family: arial;
+            margin: 0;
+            padding: none;
+        }
     </style>
 
+    <script src="./xtermjsixel/xterm.js"></script>
+    <script src="./xtermjsixel/xterm-addon-image.js"></script>
+
     <script src="./browserfs.min.js"></script>
-    <script src="./xtermjsixel/xterm.js" defer ></script>
-    <script src="./xtermjsixel/xterm-addon-image.js" defer></script>
+
+    <!-- <script type="application/javascript" src="python311/main.js"></script> -->
+
+    <!-- contains xterm wrapper must be ready first -->
+    <script type="module" src="index.js"></script>
 
 
-    <script type="module" src="index.js" async></script>
-
-    <script src="emscripten.js"></script>
-
+    <script type="module" src="python311.js" async defer></script>
 
 
 </head>
 
 <body>
-
     <div class="spinner" id='spinner'></div>
     <div class="emscripten" id="status">Downloading...</div>
     <div class="emscripten">
@@ -76,86 +81,77 @@
         </div>
     </div>
 
+    <script type="application/javascript">
+    config = { xtermjs : 1 }
 
-
-
-    <script>
     function custom_prerun(){
-
+        // no python main and no (MEMFS + VFS) yet.
         console.log(__FILE__, "custom_prerun")
-
-        var argv = window.location.href.split('?',2)
-        var e;
-        Python = JSON.parse(`
-{
-    "sys" :
-        {
-            "executable" : "${argv.shift()}"
-        }
-}
-`)
-
-        while (e=argv.shift())
-            arguments_.push(e)
-        argv = arguments_.pop().split('&')
-        while (e=argv.shift())
-            arguments_.push(e)
-
-        console.log(__FILE__, arguments_)
-
-        Module.APK = arguments_[0]
     }
 
     function custom_postrun(){
-        console.log(__FILE__, "custom_postrun")
-        //  wasm main() is running,  but python loop or external filesystems maybe not ready
-
+        // python main and no VFS filesystem yet.
+        console.log(__FILE__, "custom_prerun")
     }
 
-    async function _rcp(url, store) {
-        const content = await fetch(url)
-        FS.writeFile( store || ( "/data/data/" + url ), await content.text());
-    }
 
     async function custom_site(vfs) {
-
+        // python and all filesystems are ready.
         console.log(__FILE__, "custom_site Begin")
-        // python and external filesystem are ready.
+
+        async function _rcp(url, store) {
+            const content = await fetch(url)
+            store = store || ( "/data/data/" + url )
+            console.info(__FILE__,`rcp ${url} => ${store}`)
+            if (content.ok) {
+                const text= await content.text()
+                return await FS.writeFile( store, text);
+            } else {
+                console.error(__FILE__,`can't rcp ${url} to ${store}`)
+                return false;
+            }
+        }
+
         await _rcp("pythonrc.py")
 
-
-
         var runsite = `#!
-Python = """${JSON.stringify(Python)}"""
+PyConfig = """${JSON.stringify(python.PyConfig)}"""
 execfile("/data/data/pythonrc.py")
 `
-        // possible race condition with Module.postMessage when in non worker mode
-        setTimeout(Module.PyRun_SimpleString, 500, runsite)
 
+        // FIXME: sometimes runtime is called without overlayfs ready.
 
-        await _rcp(`${Module.APK}.py`, `/data/data/${Module.APK}/assets/main.py`)
+        if (python.APK) {
+            await _rcp(`${python.APK}.py`, `/data/data/${python.APK}/assets/main.py`)
 
-
-
+            // possible race condition with Module.postMessage when in non worker mode
+            python.PyRun_SimpleString(runsite)
+        } else {
+            console.log(__FILE__, "not script to run")
+        }
     }
 
 
-    function custom_onload(WasmTerminal) {
-        console.log(__FILE__, "custom_onload");
-        //add  your code as in window.onload here
+    window.onload = function () {
+        // nothing is ready.
 
+        var wasmterm
 
-        // it uses  document.getElementById('terminal') to get its host
-        const wasmterm = new WasmTerminal( document.getElementById('terminal') )
+        if (!config.xtermjs) {
+            // xterm js placeholder
+            wasmterm = { print : console.log, sixel : function(){}}
+        } else {
+            // it uses  document.getElementById('terminal') to get its host
+            wasmterm = new WasmTerminal( document.getElementById('terminal') )
 
-        window.xterm = wasmterm.xterm
+            window.xterm = wasmterm.xterm
 
-        const replButton = document.getElementById('repl')
-        const clearButton  = document.getElementById('clearvt')
+            const replButton = document.getElementById('repl')
+            const clearButton  = document.getElementById('clearvt')
 
-        replButton.addEventListener('click', (e) => {
-            xterm.reset()
-            Module.PyRun_SimpleString(`
+            replButton.addEventListener('click', (e) => {
+                xterm.reset()
+                Module.PyRun_SimpleString(`#!
 print(chr(27),"[2J",chr(27),"[H",sep='',end='')
 print(open('/assets/cpython.six').read())
 print()
@@ -168,13 +164,15 @@ print(sys.version)
                 xterm.clear()
             })
 
-        replButton.removeAttribute('disabled')
-        clearButton.removeAttribute('disabled')
+            replButton.removeAttribute('disabled')
+            clearButton.removeAttribute('disabled')
 
-        setTimeout( emscripten, 0, "canvas", wasmterm)
+        }
+
+
+        pythonvm("canvas", wasmterm )
     }
+
     </script>
-
 </body>
-
 </html>
