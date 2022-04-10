@@ -164,14 +164,14 @@ register(_until);
 
 var readline = { last_cx : -1 , index : 0 }
 
-readline.history = ["os.listdir('/data/data')","os.listdir('/data/data/org.pygame.asteroids/assets')","test()"]
 
 readline.complete = function (line) {
     if ( readline.history[ readline.history.length -1 ] != line )
         readline.history.push(line);
     readline.index = 0;
 
-    python.PyRun_SimpleString(line + "\n")
+    python.PyRun_SimpleString(unescape(encodeURIComponent(line)) + "\n")
+
 }
 
 
@@ -385,52 +385,70 @@ async function fshandler(VM) {
     console.log(__FILE__,"fshandler Begin")
     await _until(defined,"FS", VM)
     await _until(defined,"python")
-
-    VM.FS.mkdir("/data")
-    VM.FS.mkdir("/data/data")
-    VM.FS.mkdir("/data/data/" + VM.APK);
-    VM.FS.mkdir("/data/data/" + VM.APK + "/assets");
-
-
-    //                  BrowserFS.FileSystem.IndexedDB.Create({},
-    //                      function(e, idbfs) {
-
-
-    var BFS = new BrowserFS.EmscriptenFS()
-
-    const Buffer = BrowserFS.BFSRequire('buffer').Buffer;
-
-    function apk_cb(e, apkfs){
-        console.log(__FILE__,"APK", VM.APK,"received")
-        window.document.title = VM.APK
-        BrowserFS.FileSystem.InMemory.Create(
-            function(e, memfs) {
-                BrowserFS.FileSystem.OverlayFS.Create({"writable" :  memfs, "readable" : apkfs },
-                    function(e, ovfs) {
-                                BrowserFS.FileSystem.MountableFileSystem.Create({
-                                    '/' : ovfs
-                                    }, async function(e, mfs) {
-                                        await BrowserFS.initialize(mfs);
-                                        // BFS is now ready to use!
-                                        await VM.FS.mount(BFS, {root: "/"}, "/data/data/" + VM.APK );
-                                        await VM.FS.mkdir("/data/data/" + VM.APK + "/need-preload");
-                                        VM.vfs = BFS
-                                    })
-                    }
-                );
-
-            }
-        );
+    try {
+        VM.FS.mkdir("/data")
+        VM.FS.mkdir("/data/data")
+    } catch (x) {
+        console.info("/data/data aleady there");
     }
 
-    fetch(VM.APK + ".apk").then(function(response) {
-        return response.arrayBuffer();
-    }).then(function(zipData) {
-        BrowserFS.FileSystem.ZipFS.Create({"zipData" : Buffer.from(zipData),"name":"apkfs"}, apk_cb)
-    })
+    if (VM.APK) {
+        const assets = "/data/data/" + VM.APK + "/assets"
+        try {
+            VM.FS.mkdir("/data/data/" + VM.APK);
+            VM.FS.mkdir(assets);
+            console.log(VM.APK, "assets will be hosted at", assets )
+        } catch(y) {
+            console.warn(assets," already there ???");
+        }
 
-    await _until(defined,"vfs", VM)
 
+        if (VM.APK != "org.python")   {
+            //                  BrowserFS.FileSystem.IndexedDB.Create({},
+            //                      function(e, idbfs) {
+
+            var BFS = new BrowserFS.EmscriptenFS()
+
+            const Buffer = BrowserFS.BFSRequire('buffer').Buffer;
+
+            function apk_cb(e, apkfs){
+                console.log(__FILE__,"APK", VM.APK,"maybe received")
+                window.document.title = VM.APK
+                BrowserFS.FileSystem.InMemory.Create(
+                    function(e, memfs) {
+                        BrowserFS.FileSystem.OverlayFS.Create({"writable" :  memfs, "readable" : apkfs },
+                            function(e, ovfs) {
+                                        BrowserFS.FileSystem.MountableFileSystem.Create({
+                                            '/' : ovfs
+                                            }, async function(e, mfs) {
+                                                await BrowserFS.initialize(mfs);
+                                                // BFS is now ready to use!
+                                                await VM.FS.mount(BFS, {root: "/"}, "/data/data/" + VM.APK );
+                                                await VM.FS.mkdir("/data/data/" + VM.APK + "/need-preload");
+                                                console.log(VM.APK," Mounted !")
+                                                VM.vfs = BFS
+                                            })
+                            }
+                        );
+                    }
+                );
+            }
+
+            fetch(VM.APK + ".apk").then(function(response) {
+                return response.arrayBuffer();
+            }).then(function(zipData) {
+                BrowserFS.FileSystem.ZipFS.Create({"zipData" : Buffer.from(zipData),"name":"apkfs"}, apk_cb)
+            })
+
+            await _until(defined,"vfs", VM)
+            if (!VM.vfs) {
+                VM.motd = "FATAL: " + VM.APK+ ".apk could not be downloaded and mounted"
+                console.error(VM.motd)
+            }
+        }
+    } else {
+        console.warn(__FILE__,"not mounting any VFS")
+    }
 }
 
 
@@ -460,6 +478,20 @@ function pythonvm(canvasid, vterm) {
     var buffer_stderr = ""
     var flushed_stdout = false
     var flushed_stderr = false
+
+
+    const text_codec = new TextDecoder()
+
+
+    function b_utf8(s) {
+        var ary = []
+        for ( var i=0; i<s.length; i+=1 ) {
+            ary.push( s.substr(i,1).charCodeAt(0) )
+        }
+        return text_codec.decode(  new Uint8Array(ary) )
+    }
+
+    register(b_utf8)
 
     function pre1(VM){
         function stdin() {
@@ -502,7 +534,7 @@ function pythonvm(canvasid, vterm) {
                         if (buffer_stdout.startsWith("Looks like you are rendering"))
                             return;
 
-                        VM.vt.xterm.write(buffer_stdout)
+                        VM.vt.xterm.write( b_utf8(buffer_stdout) )
                     }
                     buffer_stdout = ""
                     return
@@ -549,14 +581,8 @@ function pythonvm(canvasid, vterm) {
 
         var argv = window.location.href.split('?',2)
         var e;
-        VM.PyConfig = JSON.parse(`
-{
-    "sys" :
-        {
-            "executable" : "${argv.shift()}"
-        }
-}
-`)
+
+        VM.PyConfig = JSON.parse(`{"executable" : "${argv.shift()}"}`)
         while (e=argv.shift())
             VM.arguments.push(e)
 
@@ -573,7 +599,8 @@ function pythonvm(canvasid, vterm) {
             console.log(__FILE__,"preRun1",VM.arguments)
         } else {
             console.log("no source given, interactive prompt requested")
-            VM.APK = ""
+            VM.APK = "org.python"
+            VM.arguments.push(VM.APK)
         }
 
     }
@@ -593,6 +620,8 @@ function pythonvm(canvasid, vterm) {
 
     const Module = {
         arguments : [],
+
+        readline : readline,
 
         canvas: (() => document.getElementById('canvas'))(),
 
@@ -683,10 +712,7 @@ function pythonvm(canvasid, vterm) {
                 await _until(defined, "APK", VM)
 
 
-                if (VM.APK)
-                    await fshandler(VM)
-                else
-                    console.warn(__FILE__,"not mounting any VFS")
+                await fshandler(VM)
 
                 await _until(defined, "postMessage", VM)
             /*
@@ -700,7 +726,6 @@ function pythonvm(canvasid, vterm) {
         );
     } else {
         window.Module = Module
-
         const jswasmloader=document.createElement('script')
         jswasmloader.setAttribute("type","text/javascript")
         jswasmloader.setAttribute("src", "python311/main.js")
@@ -719,9 +744,11 @@ await _until(defined,"python")
 console.log(__FILE__,"waiting vfs")
 
 if (!modularized) {
+    await _until(defined, "Module")
+
     await _until(defined, "APK", Module)
 
-    await fshandler(window.Module)
+    await fshandler(Module)
     await _until(defined, "postMessage", VM)
     if (window.custom_site)
         await window.custom_site(VM)
