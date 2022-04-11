@@ -17,13 +17,19 @@ mode = 'home'
 first_time_playing = True
 
 
-async def main_game():
+async def main():
     global mode, first_time_playing
     g = Game()
     game_won = GameWonMenu()
     game_lost = GameLostMenu()
     home = Home()
     guide = Guide()
+
+    if sys.platform == 'emscripten':
+        import embed
+        #https://v6p9d9t4.ssl.hwcdn.net/html/5546785/index.html
+        embed.run_script("""info_inline(`<a href="https://tank-king.itch.io/breakpong" target=iframe>Open Javascript/HTML5 Version (new window)</a>`)""")
+
 
     while True:
         events = pygame.event.get()
@@ -87,10 +93,10 @@ async def main_game():
                     else:
                         mode = 'home'
 
-        screen.blit(text(str(clock.get_fps().__int__()), 50, 'white'), (0, 0))
+        #screen.blit(text(str(clock.get_fps().__int__()), 50, 'white'), (0, 0))
         pygame.display.update()
         clock.tick(FPS)
         await asyncio.sleep(0)
 
 
-asyncio.run( main_game() )
+asyncio.run( main() )

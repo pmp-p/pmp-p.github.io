@@ -268,12 +268,10 @@ if __WASM__ and 0:
     # "┌─┐"
 
 
-    class dd:
-        __getitem__ = getattr
-        __setitem__ = setattr
-
-
-
+if __WASM__ and 1:
+    from cffi import FFI
+    ffi = FFI()
+    print( ffi.new("int *") )
 
 
 

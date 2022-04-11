@@ -1,6 +1,14 @@
 <html><head>
 
 <script type="text/python">
+async def __main__(argc,argv):
+    while 1:
+        print(".")
+        await aio.sleep(1)
+interact()
+</script>
+
+<script type="text/xpython">
 
 import math
 import datetime
@@ -20,7 +28,7 @@ async def __main__(argc,argv):
     #loop.create_task( scroll_test() )
 
 
-    #ctx =  window.canvas.getContext("2d") ; print(ctx)
+    #ctx =  window.crt.getContext("2d") ; print(ctx)
 
     if 1: #'exp' in sys.argv:
 
@@ -28,7 +36,7 @@ async def __main__(argc,argv):
         window.test.textContent = "/////////////////////////"
 
         print('-----------ASYNC python -------------')
-        with await window.canvas.getContext("2d") as ctx:
+        with await window.crt.getContext("2d") as ctx:
 
             def show_hours():
                 ctx.beginPath()
@@ -182,6 +190,9 @@ interact()
     You can type your own Python code into the prompt in the usual way.
     <br>
 
+
+
+
     <pre id="url"></pre>
 
     <pre id="status"></pre>
@@ -191,13 +202,12 @@ interact()
     <pre id="log"></pre>
 
     <div id="mp_js_stdout"></div>
-
-    <canvas id="canvas" width="240" height="320" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
-
+<!--
+    <canvas id="crt" width="240" height="320" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+oncontextmenu="event.preventDefault()"
+-->
+    <canvas id="canvas" width="640" height="480"  tabindex="-1"></canvas>
     <p>
-
-
-
 
 <br/>
   </body>
@@ -219,6 +229,40 @@ interact()
                 return url
             }
 
+            var canvas = document.getElementById('canvas');
+            var gl_aa = true
+
+            // 3D canvas
+            try {
+                gl = canvas.getContext("experimental-webgl", {antialias:gl_aa}) || canvas.getContext("webgl", {antialias:gl_aa});
+            } catch (x) {
+                console.log("WebGL : error "+x)
+                gl = null;
+            }
+
+            if (!gl) {
+                var msg = "WebGL : your browser doesn't support WebGL. This application won't work.\r\n";
+                console.log(msg);
+                term_impl(msg);
+                return;
+
+            }
+
+            var ext = gl.getExtension('OES_standard_derivatives');
+            if (!ext)
+                console.log('WebGL : [OES_standard_derivatives] supported');
+            else
+                console.log('WebGL : Error [OES_standard_derivatives] derivatives *not* supported');
+
+
+            var antialias = gl.getContextAttributes().antialias;
+            console.log('WebGL : antialias = '+antialias);
+
+            var aasize = gl.getParameter(gl.SAMPLES);
+            console.log('WebGL : antialias size = '+aasize );
+
+            Module.canvas = canvas;
+
         }
 
         /*Initialization function*/
@@ -234,7 +278,7 @@ interact()
                     applicationCursor : true,
                 });
 
-            //term.customKeydownHandler = kbd_handler
+
 
             mp_js_stdout = document.getElementById('mp_js_stdout');
             mp_js_stdout.value = "";
