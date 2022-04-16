@@ -10,8 +10,8 @@ if 0:
     import cymunk as pymunk
     from cymunk import Vec2d
 else:
-    import pymunk
-    from pymunk import Vec2d
+    import pymunk4 as pymunk
+    from pymunk4 import Vec2d
 
 
 class PyramidDemo:
